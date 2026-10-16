@@ -27,13 +27,13 @@ class Ollama:
         return "cloud" in model.lower() or "/" in model or "://" in model
 
     def chat(self, messages: list[dict], model: str = "qwen3:4b", schema: dict | None = None,
-             seed: int = 42, max_tokens: int = 1200) -> dict:
+             seed: int = 42, max_tokens: int = 1200, num_ctx: int = 8192) -> dict:
         available = {m["name"] for m in self.models()}
         if self._cloud(model) or model not in available:
             raise ValueError("Select an already installed local Ollama model")
         payload = {"model": model, "messages": messages, "stream": False, "think": False,
                    "keep_alive": "5m", "options": {"temperature": 0, "seed": seed,
-                   "num_ctx": 8192, "num_predict": max_tokens}}
+                   "num_ctx": num_ctx, "num_predict": max_tokens}}
         if schema is not None:
             payload["format"] = schema
         response = self.http.post(self.url + "/api/chat", json=payload)
