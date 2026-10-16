@@ -1,0 +1,177 @@
+{
+  "run_id": "20261016-082555-preserved-baseline",
+  "started": "2026-10-16T08:25:55.606799",
+  "source_commit": "a909ce2",
+  "mode": "verify existing generated files without regeneration",
+  "configuration": {
+    "links": 29,
+    "joints": 28,
+    "driven": 16,
+    "mimic": 2
+  },
+  "model_sha256": {
+    "generated\\modelica\\ALOHA2\\Aloha2.mo": "0426bcb3553f922aa53630b491ad97181b98db4fd7bddfb169fbd4c2c7ec3974",
+    "generated\\modelica\\ALOHA2\\package.mo": "6d3c0fc85d77b175f3aeee2096457bbbccbec8c517311560c78fa1c1c05ac2d7",
+    "generated\\modelica\\ALOHA2\\Arms\\AlohaVX300s.mo": "dfdac030a05b71db1a64f0e348631a15e9e295d83ccbb37aa18585c652a3ea3f",
+    "generated\\modelica\\ALOHA2\\Arms\\AlohaWX250s.mo": "2748200d71f0b478f61b3361e423b4e6047a4dca3301d261d69fcb8b21564c9e",
+    "generated\\modelica\\ALOHA2\\Arms\\package.mo": "9887186a91bce23a8c55c4b3c7bc5116001553d3851205dd70191870377f49d8",
+    "generated\\modelica\\ALOHA2\\Blocks\\cosineBlend.mo": "ccf944863cfc795943c774432411eb86a853ce72d4a25968e28a14b1f594666d",
+    "generated\\modelica\\ALOHA2\\Blocks\\package.mo": "f807c3111b1c57c3af2934516c79a97ad6ed904d976c7b172867d15757d8138d",
+    "generated\\modelica\\ALOHA2\\Blocks\\WaypointTrajectory.mo": "d2ad7c72aa59d4039215f7ed582bf2516bf0f04e54af1ee840a9141ca382ab03",
+    "generated\\modelica\\ALOHA2\\Components\\FixedJoint.mo": "3ed1b5bbf20928bedb17691fef330bb10e094b83e732418b7b6c2942bf147820",
+    "generated\\modelica\\ALOHA2\\Components\\package.mo": "29a227d55c2f357d5aaa19636c5ba08329dbafaad6f521bd9530195e7d0f852f",
+    "generated\\modelica\\ALOHA2\\Components\\PrismaticJoint.mo": "6da4fd41633a82f2fdd5ea4674244bb4f9e3b7539c3e74abd47d42eaa0bad6fc",
+    "generated\\modelica\\ALOHA2\\Components\\RevoluteJoint.mo": "95755038396598ef5aebffa9ddd5929fd72ce1b8f6f6c16bf4b23e02adab2414",
+    "generated\\modelica\\ALOHA2\\Components\\RigidLink.mo": "0887669579f372fde49bc5e3e9da5555ef4ab34c2011c689bc7b4e6ff6d50b7b",
+    "generated\\modelica\\ALOHA2\\Experiments\\HoldStartPose.mo": "bd89740d8b8ee54015a32c2160910c045d9972a745ed61d4b45a7831b7274f6a",
+    "generated\\modelica\\ALOHA2\\Experiments\\LeaderArmCheck.mo": "627805c51909eab89eb8733c91d1c6560ed605c46fa12f20185796db2bfd60ed",
+    "generated\\modelica\\ALOHA2\\Experiments\\package.mo": "50f1353b294266c1115d904e6a316bec4db39ee90007fd1de8ca2ff4542ae177",
+    "generated\\modelica\\ALOHA2\\Experiments\\RightArmReach.mo": "f164551646f54c76667a5bf7b9f18ddc5b6adac06896e78470c48090280af9d5"
+  },
+  "tools": {
+    "omc": "OpenModelica v1.27.1 (64-bit)",
+    "msl": {
+      "Modelica": "4.1.0"
+    }
+  },
+  "load": {
+    "ok": true,
+    "action": "load",
+    "model": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/generated/modelica/ALOHA2/package.mo",
+    "messages": "",
+    "errors": [],
+    "data": {},
+    "seconds": 0.079
+  },
+  "checks": {
+    "ALOHA2.Arms.AlohaVX300s": {
+      "ok": true,
+      "action": "check",
+      "model": "ALOHA2.Arms.AlohaVX300s",
+      "messages": "Check of ALOHA2.Arms.AlohaVX300s completed successfully.\nClass ALOHA2.Arms.AlohaVX300s has 4365 equation(s) and 4365 variable(s).\n3309 of these are trivial equation(s).",
+      "errors": [],
+      "data": {
+        "equations": 4365,
+        "variables": 4365
+      },
+      "seconds": 0.314
+    },
+    "ALOHA2.Arms.AlohaWX250s": {
+      "ok": true,
+      "action": "check",
+      "model": "ALOHA2.Arms.AlohaWX250s",
+      "messages": "Check of ALOHA2.Arms.AlohaWX250s completed successfully.\nClass ALOHA2.Arms.AlohaWX250s has 4533 equation(s) and 4533 variable(s).\n3444 of these are trivial equation(s).",
+      "errors": [],
+      "data": {
+        "equations": 4533,
+        "variables": 4533
+      },
+      "seconds": 0.239
+    },
+    "ALOHA2.Aloha2": {
+      "ok": true,
+      "action": "check",
+      "model": "ALOHA2.Aloha2",
+      "messages": "Check of ALOHA2.Aloha2 completed successfully.\nClass ALOHA2.Aloha2 has 8194 equation(s) and 8194 variable(s).\n6253 of these are trivial equation(s).",
+      "errors": [],
+      "data": {
+        "equations": 8194,
+        "variables": 8194
+      },
+      "seconds": 0.481
+    },
+    "ALOHA2.Experiments.RightArmReach": {
+      "ok": true,
+      "action": "check",
+      "model": "ALOHA2.Experiments.RightArmReach",
+      "messages": "Check of ALOHA2.Experiments.RightArmReach completed successfully.\nClass ALOHA2.Experiments.RightArmReach has 8178 equation(s) and 8178 variable(s).\n6307 of these are trivial equation(s).",
+      "errors": [],
+      "data": {
+        "equations": 8178,
+        "variables": 8178
+      },
+      "seconds": 0.676
+    }
+  },
+  "simulation": {
+    "ok": true,
+    "action": "simulate",
+    "model": "ALOHA2.Experiments.RightArmReach",
+    "messages": "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.\nLOG_STATS         | info    | ### STATISTICS ###\n|                 | |       | | timer\n|                 | |       | | |      0.13116s          reading init.xml\n|                 | |       | | |    0.0150252s          reading info.xml\n|                 | |       | | |    0.0086576s [ 24.3%] pre-initialization\n|                 | |       | | |    0.0027355s [  7.7%] initialization\n|                 | |       | | |     2.33e-05s [  0.1%] steps\n|                 | |       | | |      7.7e-06s [  0.0%] solver (excl. callbacks)\n|                 | |       | | |     0.006916s [ 19.4%] creating output-file\n|                 | |       | | |     2.74e-05s [  0.1%] event-handling\n|                 | |       | | |    0.0010095s [  2.8%] overhead\n|                 | |       | | |    0.0162624s [ 45.6%] simulation\n|                 | |       | | |    0.0356394s [100.0%] total\n|                 | |       | | events\n|                 | |       | | |     0 state events\n|                 | |       | | |     0 time events\n|                 | |       | | solver: euler\n|                 | |       | | |   450 steps taken\n|                 | |       | | |   450 calls of functionODE\n|                 | |       | | |     0 evaluations of jacobian\n|                 | |       | | |     0 error test failures\n|                 | |       | | |     0 convergence test failures\n|                 | |       | | | 0s time of jacobian evaluation\nLOG_SUCCESS       | info    | The simulation finished successfully.",
+    "errors": [],
+    "data": {
+      "resultFile": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/runs/20261016-082555-preserved-baseline/omc/ALOHA2.Experiments.RightArmReach_res.mat",
+      "timeFrontend": 0.4076193,
+      "timeBackend": 4.5955464,
+      "timeSimCode": 0.6041997,
+      "timeCompile": 4.9377474,
+      "timeSimulation": 0.6005351,
+      "timeTotal": 11.772761,
+      "assert_warnings": 0
+    },
+    "seconds": 11.836
+  },
+  "results": {
+    "ok": true,
+    "samples": 226,
+    "results_file": "runs/20261016-082555-preserved-baseline/results.json",
+    "moving_joints": [
+      "follower_right/waist",
+      "follower_right/shoulder",
+      "follower_right/elbow",
+      "follower_right/forearm_roll",
+      "follower_right/wrist_angle",
+      "follower_right/wrist_rotate",
+      "follower_right/left_finger",
+      "follower_right/right_finger"
+    ],
+    "peak_effort": {
+      "follower_left/waist": 0.0,
+      "follower_left/shoulder": 0.76277,
+      "follower_left/elbow": 3.03286,
+      "follower_left/forearm_roll": 0.02712,
+      "follower_left/wrist_angle": 0.4299,
+      "follower_left/wrist_rotate": 0.0,
+      "follower_left/gripper": 0.0,
+      "follower_left/left_finger": 0.0,
+      "follower_left/right_finger": 0.0,
+      "follower_right/waist": 0.04058,
+      "follower_right/shoulder": 2.15679,
+      "follower_right/elbow": 3.05593,
+      "follower_right/forearm_roll": 0.18256,
+      "follower_right/wrist_angle": 0.43276,
+      "follower_right/wrist_rotate": 0.00172,
+      "follower_right/gripper": 0.0,
+      "follower_right/left_finger": 0.06525,
+      "follower_right/right_finger": 0.0652
+    },
+    "ee_path_length_m": {
+      "follower_left": 0.0,
+      "follower_right": 0.57466
+    },
+    "n_moving_joints": 8
+  },
+  "validation": {
+    "ok": true,
+    "forward_kinematics": {
+      "samples": 25,
+      "links_checked": 28,
+      "max_position_error_m": 7.287204574051587e-14,
+      "max_rotation_error": 2.928985312740494e-13,
+      "worst": [
+        "follower_right/ee_gripper_link",
+        5.64
+      ],
+      "tol_position_m": 1e-06,
+      "tol_rotation": 1e-06,
+      "pass": true
+    },
+    "trajectory_max_error": 0.0,
+    "mimic_max_error": 0.0,
+    "limit_violations": [],
+    "reference": "independent numpy URDF FK on data/urdf/aloha2_bimanual.urdf"
+  },
+  "success": true,
+  "wall_seconds": 13.813,
+  "finished": "2026-10-16T08:26:12.476284"
+}

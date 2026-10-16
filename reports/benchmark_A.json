@@ -1,0 +1,47 @@
+{
+  "workflow": "A",
+  "description": "DLR URDFModelica (deterministic, no LLM)",
+  "converter_commit": "92541b6f6aa76fd510983a25afd3082377b4028f",
+  "preprocessing": [
+    "T1",
+    "T2",
+    "relative-root"
+  ],
+  "human_interventions": 3,
+  "repair_iterations": 0,
+  "llm_calls": 0,
+  "converter_ok": true,
+  "link_coverage": 1.0,
+  "joint_coverage": 1.0,
+  "connections": 101,
+  "mimic_enforced": false,
+  "placeholder_links_given_mass": 6,
+  "load_ok": true,
+  "check_ok": true,
+  "equations": 13759,
+  "simulate_ok": true,
+  "compile_seconds": 24.2036965,
+  "limit_assertions": 4,
+  "kinematics": {
+    "samples": 15,
+    "links_checked": 28,
+    "max_position_error_m": 7.858125020761362e-17,
+    "max_rotation_error": 2.220717083251841e-16,
+    "worst": [
+      "follower_left/upper_forearm_link",
+      1.06
+    ],
+    "tol_position_m": 1e-06,
+    "tol_rotation": 1e-06,
+    "pass": true
+  },
+  "kinematics_with_urdf_mimic_max_error_m": 0.039826941862870155,
+  "joints_outside_limits": 4,
+  "mimic_max_error": 0.039826941862870155,
+  "time_to_first_executable_s": 29.0,
+  "success": true,
+  "source_sha256": "da1ca7e104a5ef26bed7b11b4e405daa73986e5babfb376bc1786ee7aa77c083",
+  "source_preprocessing_matches_current": true,
+  "evidence_directory": "runs/benchmark/A/20261016-075041",
+  "comparison_scope": "Separate DLR-generated experiment, not a matched B/C trial"
+}

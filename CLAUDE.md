@@ -51,7 +51,9 @@ Set `PYTHONPATH=.` when running modules from bash.
 
 ## Environment (verified 2026-10-16)
 OpenModelica 1.27.1 (`C:\Program Files\OpenModelica1.27.1-64bit`), MSL 4.1.0 (4.0.0 requests resolve to 4.1.0);
-GraphDB Free 11.1.3 at http://localhost:7200 (security off); Ollama 0.35.0; RTX A1000 6 GB, 32 GB RAM.
+Project GraphDB Docker 11.3.3 at http://localhost:7201 (user license active; ingestion/reasoning/SHACL verified); port 7200 belongs
+to an unrelated container and must not be modified. See compose.yaml and docs/GRAPHDB_UPGRADE.md.
+Ollama 0.35.0; RTX A1000 6 GB, 32 GB RAM.
 C: drive has little free space — keep large artefacts on E:.
 
 ## Modelica generation conventions

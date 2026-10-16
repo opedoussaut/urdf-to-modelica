@@ -21,6 +21,8 @@ runs/
 # Secrets / local settings
 .env
 *.key
+*.license
+*.lic
 config/local*.json
 
 # OS / editor

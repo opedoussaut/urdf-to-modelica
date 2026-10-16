@@ -53,6 +53,8 @@ class Pipeline:
         self.run_id = dt.datetime.now().strftime("%Y%m%d-%H%M%S") + f"-{experiment}"
         self.run_dir = run_dir or RUNS / self.run_id
         self.run_dir.mkdir(parents=True, exist_ok=True)
+        self.publish_latest = run_dir is None
+        self.generated_root = C.ROOT / "generated/modelica" if run_dir is None else self.run_dir / "generated"
         self.steps: list[dict] = []
         self.report: dict = {"run_id": self.run_id, "experiment": experiment, "workflow": "D-deterministic-kkh",
                              "started": dt.datetime.now().isoformat(timespec="seconds")}
@@ -81,14 +83,16 @@ class Pipeline:
             self.report["finished"] = dt.datetime.now().isoformat(timespec="seconds")
             self.report["success"] = all(s["ok"] for s in self.steps) and len(self.steps) >= 8
             (self.run_dir / "report.json").write_text(json.dumps(self.report, indent=1))
-            REPORTS.mkdir(exist_ok=True)
-            (REPORTS / f"latest_{self.experiment}.json").write_text(json.dumps(self.report, indent=1))
+            if self.publish_latest:
+                REPORTS.mkdir(exist_ok=True)
+                (REPORTS / f"latest_{self.experiment}.json").write_text(json.dumps(self.report, indent=1))
         return self.report
 
     def _run(self):
         R = self.report
         manifest = self.step("configuration", lambda: {"ok": True, **C.build_manifest()})
-        C.write_manifest()
+        if self.publish_latest:
+            C.write_manifest()
         R["configuration"] = {"variant": manifest["variant"]["name"], "totals": manifest["totals"],
                               "discrepancies": len(manifest["discrepancies"])}
 
@@ -104,17 +108,17 @@ class Pipeline:
             return out
         R["urdf_validation"] = self.step("urdf_validation", assets)
 
-        rec = self.step("generate_modelica", lambda: {"ok": True, **build()})
+        rec = self.step("generate_modelica", lambda: {"ok": True, **build(self.generated_root)})
         R["generation"] = {"files": len(rec["files"]), "placeholders": rec["placeholders"],
                            "package": f"generated/modelica/{PKG}"}
 
         def comp():
             out = {"ok": True, "arms": {}}
             for m, cls in C.ARM_CLASS.items():
-                rep = completeness(C.arm_robot(m), C.ROOT / f"generated/modelica/{PKG}/Arms/{cls}.mo")
+                rep = completeness(C.arm_robot(m), self.generated_root / f"{PKG}/Arms/{cls}.mo")
                 out["arms"][m] = rep
                 out["ok"] &= rep["complete"]
-            asm = (C.ROOT / f"generated/modelica/{PKG}/{ASSEMBLY}.mo").read_text()
+            asm = (self.generated_root / f"{PKG}/{ASSEMBLY}.mo").read_text()
             n_inst = sum(asm.count(f"{PKG}.Arms.{c} ") for c in C.ARM_CLASS.values())
             n_mount = asm.count("FixedRotation mount_")
             out["assembly"] = {"arm_instances": n_inst, "mounts": n_mount, "expected": len(C.ARMS)}
@@ -131,7 +135,7 @@ class Pipeline:
             R["tools"] = {"omc": omc.version(), "msl": omc.loaded_libraries()}
 
             def load_check():
-                lr = omc.load_package(C.ROOT / f"generated/modelica/{PKG}/package.mo")
+                lr = omc.load_package(self.generated_root / f"{PKG}/package.mo")
                 out = {"ok": lr.ok, "load": lr.ok, "checks": {}}
                 for m in [f"{PKG}.Arms.{c}" for c in C.ARM_CLASS.values()] + [f"{PKG}.{ASSEMBLY}",
                                                                                 f"{PKG}.Experiments.{self.experiment}"]:
@@ -153,7 +157,7 @@ class Pipeline:
             if not R["simulation"]["ok"]:
                 return
             res = MatResult(R["simulation"]["data"]["resultFile"])
-            mapping = json.loads((C.ROOT / "generated/modelica/aloha2_mapping.json").read_text())
+            mapping = json.loads((self.generated_root / "aloha2_mapping.json").read_text())
             arms = mapping["arms"] if sc["target"] == "assembly" else [mapping["leader"]]
             self.report["target"] = sc["target"]
             R["results"] = self.step("extract_results", lambda: self._extract(res, arms, sc))
