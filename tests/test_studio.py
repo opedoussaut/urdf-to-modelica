@@ -254,7 +254,13 @@ def test_copilot_proposal_checks_reject_noop_bounds_and_class_names():
     assert [c["structurally_valid"] for c in out] == [True, False, False, False, False]
     assert out[0]["file"] == "Control/FollowerServoSettings.mo" and out[0]["bounds"] == [1.0, 500.0]
     assert "no change" in out[1]["check"] and "[1, 500]" in out[2]["check"] and "instance name" in out[3]["check"]
-    assert out[4]["file"] == "Arms/AlohaVX300s.mo" and "URDF-derived source fact" in out[4]["check"]
+    assert out[4]["file"] == "Arms/AlohaVX300s.mo"
+    basis = out[4]["semantics"]["basis"]
+    if basis.startswith("knowledge graph"):          # ontology-grounded decision (GraphDB available)
+        assert "Verified fact from data/urdf/aloha_vx300s.urdf" in out[4]["check"]
+        assert out[0]["semantics"]["tunable"] is True and out[0]["semantics"]["evidence_status"] == "Assumed"
+    else:                                            # explicit, conservative fallback
+        assert "GraphDB unavailable" in out[4]["check"]
 
 
 def test_dynamic_follower_binds_servo_parameters_to_revision(tmp_path):

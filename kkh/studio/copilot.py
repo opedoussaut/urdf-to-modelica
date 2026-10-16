@@ -41,6 +41,7 @@ def check_parameter_changes(changes, sources):
     mo = [(str(e["path"]), e.get("source", "")) for e in sources if str(e.get("path", "")).endswith(".mo")]
     out = []
     for change in changes or []:
+        semantic = None
         comp, key, value = str(change.get("component", "")), str(change.get("parameter", "")), change.get("value")
         file = type_name = current = bounds = None
         for path, text in mo:
@@ -69,12 +70,10 @@ def check_parameter_changes(changes, sources):
             reason = f"{comp} ({type_name}) has no parameter '{key}' set in {file}"
         elif not numeric:
             reason = f"{comp}.{key} = {current} is not a numeric literal; edit it in source"
-        elif file.startswith("Arms/"):
-            # Generated arm classes carry URDF source facts (geometry, limits, effort, inertia): verified data,
-            # not design parameters. AI proposals may only change tunable parameters (Control package).
-            reason = (f"{comp}.{key} = {current} is a URDF-derived source fact in {file} (verified, provenance "
-                      "data/urdf); AI proposals may only change tunable design parameters such as the servo settings "
-                      "in Control/FollowerServoSettings.mo. Correct the source or record a discrepancy instead.")
+        elif not (semantic := ontology_applicability(f"ALOHA2.{file[:-3].replace('/', '.')}.{comp}", key, file))["applicable"]:
+            # Ontology-grounded gate: what the parameter represents, its evidence status and tunability come from the
+            # knowledge graph (kkh:ModelicaParameterBinding), not from file names or LLM text.
+            reason = semantic["reason"]
         elif not number:
             reason = "proposed value is not a number"
         elif abs(float(value) - float(current)) <= 1e-12 * max(1.0, abs(float(current))):
@@ -83,11 +82,33 @@ def check_parameter_changes(changes, sources):
             reason = f"{value} is outside the bounds declared in Modelica [{bounds[0]:g}, {bounds[1]:g}]"
         else:
             reason = ""
+        sem = semantic
         out.append({**change, "file": file, "type": type_name, "current": current,
                     "bounds": list(bounds) if bounds else None, "structurally_valid": not reason,
+                    "semantics": {k: sem.get(k) for k in ("found", "iri", "tunable", "evidence_status", "owner", "owner_label",
+                                                          "source", "unit", "bounds", "basis")} if sem else None,
                     "check": reason or ("component instance and numeric parameter found in " + file
-                                        + (f"; within declared bounds [{bounds[0]:g}, {bounds[1]:g}]" if bounds else "; no bounds declared"))})
+                                        + (f"; within declared bounds [{bounds[0]:g}, {bounds[1]:g}]" if bounds else "; no bounds declared")
+                                        + (f"; {sem['reason']}" if sem else ""))})
     return out
+
+
+def ontology_applicability(modelica_path: str, parameter: str, file: str) -> dict:
+    """Knowledge-graph decision for a proposed change; conservative file rule only if GraphDB is unreachable."""
+    try:
+        from kkh.semantic.graphdb import GraphDB
+        from kkh.semantic.parameters import applicability
+        db = GraphDB(timeout=8)
+        try:
+            return {**applicability(db, modelica_path, parameter), "basis": "knowledge graph (GraphDB)"}
+        finally:
+            db.close()
+    except Exception as exc:  # GraphDB unavailable: never allow source facts through
+        ok = file.startswith("Control/")
+        return {"found": None, "applicable": ok, "basis": "fallback file rule (GraphDB unavailable)",
+                "reason": ("tunable design parameter (fallback rule, GraphDB unavailable)" if ok else
+                           f"cannot verify what {modelica_path}.{parameter} represents (GraphDB unavailable: "
+                           f"{str(exc)[:80]}); only Control-package parameters are allowed in fallback mode")}
 
 
 ROBOT_WORDS = {"aloha_vx300s": ("follower", "viperx", "vx300s", "vx300"),

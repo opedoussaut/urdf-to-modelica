@@ -72,7 +72,16 @@ def create(kind:str,body:Document):
     if kind not in {"trajectory","conversation","session"}:
         raise HTTPException(422,"Unsupported record type")
     data=guard(lambda:robotics.trajectory(body.data)) if kind=="trajectory" else body.data
-    return store.create(kind,body.name,data)
+    if kind=="trajectory" and data.get("scenario"):
+        from kkh import scenarios as S
+        sc=guard(lambda:S.load(data["scenario"].get("id","")))
+        if data["scenario"].get("version")!=sc["version"]:raise HTTPException(422,"Scenario version mismatch")
+        data["scenario"]={"id":sc["id"],"version":sc["version"],"sha256":sc["sha256"],"file":sc["file"]}
+    record=store.create(kind,body.name,data)
+    if kind=="trajectory":
+        from kkh.semantic.trace import record_observation
+        record_observation(record)  # GraphDB engineering trace; best effort, never blocks saving
+    return record
 
 
 @router.get("/record/{identity}")
@@ -170,9 +179,13 @@ def dynamics(identity:str,body:Control,axes:int=6):
         from .dynamics import compare
         result=compare(old["data"],axes,runs,body.focus)
         labels=" vs ".join(r["label"].split(" · ")[0] for r in runs)
-        return store.create("simulation",old["name"]+f" · {body.focus} · {labels}",
+        record=store.create("simulation",old["name"]+f" · {body.focus} · {labels}",
                             {**result,"trajectory":identity,"model":body.model,
                              "model_revision":runs[-1]["revision"],"reference_revision":runs[0]["revision"]})
+        from kkh.semantic.trace import record_simulation
+        revs={r["revision"]:store.get(r["revision"],"revision") for r in runs if r.get("revision")}
+        trace=record_simulation(record,revs)
+        return store.update(record["id"],record["version"],{**record["data"],"trace":trace})
     return job("Follower revision comparison",run)
 
 
@@ -252,9 +265,21 @@ def action(identity:str,body:Action):
     if body.action=="open":return guard(lambda:models.open_native(identity,body.path))
     if body.action=="ensure_control":return {"revision":guard(lambda:models.ensure_control(identity))}
     if body.action in {"import","reject"}:return guard(lambda:models.roundtrip(identity,body.action,body.hashes))
-    if body.action=="accept":return guard(lambda:models.accept(identity,body.revision))
+    if body.action=="accept":
+        accepted=guard(lambda:models.accept(identity,body.revision))
+        from kkh.semantic.trace import record_acceptance
+        record_acceptance(identity,store.get(body.revision,"revision"))
+        return accepted
     if body.action=="restore":return guard(lambda:models.restore(identity,body.revision,body.hashes))
-    if body.action in {"check","simulate"}:return job("OpenModelica "+body.action,lambda:models.validate(identity,body.class_name,body.action=="simulate",body.stop_time))
+    if body.action in {"check","simulate"}:
+        def validate():
+            head=store.get(identity,"model")["data"]["head"]
+            result=models.validate(identity,body.class_name,body.action=="simulate",body.stop_time)
+            from kkh.semantic.trace import record_validation
+            revision=store.get(head,"revision")
+            record_validation(revision,revision["data"].get("status")=="validated",body.class_name)
+            return result
+        return job("OpenModelica "+body.action,validate)
     raise HTTPException(422,"Unknown action")
 
 
@@ -271,16 +296,30 @@ def propose(identity:str,body:Proposal):
     the revision must be reviewed, validated by OpenModelica and explicitly accepted in the Modelica editor."""
     msg=guard(lambda:store.get(body.message,"message"))
     changes=[c for i,c in enumerate(msg["data"].get("parameter_changes") or []) if not body.indices or i in body.indices]
-    # Re-apply the applicability rule at proposal time (answers stored before the rule existed are not trusted).
-    rejected=[f"{c.get('component')}.{c.get('parameter')}: URDF-derived source fact in {c.get('file')}"
-              for c in changes if c.get("structurally_valid") and str(c.get("file") or "").startswith("Arms/")]
-    valid=[{k:c.get(k) for k in ("component","parameter","value","file")} for c in changes
-           if c.get("structurally_valid") and not str(c.get("file") or "").startswith("Arms/")]
+    # Re-decide applicability now from the knowledge graph (stored answers are never trusted for this decision).
+    from .copilot import ontology_applicability
+    valid,rejected,decisions=[],[],{}
+    for c in changes:
+        if not c.get("structurally_valid") or not c.get("file"):continue
+        path_=f"ALOHA2.{c['file'][:-3].replace('/','.')}.{c['component']}"
+        d=ontology_applicability(path_,c["parameter"],c["file"])
+        if d["applicable"]:
+            valid.append({k:c.get(k) for k in ("component","parameter","value","file")})
+            decisions[(c["component"],c["parameter"])]={**d,"justification":c.get("justification")}
+        else:
+            rejected.append(f"{c['component']}.{c['parameter']}: {d['reason']}")
     if not valid:raise HTTPException(422,"No applicable parameter change selected"+("; rejected: "+"; ".join(rejected) if rejected else ""))
     path=(msg["data"].get("context") or {}).get("file","Arms/AlohaVX300s.mo")
     reason=(f"AI proposal from copilot ({msg['data'].get('mode')} ontology, {msg['data'].get('settings',{}).get('model')}, "
             f"message {msg['id'][:8]}): "+", ".join(f"{c['component']}.{c['parameter']}={c['value']}" for c in valid))
     result=guard(lambda:models.propose_parameters(identity,path,valid,reason))
+    for a in result["applied"]:
+        d=decisions.get((a["component"],a["parameter"]),{})
+        a.update({"parameter_iri":d.get("iri"),"justification":d.get("justification"),"semantic_basis":d.get("basis"),
+                  "evidence_status":d.get("evidence_status")})
+    from kkh.semantic.trace import record_proposal
+    result["trace"]=record_proposal(msg,result["applied"],store.get(result["revision"],"revision"),identity)
+    result["rejected"]=rejected
     store.update(msg["id"],msg["version"],{**msg["data"],"proposal_revision":result["revision"],"proposal_model":identity})
     return result
 
@@ -322,3 +361,66 @@ def entity(robot:str="aloha_vx300s",joint:str|None=None,file:str|None=None,compo
             "metrics_index":C.ACTUATED.index(joint) if joint in C.ACTUATED[:6] else None,
             "mapping_source":"generated/modelica/aloha2_mapping.json"}
     return record
+
+
+# ---------------------------------------------------------------------------------------------- task scenarios
+@router.get("/scenarios")
+def scenarios_list():
+    from kkh import scenarios as S
+    return S.available()
+
+
+@router.get("/scenarios/{scenario_id}")
+def scenario(scenario_id:str):
+    from kkh import scenarios as S
+    return guard(lambda:S.load(scenario_id))
+
+
+@router.post("/follower-ik")
+def follower_ik(body:Pose):
+    """Cartesian control: place the FOLLOWER end effector (follower base frame); returns a leader joint command."""
+    from kkh.domain.aloha.scenario_binding import follower_ik as solve
+    if body.target is None:raise HTTPException(422,"target required")
+    return guard(lambda:solve(body.q,body.target))
+
+
+@router.get("/trajectory/{identity}/task")
+def task_result(identity:str):
+    """Level-1 visual task evaluation of a saved recording (deterministic backend computation)."""
+    from kkh import scenarios as S
+    record=guard(lambda:store.get(identity,"trajectory"))
+    info=record["data"].get("scenario")
+    if not info:raise HTTPException(404,"This recording is not linked to a task scenario")
+    def compute():
+        sc=S.load(info["id"])
+        ee,opening=S.binding(sc).signals(record["data"]["q"])
+        result=S.evaluate(sc,record["data"]["time"],ee,opening)
+        result["scenario_version_recorded"]=info.get("version")
+        result["scenario_changed_since_recording"]=info.get("sha256") not in (None,sc["sha256"])
+        return result
+    return guard(compute)
+
+
+# ---------------------------------------------------------------------------------------------- semantic engineering
+@router.get("/semantic/joint")
+def semantic_joint(robot:str="aloha_vx300s",joint:str="shoulder"):
+    """Ontology chain (actuators, servo controller, parameters, Modelica bindings, evidence) and engineering trace."""
+    from kkh.semantic.graphdb import GraphDB
+    from kkh.semantic.trace import joint_chain, joint_trace
+    from kkh.studio.robotics import JOINTS
+    if joint not in JOINTS:raise HTTPException(422,"Unknown joint")
+    arm="leader" if robot=="aloha_wx250s" else "follower_right"
+    db=GraphDB(timeout=10)
+    try:
+        return {"chain":guard(lambda:joint_chain(db,arm,joint)),
+                "trace":guard(lambda:joint_trace(db,joint)) if arm!="leader" else None,
+                "graphs":{"evidence":"https://w3id.org/kkh/graphs/aloha2","trace":"https://w3id.org/kkh/graphs/aloha2/trace"}}
+    finally:
+        db.close()
+
+
+@router.post("/semantic/backfill")
+def semantic_backfill():
+    """Record existing recordings, simulations, proposals and acceptances in the GraphDB engineering trace (idempotent)."""
+    from kkh.semantic.trace import backfill
+    return guard(lambda:backfill(store))

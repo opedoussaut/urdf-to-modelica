@@ -1279,3 +1279,14 @@
 @media (max-width: 700px) { .wb-revision-pick { grid-template-columns: 1fr; } }
 .wb-proposal tr.wb-rejected td { color: var(--muted); }
 .wb-proposal td small { color: var(--muted); }
+.wb-semantic { margin: 18px 0; }
+.wb-semantic table code { font-size: 11.5px; }
+.wb-evidence { display: inline-block; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em;
+  padding: 1px 6px; border-radius: 4px; border: 1px solid currentColor; }
+.wb-evidence.verified { color: #5fd3a8; }
+.wb-evidence.assumed { color: #f0bc5e; }
+.wb-evidence.observed { color: #2dd4bf; }
+.wb-evidence.simulated { color: #60a5fa; }
+.wb-evidence.derived { color: #a5b4fc; }
+.wb-trace-list { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.wb-trace-list small { color: var(--muted); }

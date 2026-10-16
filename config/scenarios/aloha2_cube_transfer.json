@@ -1,0 +1,39 @@
+{
+  "id": "aloha2-cube-transfer",
+  "version": "1.0.0",
+  "title": "Cube transfer A → B",
+  "task": "Move the cube from A to B.",
+  "description": "Teleoperate the leader arm so that the follower picks the cube at A and places it in target area B. The recording becomes the reference input of the Modelica follower simulation.",
+  "robot_configuration": "aloha2",
+  "binding": "kkh.domain.aloha.scenario_binding",
+  "manipulator": {"role": "follower", "arm": "follower_right", "end_effector_link": "ee_gripper_link",
+                  "frame": "follower base_link (display offset only, no measured registration)"},
+  "start_pose": "START_ARM_POSE (Interbotix/aloha aloha/constants.py)",
+  "objects": [{"id": "cube", "shape": "box", "size_m": [0.04, 0.04, 0.04], "color": "#F59E0B",
+               "start_m": [0.30, 0.12, 0.02], "mass_kg": null,
+               "mass_note": "not modelled: visual object only (Level 1)"}],
+  "targets": [{"id": "B", "shape": "square", "size_m": [0.10, 0.10], "center_m": [0.30, -0.14, 0.0], "color": "#22C55E"}],
+  "labels": [{"id": "A", "position_m": [0.30, 0.12, 0.0]}],
+  "visual_grasp": {
+    "level": 1,
+    "model": "kinematic attachment (demonstration logic, not physics)",
+    "capture_radius_m": 0.06,
+    "gripper_closed_below": 0.30,
+    "gripper_open_above": 0.60,
+    "gripper_measure": "normalised leader finger opening (0 closed, 1 open)",
+    "release": "on opening, the cube drops vertically to the table surface",
+    "orientation": "ignored: attachment depends on fingertip position only"
+  },
+  "success": {"cube_center_within_target_half_size": true, "tolerance_m": 0.0},
+  "physics": {
+    "level": 1,
+    "implemented": false,
+    "level2_planned": ["collision detection", "contact dynamics", "grasp stability", "friction", "payload effects on the follower", "object motion"],
+    "level2_interface": "kkh.scenarios.physics.PhysicsBackend"
+  },
+  "engineering_questions": [
+    "Why does the follower deviate from the leader trajectory during the transfer?",
+    "Which actuator, control or friction parameters of the shoulder dominate the tracking error?",
+    "How would a cube payload change the required shoulder torque? (not modelled at Level 1)"
+  ]
+}
