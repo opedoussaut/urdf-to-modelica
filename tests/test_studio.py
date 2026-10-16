@@ -236,3 +236,64 @@ def test_servo_proposal_bounds_and_control_injection(tmp_path):
     assert out['applied'][0]['bounds'] == [1.0, 500.0]
     from kkh.studio.dynamics import read_servo
     assert read_servo(models.directory(w['id']))['shoulder']['kp'] == 120.0
+
+
+def test_copilot_proposal_checks_reject_noop_bounds_and_class_names():
+    from kkh.studio.copilot import check_parameter_changes
+    from kkh.studio.models import BASELINE
+    src = [{"path": "generated/modelica/ALOHA2/Control/FollowerServoSettings.mo",
+            "source": (BASELINE / "Control/FollowerServoSettings.mo").read_text()},
+           {"path": "generated/modelica/ALOHA2/Arms/AlohaVX300s.mo",
+            "source": (BASELINE / "Arms/AlohaVX300s.mo").read_text()}]
+    out = check_parameter_changes([
+        {"component": "shoulder", "parameter": "kp", "value": 120.0, "justification": "x"},
+        {"component": "shoulder", "parameter": "kp", "value": 40.0, "justification": "x"},          # no-op
+        {"component": "shoulder", "parameter": "kp", "value": 900.0, "justification": "x"},         # out of bounds
+        {"component": "ALOHA2.Control.ServoGains", "parameter": "kp", "value": 60.0, "justification": "x"},
+        {"component": "j_shoulder", "parameter": "q_max", "value": 1.7, "justification": "x"}], src)
+    assert [c["structurally_valid"] for c in out] == [True, False, False, False, False]
+    assert out[0]["file"] == "Control/FollowerServoSettings.mo" and out[0]["bounds"] == [1.0, 500.0]
+    assert "no change" in out[1]["check"] and "[1, 500]" in out[2]["check"] and "instance name" in out[3]["check"]
+    assert out[4]["file"] == "Arms/AlohaVX300s.mo" and "URDF-derived source fact" in out[4]["check"]
+
+
+def test_dynamic_follower_binds_servo_parameters_to_revision(tmp_path):
+    """Gains are Modelica bindings to the simulated revision's Control settings, not injected literals."""
+    from kkh.studio.dynamics import generate
+    from kkh.studio.models import BASELINE
+    from kkh.studio import robotics as R
+    store = Store(tmp_path / 's.sqlite')
+    data = R.trajectory({'configuration_id': R.CONFIG_ID, 'joint_ids': R.JOINTS, 'time': [0.0, 0.5, 1.0],
+                         'q': [[0.0, -0.96, 1.16, 0.0, -0.3, 0.0, 0.0, 0.0224]] * 3})
+    pkg = tmp_path / 'p' / 'ALOHA2'
+    cfg = generate(pkg, data, 1, BASELINE)
+    arm = (pkg / 'DynamicArm.mo').read_text()
+    assert 'kp=settings.shoulder.kp' in arm and 'ALOHA2.Control.FollowerServoSettings settings' in arm
+    assert 'arm.settings.shoulder.feedforward*nominal.j_shoulder.tau' in (pkg / 'RecordedFollower.mo').read_text()
+    assert cfg['servo']['shoulder'] == {'kp': 40.0, 'kd': 4.0, 'actuatorTime': 0.03, 'feedforward': 0.0}
+    assert cfg['servo_origin'] == 'revision'
+
+
+@pytest.mark.omc
+def test_failed_validation_cannot_be_accepted_and_rollback_restores(tmp_path):
+    import shutil
+    from kkh.studio.models import BASELINE
+    baseline = tmp_path / 'baseline'
+    shutil.copytree(BASELINE, baseline, ignore=shutil.ignore_patterns('*.stl'))
+    models = Models(Store(tmp_path / 'state.sqlite'), tmp_path / 'models', baseline)
+    w = models.create()
+    initial = w['data']['head']
+    f = models.directory(w['id']) / 'Control/FollowerServoSettings.mo'
+    from kkh.studio.models import digest
+    broken = f.read_text().replace('shoulder(kp = 40.0', 'shoulder(kp = 40.0 +', 1)   # syntax error
+    models.save(w['id'], 'Control/FollowerServoSettings.mo', broken, digest(f))
+    head = models.store.get(w['id'], 'model')['data']['head']
+    result = models.validate(w['id'], 'ALOHA2.Experiments.RightArmReach')
+    assert not result.get('ok', result.get('check', {}).get('ok', False))
+    assert models.store.get(head, 'revision')['data']['status'] != 'validated'
+    with pytest.raises(ValueError):
+        models.accept(w['id'], head)
+    restored = models.restore(w['id'], initial, models.changes(w['id'])['hashes'])
+    assert 'kp = 40.0 +' not in f.read_text()
+    assert restored['data']['head'] not in (initial, head)                 # rollback is a new revision
+    assert models.store.get(w['id'], 'model')['data']['accepted'] is None

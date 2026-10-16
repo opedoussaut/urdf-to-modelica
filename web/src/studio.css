@@ -1247,3 +1247,35 @@
 }
 .wb-proposal table { font-size: 12px; }
 .wb-proposal button { align-self: flex-start; }
+.wb-entity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 12px;
+  padding: 10px;
+  border-left: 3px solid #2563eb;
+  background: #10202f;
+  border-radius: 4px;
+}
+.wb-entity small { color: var(--muted); overflow-wrap: anywhere; }
+.wb-entity .wb-toolbar { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.wb-focus { display: inline-flex; gap: 4px; }
+.wb-app .wb-focus button { padding: 3px 9px; font-size: 12px; border-radius: 999px; background: transparent; }
+.wb-app .wb-focus button.active.follower { background: #2563eb; border-color: #2563eb; color: #fff; }
+.wb-app .wb-focus button.active.leader { background: #0d9488; border-color: #0d9488; color: #fff; }
+.wb-revision-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.wb-revision-pick label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
+.wb-revision-pick select { min-width: 0; }
+.wb-sim-result { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.wb-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; margin: 2px 0 6px; }
+.wb-legend .leader { color: #2dd4bf; }
+.wb-legend .ref { color: #7aa7f7; }
+.wb-legend .cand { color: #60a5fa; }
+.wb-decision {
+  display: flex; flex-direction: column; gap: 6px; padding: 10px;
+  border: 1px solid #2563eb; border-radius: 6px; background: #0f1b2d;
+}
+.wb-decision small { color: var(--muted); }
+@media (max-width: 700px) { .wb-revision-pick { grid-template-columns: 1fr; } }
+.wb-proposal tr.wb-rejected td { color: var(--muted); }
+.wb-proposal td small { color: var(--muted); }

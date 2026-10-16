@@ -144,11 +144,26 @@ export default function App() {
         </header>
         <div className="wb-context">
           <span>CONTEXT</span>
-          <strong>
-            {context.robot === "aloha_wx250s"
-              ? "WidowX leader"
-              : "ViperX follower"}
-          </strong>
+          <span className="wb-focus" role="group" aria-label="Engineering focus robot">
+            {(
+              [
+                ["aloha_vx300s", "ViperX follower"],
+                ["aloha_wx250s", "WidowX leader"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                className={
+                  (context.robot === id ? "active " : "") +
+                  (id === "aloha_vx300s" ? "follower" : "leader")
+                }
+                aria-pressed={context.robot === id}
+                onClick={() => setContext({ robot: id })}
+              >
+                {label}
+              </button>
+            ))}
+          </span>
           <span>/</span>
           <button onClick={() => choose(1)}>{context.selected}</button>
           <span>·</span>

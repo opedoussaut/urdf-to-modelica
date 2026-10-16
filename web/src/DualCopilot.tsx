@@ -20,6 +20,7 @@ export default function DualCopilot({ context }: { context: Context }) {
     [model, setModel] = useState("qwen3:4b"),
     [models, setModels] = useState<string[]>([]),
     [busy, setBusy] = useState(false),
+    [picked, setPicked] = useState<Record<string, number[]>>({}),
     [error, setError] = useState("");
   const refresh = () =>
     request<Doc[]>(
@@ -55,13 +56,14 @@ export default function DualCopilot({ context }: { context: Context }) {
       disposed = true;
     };
   }, []);
-  const propose = async (answer: Doc) => {
-    if (!context.model || !conversation) return;
+  const propose = async (answer: Doc, indices: number[]) => {
+    if (!context.model || !conversation || !indices.length) return;
     setBusy(true);
     setError("");
     try {
       await request("/model/" + context.model + "/propose", "POST", {
         message: answer.id,
+        indices,
       });
       setMessages(await request("/conversation/" + conversation.id));
     } catch (e) {
@@ -369,34 +371,63 @@ export default function DualCopilot({ context }: { context: Context }) {
                               )}
                               {answer.data.parameter_changes?.length > 0 && (
                                 <div className="wb-proposal">
-                                  <strong>Structured parameter proposal</strong>
+                                  <strong>Structured parameter proposal · select changes to review</strong>
                                   <table className="wb-table">
                                     <thead>
                                       <tr>
-                                        <th>Component.parameter</th>
-                                        <th>Current</th>
-                                        <th>Proposed</th>
-                                        <th>Structural check</th>
+                                        <th></th>
+                                        <th>Instance.parameter (file)</th>
+                                        <th>Current → proposed</th>
+                                        <th>Justification</th>
+                                        <th>Applicability & bounds</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       {answer.data.parameter_changes.map(
-                                        (c: any, i: number) => (
-                                          <tr key={i} title={c.justification}>
-                                            <td>
-                                              <code>
-                                                {c.component}.{c.parameter}
-                                              </code>
-                                            </td>
-                                            <td>{c.current ?? "—"}</td>
-                                            <td>{c.value}</td>
-                                            <td>
-                                              {c.structurally_valid
-                                                ? "found"
-                                                : "not applicable"}
-                                            </td>
-                                          </tr>
-                                        ),
+                                        (c: any, i: number) => {
+                                          const applicable =
+                                            c.structurally_valid &&
+                                            !String(c.file || "").startsWith("Arms/");
+                                          const reason = applicable
+                                            ? c.check
+                                            : String(c.file || "").startsWith("Arms/") && c.structurally_valid
+                                              ? "URDF-derived source fact; only tunable design parameters (Control package) may be proposed"
+                                              : c.check;
+                                          return (
+                                            <tr key={i} className={applicable ? "" : "wb-rejected"}>
+                                              <td>
+                                                <input
+                                                  type="checkbox"
+                                                  aria-label={`Select ${c.component}.${c.parameter}`}
+                                                  disabled={!applicable || !!answer.data.proposal_revision}
+                                                  checked={applicable && (picked[answer.id] ?? []).includes(i)}
+                                                  onChange={(e) =>
+                                                    setPicked((old) => ({
+                                                      ...old,
+                                                      [answer.id]: e.target.checked
+                                                        ? [...(old[answer.id] ?? []), i]
+                                                        : (old[answer.id] ?? []).filter((x) => x !== i),
+                                                    }))
+                                                  }
+                                                />
+                                              </td>
+                                              <td>
+                                                <code>
+                                                  {c.component}.{c.parameter}
+                                                </code>
+                                                <small> {c.file || ""}</small>
+                                              </td>
+                                              <td>
+                                                {c.current ?? "—"} → <strong>{c.value}</strong>
+                                              </td>
+                                              <td>{c.justification}</td>
+                                              <td>
+                                                {applicable ? "✓ " : "✗ not applicable: "}
+                                                {reason}
+                                              </td>
+                                            </tr>
+                                          );
+                                        },
                                       )}
                                     </tbody>
                                   </table>
@@ -404,35 +435,32 @@ export default function DualCopilot({ context }: { context: Context }) {
                                     <p className="wb-footnote">
                                       Proposal revision{" "}
                                       {answer.data.proposal_revision.slice(0, 8)}{" "}
-                                      created. Review the diff, run
-                                      OpenModelica and accept it in the Modelica
-                                      editor.
+                                      created (status “AI proposal”, not accepted). Next: Leader–Follower →
+                                      Validate candidate → Simulate → compare → accept or roll back.
                                     </p>
                                   ) : (
                                     <button
+                                      className="wb-primary"
                                       disabled={
                                         !context.model ||
                                         busy ||
-                                        !answer.data.parameter_changes.some(
-                                          (c: any) => c.structurally_valid,
-                                        )
+                                        !(picked[answer.id] ?? []).length
                                       }
                                       title={
                                         context.model
-                                          ? "Creates an unaccepted 'AI proposal' revision in the editable model"
+                                          ? "Creates an isolated, unaccepted 'AI proposal' revision with the selected changes"
                                           : "Open an editable model in the Modelica editor first"
                                       }
-                                      onClick={() => propose(answer)}
+                                      onClick={() => propose(answer, picked[answer.id] ?? [])}
                                     >
-                                      Create proposal revision for review
+                                      Create AI-proposal revision ({(picked[answer.id] ?? []).length} selected)
                                     </button>
                                   )}
                                   <p className="wb-footnote">
-                                    Structural check only: the component and a
-                                    numeric parameter exist. Engineering
-                                    correctness requires your review and
-                                    OpenModelica validation; nothing is
-                                    accepted automatically.
+                                    Checks: instance exists in the supplied source, numeric parameter, value
+                                    differs, within Modelica-declared bounds, and only tunable design parameters.
+                                    Engineering correctness still requires your review, OpenModelica validation
+                                    and simulation; nothing is accepted automatically.
                                   </p>
                                 </div>
                               )}

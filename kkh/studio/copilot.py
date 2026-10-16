@@ -19,9 +19,11 @@ Answer concisely with source paths, joint names, relevant equations, and actiona
 Return only your final answer in the requested JSON schema. Never include reasoning or thinking text.
 The selected robot's URDF and an open Modelica class can represent DIFFERENT robots: identify them by their source paths.
 Never claim experiments, real hardware discrepancies or measured improvements unless supplied simulation results establish them.
-If you propose changing a numeric Modelica parameter, ALSO list it in parameter_changes using the component and parameter
-names exactly as they appear in the supplied Modelica source; otherwise return an empty list. Listed changes only become a
-reviewable proposal revision after a human request; they are never applied automatically."""
+Whenever you recommend changing a numeric Modelica parameter (including when asked which parameters could improve
+behaviour), list each concrete candidate in parameter_changes: the component INSTANCE name and parameter name exactly as
+they appear in the supplied Modelica source (e.g. instance shoulder, parameter kp), a value within any bounds declared
+there, and a one-sentence justification grounded in the supplied evidence. Otherwise return an empty list. Listed changes
+only become a reviewable proposal revision after a human request; they are never applied automatically."""
 # Length/item bounds are enforced by Ollama's schema grammar: without them small models can loop inside "answer"
 # until the token budget is exhausted (observed with qwen3:4b at 1,800 and 3,000 tokens).
 SCHEMA={"type":"object","properties":{"answer":{"type":"string","maxLength":1500},"source_paths":{"type":"array","maxItems":6,"items":{"type":"string"}},"assumptions":{"type":"array","maxItems":6,"items":{"type":"string","maxLength":300}},"proposed_change":{"type":"string","maxLength":600},
@@ -67,8 +69,16 @@ def check_parameter_changes(changes, sources):
             reason = f"{comp} ({type_name}) has no parameter '{key}' set in {file}"
         elif not numeric:
             reason = f"{comp}.{key} = {current} is not a numeric literal; edit it in source"
+        elif file.startswith("Arms/"):
+            # Generated arm classes carry URDF source facts (geometry, limits, effort, inertia): verified data,
+            # not design parameters. AI proposals may only change tunable parameters (Control package).
+            reason = (f"{comp}.{key} = {current} is a URDF-derived source fact in {file} (verified, provenance "
+                      "data/urdf); AI proposals may only change tunable design parameters such as the servo settings "
+                      "in Control/FollowerServoSettings.mo. Correct the source or record a discrepancy instead.")
         elif not number:
             reason = "proposed value is not a number"
+        elif abs(float(value) - float(current)) <= 1e-12 * max(1.0, abs(float(current))):
+            reason = f"proposed value equals the current value ({current}); no change"
         elif bounds and not bounds[0] <= value <= bounds[1]:
             reason = f"{value} is outside the bounds declared in Modelica [{bounds[0]:g}, {bounds[1]:g}]"
         else:
@@ -132,6 +142,10 @@ def base_context(context, store):
         # Follower servo parameters (assumed values) drive the dynamic follower: both sides receive them.
         settings_file = directory / "Control/FollowerServoSettings.mo"
         paths.append(settings_file if settings_file.exists() else BASELINE / "Control/FollowerServoSettings.mo")
+        arm_file = directory / "Arms/AlohaVX300s.mo"
+        if arm_file.exists():
+            paths.append(arm_file)  # the joint component (limits, effort) is relevant even when the settings file is open
+    paths = list(dict.fromkeys(paths))  # each source once
     for path in paths:
         text = path.read_text(encoding="utf-8")
         # Bounded, equal base context keeps the selected evidence inside the model's context window.

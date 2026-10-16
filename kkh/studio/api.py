@@ -250,6 +250,7 @@ class Action(BaseModel):
 @router.post("/model/{identity}/action")
 def action(identity:str,body:Action):
     if body.action=="open":return guard(lambda:models.open_native(identity,body.path))
+    if body.action=="ensure_control":return {"revision":guard(lambda:models.ensure_control(identity))}
     if body.action in {"import","reject"}:return guard(lambda:models.roundtrip(identity,body.action,body.hashes))
     if body.action=="accept":return guard(lambda:models.accept(identity,body.revision))
     if body.action=="restore":return guard(lambda:models.restore(identity,body.revision,body.hashes))
@@ -270,11 +271,54 @@ def propose(identity:str,body:Proposal):
     the revision must be reviewed, validated by OpenModelica and explicitly accepted in the Modelica editor."""
     msg=guard(lambda:store.get(body.message,"message"))
     changes=[c for i,c in enumerate(msg["data"].get("parameter_changes") or []) if not body.indices or i in body.indices]
-    valid=[{k:c.get(k) for k in ("component","parameter","value","file")} for c in changes if c.get("structurally_valid")]
-    if not valid:raise HTTPException(422,"The answer contains no structurally valid parameter change")
+    # Re-apply the applicability rule at proposal time (answers stored before the rule existed are not trusted).
+    rejected=[f"{c.get('component')}.{c.get('parameter')}: URDF-derived source fact in {c.get('file')}"
+              for c in changes if c.get("structurally_valid") and str(c.get("file") or "").startswith("Arms/")]
+    valid=[{k:c.get(k) for k in ("component","parameter","value","file")} for c in changes
+           if c.get("structurally_valid") and not str(c.get("file") or "").startswith("Arms/")]
+    if not valid:raise HTTPException(422,"No applicable parameter change selected"+("; rejected: "+"; ".join(rejected) if rejected else ""))
     path=(msg["data"].get("context") or {}).get("file","Arms/AlohaVX300s.mo")
     reason=(f"AI proposal from copilot ({msg['data'].get('mode')} ontology, {msg['data'].get('settings',{}).get('model')}, "
             f"message {msg['id'][:8]}): "+", ".join(f"{c['component']}.{c['parameter']}={c['value']}" for c in valid))
     result=guard(lambda:models.propose_parameters(identity,path,valid,reason))
     store.update(msg["id"],msg["version"],{**msg["data"],"proposal_revision":result["revision"],"proposal_model":identity})
     return result
+
+
+@router.get("/entity")
+def entity(robot:str="aloha_vx300s",joint:str|None=None,file:str|None=None,component:str|None=None):
+    """Resolve one engineering entity across representations using the generator's URDF<->Modelica mapping
+    (generated/modelica/aloha2_mapping.json) and the evidence-graph IRIs. Either (robot, joint) or (file, component)."""
+    from kkh.domain.aloha import configuration as C
+    from kkh.domain.aloha.build import SERVO_JOINTS
+    from kkh.domain.aloha.knowledge import entity as iri
+    mapping=json.loads((C.ROOT/"generated/modelica/aloha2_mapping.json").read_text(encoding="utf-8"))["classes"]
+    if file and component:
+        if file.startswith("Control/") and component in SERVO_JOINTS:
+            robot,joint="aloha_vx300s",component
+        else:
+            robot=next((m for m,cls in C.ARM_CLASS.items() if file==f"Arms/{cls}.mo"),None)
+            if robot is None:raise HTTPException(404,"No engineering entity mapped for this file")
+            joint=next((j for j,c in mapping[robot]["joints"].items() if c==component),None)
+            if joint is None:
+                link=next((l for l,c in mapping[robot]["links"].items() if c==component),None)
+                if link is None:raise HTTPException(404,"Component is not mapped to a URDF joint or link")
+                joint=next((j.name for j in C.arm_robot(robot).joints.values() if j.child==link),None)
+                if joint is None:raise HTTPException(404,"Root link has no parent joint")
+    if robot not in C.ARM_CLASS:raise HTTPException(422,"Unknown robot")
+    urdf=C.arm_robot(robot)
+    if joint not in urdf.joints:raise HTTPException(404,"Unknown joint for this robot")
+    j=urdf.joints[joint]; cls=mapping[robot]
+    arm="leader" if robot=="aloha_wx250s" else "follower_right"
+    record={"robot":robot,"joint":joint,"type":j.type,"iri":str(iri(f"{arm}/joint/{joint}")),
+            "graph_arm":arm,
+            "urdf":{"file":f"data/urdf/{robot}.urdf","joint":joint,"parent":j.parent,"child":j.child,
+                    "axis":j.axis.tolist() if j.movable else None},
+            "modelica":{"file":f"Arms/{C.ARM_CLASS[robot]}.mo","class":cls["class"],"component":cls["joints"][joint],
+                        "parent_component":cls["links"][j.parent],"child_component":cls["links"][j.child]},
+            "servo":({"file":"Control/FollowerServoSettings.mo","component":joint,"class":"ALOHA2.Control.FollowerServoSettings"}
+                     if robot=="aloha_vx300s" and joint in SERVO_JOINTS else None),
+            "actuators":C.ACTUATORS[robot].get(joint),"servo_ids":C.SERVO_IDS.get(joint) if joint in C.ACTUATORS[robot] else None,
+            "metrics_index":C.ACTUATED.index(joint) if joint in C.ACTUATED[:6] else None,
+            "mapping_source":"generated/modelica/aloha2_mapping.json"}
+    return record

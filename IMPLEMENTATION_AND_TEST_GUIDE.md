@@ -59,3 +59,17 @@ Manual (http://127.0.0.1:8000):
 3. **Leader–Follower** — Joint drag or sliders → Record leader → Stop → Save recording → Play → choose the saved run
    or run the dynamic follower comparison (real OpenModelica, illustrative gains).
 4. **Knowledge Explorer** — click a joint node → source values with units and provenance; the context bar updates.
+
+## End-to-end demonstrator (16 October 2026)
+
+Follow `DEMO_WALKTHROUGH.md` for the full scenario and expected observations. Quick checks:
+
+* `/api/workbench/entity?robot=aloha_vx300s&joint=shoulder` → `j_shoulder` in `Arms/AlohaVX300s.mo`, servo instance
+  `shoulder` in `Control/FollowerServoSettings.mo`, KG IRI `…/follower_right/joint/shoulder`.
+* Modelica editor with the follower shoulder in focus opens the arm class with `j_shoulder` selected; "Servo settings
+  shoulder" opens the Control file (adds it as a revision to older models).
+* Dynamic follower: reference and candidate revisions are simulated with their own servo files; the run record lists
+  `config.servo`, `servo_origin`, `revision` per run.
+* Copilot proposals: try `kp = 900` (rejected, bounds [1, 500]), `j_shoulder.tau_max` (rejected, URDF fact),
+  same-as-current values (rejected, no change).
+* `pytest -q` → 56 passed.

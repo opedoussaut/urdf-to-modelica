@@ -182,25 +182,53 @@ export default function ModelicaEditor({ context, setContext }: Props) {
     window.addEventListener("beforeunload", prevent);
     return () => window.removeEventListener("beforeunload", prevent);
   }, [dirty]);
+  const [entity, setEntity] = useState<any>();
+  // Shared engineering entity -> exact Modelica component via the generator's URDF<->Modelica mapping.
+  useEffect(() => {
+    if (!workspace || !context.selected) return;
+    request(
+      "/entity?robot=" +
+        encodeURIComponent(context.robot || "aloha_vx300s") +
+        "&joint=" +
+        encodeURIComponent(context.selected),
+    )
+      .then(async (e: any) => {
+        setEntity(e);
+        const inServo = context.file === e.servo?.file;
+        if (!inServo && context.file !== e.modelica.file && !dirty)
+          await load(workspace.id, e.modelica.file);
+      })
+      .catch(() => setEntity(undefined));
+  }, [context.selected, context.robot, workspace?.id]);
+  useEffect(() => {
+    if (!entity || !source) return;
+    const name =
+      context.file === entity.servo?.file
+        ? entity.servo.component
+        : context.file === entity.modelica.file
+          ? entity.modelica.component
+          : undefined;
+    const match = source.components.find((c: any) => c.name === name);
+    if (match) setSelected(match);
+  }, [entity, source]);
   selection.current = (name: string) => {
     const component = source?.components.find((c: any) => c.name === name);
     setSelected(component);
-    setContext({ selected: name.replace(/^j_/, ""), file: context.file });
+    // Component -> engineering entity (reverse mapping); unmapped components keep the shared selection.
+    request(
+      "/entity?file=" +
+        encodeURIComponent(context.file) +
+        "&component=" +
+        encodeURIComponent(name),
+    )
+      .then((e: any) => setContext({ selected: e.joint, robot: e.robot, file: context.file }))
+      .catch(() => {});
     if (component && editor.current) {
       editor.current.revealLineInCenter(component.line);
       editor.current.setPosition({ lineNumber: component.line, column: 1 });
       editor.current.focus();
     }
   };
-  useEffect(() => {
-    if (source) {
-      const match = source.components.find(
-        (c: any) =>
-          c.name === context.selected || c.name === "j_" + context.selected,
-      );
-      if (match) setSelected(match);
-    }
-  }, [context.selected, source]);
   useEffect(() => {
     if (tab !== "diagram" || !graphHost.current || !source) return;
     const components = source.components.filter(
@@ -722,6 +750,63 @@ export default function ModelicaEditor({ context, setContext }: Props) {
               <h3>{selected.name}</h3>
               <p className="wb-mono">{selected.type}</p>
               <p>{selected.comment}</p>
+              {entity && (
+                <div className="wb-entity">
+                  <strong>
+                    {entity.robot === "aloha_vx300s" ? "Follower" : "Leader"} ·{" "}
+                    {entity.joint} ({entity.type})
+                  </strong>
+                  <small title={entity.iri}>
+                    Knowledge graph: {entity.iri.split("/aloha2/")[1]}
+                  </small>
+                  <small>
+                    URDF {entity.urdf.file} · {entity.urdf.parent} →{" "}
+                    {entity.urdf.child}
+                  </small>
+                  {entity.actuators && (
+                    <small>
+                      Actuators {entity.actuators.join(" + ")} · servo ID{" "}
+                      {entity.servo_ids?.join(", ")}
+                    </small>
+                  )}
+                  <div className="wb-toolbar">
+                    {context.file !== entity.modelica.file && (
+                      <button
+                        onClick={() => {
+                          if (dirty && !confirm("Discard unsaved edits?")) return;
+                          load(workspace!.id, entity.modelica.file);
+                        }}
+                      >
+                        Joint component {entity.modelica.component}
+                      </button>
+                    )}
+                    {entity.servo && context.file !== entity.servo.file && (
+                      <button
+                        onClick={async () => {
+                          if (dirty && !confirm("Discard unsaved edits?")) return;
+                          try {
+                            if (!files.some((f) => f.path === entity.servo.file)) {
+                              // Older working copies predate the Control package: add it as its own revision.
+                              await request("/model/" + workspace!.id + "/action", "POST", {
+                                action: "ensure_control",
+                              });
+                              setNotice(
+                                "Control package added to this model as a new recorded revision (generator defaults; existing files unchanged).",
+                              );
+                            }
+                            await load(workspace!.id, entity.servo.file);
+                          } catch (e) {
+                            setError(message(e));
+                          }
+                        }}
+                      >
+                        Servo settings {entity.servo.component}
+                      </button>
+                    )}
+                  </div>
+                  <small>Mapping: {entity.mapping_source}</small>
+                </div>
+              )}
               <button
                 onClick={() => {
                   const relative =
@@ -855,5 +940,10 @@ function parameterInfo(key: string) {
   if (key === "I") return "kg·m² · URDF tensor";
   if (key === "tau_max") return "N·m · URDF effort cap";
   if (key === "qd_max") return "rad/s · URDF velocity";
+  if (key === "kp") return "N·m/rad · assumed servo gain, bounds 1–500";
+  if (key === "kd") return "N·m·s/rad · assumed servo gain, bounds 0–80";
+  if (key === "actuatorTime") return "s · assumed torque lag, bounds 0.005–0.3";
+  if (key === "feedforward") return "1 · inverse-dynamics feed-forward gain, bounds 0–1";
+  if (key === "n") return "unit axis · URDF joint axis";
   return "Modelica expression · compiler checked";
 }

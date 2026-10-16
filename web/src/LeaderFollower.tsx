@@ -35,8 +35,11 @@ export default function LeaderFollower({
     [busy, setBusy] = useState(""),
     [simulation, setSimulation] = useState<Doc>(),
     [runItems, setRunItems] = useState<Doc[]>([]),
-    [controller, setController] = useState("baseline"),
-    [gains, setGains] = useState({ kp: 80, kd: 8, lag: 0.03 });
+    [controller, setController] = useState("reference"),
+    [workspace, setWorkspace] = useState<Doc>(),
+    [revisions, setRevisions] = useState<Doc[]>([]),
+    [referenceRevision, setReferenceRevision] = useState(""),
+    [candidateRevision, setCandidateRevision] = useState("");
   const current = useRef(q),
     selected = useRef(context.selected),
     ikBusy = useRef(false),
@@ -80,7 +83,8 @@ export default function LeaderFollower({
     const timer = setTimeout(async () => {
       try {
         const p = await request("/pose", "POST", { q });
-        const result = simulation?.data.results?.[controller];
+        const results = simulation?.data.results || {};
+        const result = results[controller] || results.candidate || Object.values<any>(results)[0];
         if (result) {
           let i = result.time.findIndex((t: number) => t >= time);
           if (i < 0) i = result.time.length - 1;
@@ -161,10 +165,14 @@ export default function LeaderFollower({
   const select = (link: string) => {
     const child = link.split("/").at(-1);
     const joint = joints.find((j: any) => j.child === child);
-    setContext({
-      selected: joint?.name || child!,
-      robot: link.startsWith("leader/") ? "aloha_wx250s" : "aloha_vx300s",
-    });
+    // Driving the leader (joint drag / IK) changes only the joint; the engineering focus robot (usually the
+    // follower under study) is changed by clicking a robot in orbit mode or by the focus switch.
+    if (mode !== "orbit") setContext({ selected: joint?.name || child! });
+    else
+      setContext({
+        selected: joint?.name || child!,
+        robot: link.startsWith("leader/") ? "aloha_wx250s" : "aloha_vx300s",
+      });
   };
   const target = async (t: number[]) => {
     pendingTarget.current = t;
@@ -190,10 +198,47 @@ export default function LeaderFollower({
       ikBusy.current = false;
     }
   };
+  const focus = DYNAMIC_JOINTS.includes(context.selected)
+    ? context.selected
+    : "shoulder";
+  const refreshRevisions = async () => {
+    if (!context.model) return setRevisions([]);
+    const [w, all] = await Promise.all([
+      request<Doc>("/record/" + context.model),
+      request<Doc[]>("/documents/revision"),
+    ]);
+    const own = all
+      .filter((r) => r.data.workspace === context.model)
+      .sort((a, b) => (a.created < b.created ? 1 : -1));
+    setWorkspace(w);
+    setRevisions(own);
+    setReferenceRevision(
+      (old) => old && own.some((r) => r.id === old) ? old : w.data.accepted || own.at(-1)?.id || "",
+    );
+    setCandidateRevision(w.data.head);
+  };
+  useEffect(() => {
+    refreshRevisions().catch((e) => setError(message(e)));
+  }, [context.model, context.model_revision]);
+  const modelAction = async (body: any, label: string) => {
+    if (!context.model) return;
+    setBusy(label);
+    setError("");
+    try {
+      let result: any = await request("/model/" + context.model + "/action", "POST", body);
+      if (result?.kind === "job") result = await waitJob(result);
+      await refreshRevisions();
+      return result;
+    } catch (e) {
+      setError(message(e));
+    } finally {
+      setBusy("");
+    }
+  };
   const run = async (axes: number) => {
     if (!context.trajectory) return;
     setBusy(
-      `OpenModelica · ${axes === 1 ? "single shoulder axis" : "six dynamic axes"} · baseline and comparison`,
+      `OpenModelica · ${axes === 1 ? focus + " axis" : "six torque-driven axes"} · ${referenceRevision === candidateRevision ? "one revision" : "reference and candidate revisions"}`,
     );
     setError("");
     try {
@@ -201,7 +246,12 @@ export default function LeaderFollower({
         await request(
           "/trajectory/" + context.trajectory + "/simulate?axes=" + axes,
           "POST",
-          { ...gains, model: context.model },
+          {
+            model: context.model,
+            reference_revision: referenceRevision || undefined,
+            candidate_revision: candidateRevision || undefined,
+            focus,
+          },
         ),
       );
       setSimulation(record);
@@ -377,7 +427,7 @@ export default function LeaderFollower({
               >
                 <button
                   onClick={() =>
-                    setContext({ selected: id, robot: "aloha_wx250s" })
+                    setContext({ selected: id })
                   }
                 >
                   {id.replaceAll("_", " ")}
@@ -528,9 +578,93 @@ export default function LeaderFollower({
         </section>
         <section className="wb-card wb-pad">
           <div className="wb-panel-heading">
-            <h2>Dynamic follower</h2>
+            <h2>Dynamic follower · revision comparison</h2>
             <Activity size={17} />
           </div>
+          <p className="wb-footnote">
+            Kinematic replay (3D, above) copies joint angles. This panel runs
+            the real OpenModelica torque-driven follower: URDF inertias,
+            gravity, coupling, effort limits, and the servo parameters stored
+            in each model revision (<code>Control/FollowerServoSettings.mo</code>,
+            assumed values).
+          </p>
+          {!context.model ? (
+            <p className="wb-notice">
+              Open the Modelica Engineering Editor once to create an editable
+              model; its revisions are compared here.
+            </p>
+          ) : (
+            <div className="wb-revision-pick">
+              {(
+                [
+                  ["Reference revision", referenceRevision, setReferenceRevision],
+                  ["Candidate revision", candidateRevision, setCandidateRevision],
+                ] as const
+              ).map(([label, value, set]) => (
+                <label key={label}>
+                  {label}
+                  <select
+                    aria-label={label}
+                    value={value}
+                    onChange={(e) => set(e.target.value)}
+                  >
+                    {revisions.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.id.slice(0, 8)} · {r.data.status}
+                        {workspace?.data.accepted === r.id ? " · accepted" : ""}
+                        {workspace?.data.head === r.id ? " · head" : ""} ·{" "}
+                        {r.name.slice(0, 48)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+          )}
+          {context.model && candidateRevision && (
+            <p className="wb-footnote">
+              Candidate {candidateRevision.slice(0, 8)} ·{" "}
+              {revisions.find((r) => r.id === candidateRevision)?.data.status || "unknown"}
+              {candidateRevision === workspace?.data.head &&
+                revisions.find((r) => r.id === candidateRevision)?.data.status !== "validated" && (
+                  <>
+                    {" "}
+                    ·{" "}
+                    <button
+                      disabled={!!busy}
+                      onClick={() =>
+                        modelAction(
+                          { action: "check", class_name: "ALOHA2.Experiments.RightArmReach" },
+                          "OpenModelica validation of the candidate revision",
+                        )
+                      }
+                    >
+                      Validate candidate (OpenModelica)
+                    </button>
+                  </>
+                )}
+            </p>
+          )}
+          <div className="wb-toolbar">
+            <button
+              disabled={!context.trajectory || !!busy}
+              onClick={() => run(1)}
+              title="Only the focus joint is torque driven; faster"
+            >
+              Simulate {focus} axis
+            </button>
+            <button
+              className="wb-primary"
+              disabled={!context.trajectory || !!busy}
+              onClick={() => run(6)}
+            >
+              Simulate six axes
+            </button>
+          </div>
+          {!context.trajectory && (
+            <p className="wb-muted">Select or record a leader trajectory first.</p>
+          )}
+          {busy && <p className="wb-notice">{busy}…</p>}
           <select
             aria-label="Saved follower simulation"
             value={context.run || ""}
@@ -554,146 +688,41 @@ export default function LeaderFollower({
               }
             }}
           >
-            <option value="">Select a saved simulation…</option>
+            <option value="">Saved simulations…</option>
             {runItems.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name} · {new Date(r.created).toLocaleString()}
               </option>
             ))}
           </select>
-          <p>
-            Real OpenModelica MultiBody dynamics: URDF inertias, gravity,
-            coupling, bounded actuator torque and source joint friction.
-          </p>
-          <div className="wb-control-settings">
-            {(
-              [
-                ["kp", "Comparison Kp · Nm/rad", 1, 500, 0.5],
-                ["kd", "Comparison Kd · Nm·s/rad", 0, 80, 0.1],
-                ["lag", "Actuator lag · s", 0.005, 0.3, 0.005],
-              ] as const
-            ).map(([key, label, min, max, step]) => (
-              <label key={key}>
-                {label}
-                <input
-                  type="number"
-                  aria-label={label}
-                  min={min}
-                  max={max}
-                  step={step}
-                  value={gains[key]}
-                  onChange={(e) =>
-                    setGains({ ...gains, [key]: +e.target.value })
-                  }
-                />
-                <small>Illustrative · user override; saved with each run</small>
-              </label>
-            ))}
-          </div>
-          <div className="wb-toolbar">
-            <button
-              disabled={!context.trajectory || !!busy}
-              onClick={() => run(1)}
-            >
-              1 · Shoulder axis
-            </button>
-            <button
-              className="wb-primary"
-              disabled={!context.trajectory || !!busy}
-              onClick={() => run(6)}
-            >
-              2 · Six-axis comparison
-            </button>
-          </div>
-          {busy && (
-            <p className="wb-notice">
-              {busy}. Compiling and simulating two isolated models…
-            </p>
-          )}
-          <p className="wb-footnote">
-            Gains 40/4 versus 80/8 plus inverse-dynamics feedforward; assumed 30
-            ms torque lag. Gripper is prescribed. URDF friction/damping are
-            generic, uncalibrated defaults. No identified motor transmission,
-            backlash or payload. This is an illustrative engineering model.
-          </p>
           {simulation && (
-            <>
-              <select
-                aria-label="Follower controller playback"
-                value={controller}
-                onChange={(e) => setController(e.target.value)}
-              >
-                <option value="baseline">Baseline controller playback</option>
-                <option value="improved">Comparison controller playback</option>
-              </select>
-              <table className="wb-table">
-                <thead>
-                  <tr>
-                    <th>Measured on same reference</th>
-                    <th>Baseline</th>
-                    <th>Comparison</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    ["EE RMS", "ee_rms_m", 1000, "mm"],
-                    ["EE maximum", "ee_max_m", 1000, "mm"],
-                    [
-                      "Limit violation samples",
-                      "limit_violation_samples",
-                      1,
-                      "",
-                    ],
-                    ["Compile + run", "runtime_s", 1, "s"],
-                  ].map(([label, key, scale, unit]) => (
-                    <tr key={String(key)}>
-                      <td>{label}</td>
-                      {["baseline", "improved"].map((n) => (
-                        <td key={n}>
-                          {(
-                            simulation.data.results[n].metrics[String(key)] *
-                            Number(scale)
-                          ).toFixed(3)}{" "}
-                          {unit}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <details>
-                <summary>Joint errors, delays and peak effort</summary>
-                {["baseline", "improved"].map((n) => (
-                  <pre key={n}>
-                    {n +
-                      ":\n" +
-                      JSON.stringify(
-                        simulation.data.results[n].metrics,
-                        null,
-                        2,
-                      )}
-                  </pre>
-                ))}
-              </details>
-              <p className="wb-notice">{simulation.data.conclusion}</p>
-              <p className="wb-footnote">
-                Reference {simulation.data.trajectory?.slice(0, 8)} · model
-                revision{" "}
-                {simulation.data.model_revision?.slice(0, 8) ||
-                  "generated baseline"}{" "}
-                · controller revision{" "}
-                {simulation.data.controller_revision?.slice(0, 8) || "default"}
-              </p>
-              <JointSignal
-                result={simulation.data.results[controller]}
-                index={Math.max(
-                  0,
-                  Math.min(5, config?.joint_ids.indexOf(context.selected) || 0),
-                )}
-                name={context.selected}
-              />
-              <Signal result={simulation.data.results[controller]} />
-            </>
+            <SimulationResult
+              simulation={simulation}
+              focus={simulation.data.focus || focus}
+              joints={config?.joint_ids || []}
+              controller={controller}
+              setController={setController}
+              workspace={workspace}
+              revisions={revisions}
+              busy={!!busy}
+              onValidate={() =>
+                modelAction(
+                  { action: "check", class_name: "ALOHA2.Experiments.RightArmReach" },
+                  "OpenModelica validation of the candidate revision",
+                )
+              }
+              onAccept={(revision: string) =>
+                modelAction({ action: "accept", revision }, "Accepting revision")
+              }
+              onRollback={async (revision: string) => {
+                if (!context.model) return;
+                const changes = await request("/model/" + context.model + "/changes");
+                await modelAction(
+                  { action: "restore", revision, hashes: changes.hashes },
+                  "Restoring reference revision",
+                );
+              }}
+            />
           )}
         </section>
       </div>
@@ -776,6 +805,249 @@ function JointSignal({
       <p className="wb-footnote">
         Teal: mapped leader reference · Blue: torque-driven follower response
       </p>
+    </div>
+  );
+}
+
+const DYNAMIC_JOINTS = ["waist", "shoulder", "elbow", "forearm_roll", "wrist_angle", "wrist_rotate"];
+
+function SimulationResult({
+  simulation,
+  focus,
+  joints,
+  controller,
+  setController,
+  workspace,
+  revisions,
+  busy,
+  onValidate,
+  onAccept,
+  onRollback,
+}: {
+  simulation: Doc;
+  focus: string;
+  joints: string[];
+  controller: string;
+  setController: (v: string) => void;
+  workspace?: Doc;
+  revisions: Doc[];
+  busy: boolean;
+  onValidate: () => void;
+  onAccept: (revision: string) => void;
+  onRollback: (revision: string) => void;
+}) {
+  const results = simulation.data.results || {};
+  const names = Object.keys(results);
+  const runs: any[] = simulation.data.runs || names.map((n) => ({ name: n, label: n }));
+  const index = Math.max(0, joints.indexOf(focus));
+  const ref = results.reference || results.baseline;
+  const cand = results.candidate || results.improved;
+  const label = (n: string) =>
+    runs.find((r) => r.name === n)?.label?.split(" · ")[0] ||
+    ({ baseline: "baseline (legacy)", improved: "comparison (legacy)" } as any)[n] ||
+    n;
+  const status = (rid?: string) => revisions.find((r) => r.id === rid)?.data.status;
+  const candidateRun = runs.find((r) => r.name === "candidate");
+  const referenceRun = runs.find((r) => r.name === "reference");
+  const candidateStatus = status(candidateRun?.revision);
+  const servo = (n: string) => results[n]?.config?.servo?.[focus];
+  const rows: [string, (m: any) => number, number, string][] = [
+    [`${focus} RMS error`, (m) => m.joint_rms_rad[index], 1000, "mrad"],
+    [`${focus} maximum error`, (m) => m.joint_max_rad[index], 1000, "mrad"],
+    ["End-effector RMS error", (m) => m.ee_rms_m, 1000, "mm"],
+    ["End-effector maximum error", (m) => m.ee_max_m, 1000, "mm"],
+    [`${focus} peak effort`, (m) => m.peak_effort_Nm[index], 1, "N·m"],
+    ["Limit-violation samples", (m) => m.limit_violation_samples + m.velocity_limit_violation_samples, 1, ""],
+  ];
+  return (
+    <div className="wb-sim-result">
+      {ref && <TrackingComparison reference={ref} candidate={cand} index={index} name={focus} />}
+      <table className="wb-table">
+        <thead>
+          <tr>
+            <th>Measured on the same recorded reference (OpenModelica)</th>
+            {names.map((n) => (
+              <th key={n}>{label(n)}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(([title, get, scale, unit]) => (
+            <tr key={title}>
+              <td>{title}</td>
+              {names.map((n) => (
+                <td key={n}>
+                  {(get(results[n].metrics) * scale).toFixed(unit ? 2 : 0)} {unit}
+                </td>
+              ))}
+            </tr>
+          ))}
+          <tr>
+            <td>{focus} servo (kp · kd · lag · feed-forward)</td>
+            {names.map((n) => (
+              <td key={n}>
+                {servo(n)
+                  ? `${servo(n).kp} · ${servo(n).kd} · ${servo(n).actuatorTime} s · ${servo(n).feedforward}`
+                  : results[n].config?.kp !== undefined
+                    ? `${results[n].config.kp} · ${results[n].config.kd} (legacy)`
+                    : "—"}
+              </td>
+            ))}
+          </tr>
+          <tr>
+            <td>Revision</td>
+            {names.map((n) => {
+              const rid = runs.find((r) => r.name === n)?.revision;
+              return (
+                <td key={n}>
+                  {rid ? rid.slice(0, 8) : "generated baseline"}
+                  {rid && status(rid) ? ` · ${status(rid)}` : ""}
+                  {rid && workspace?.data.accepted === rid ? " · accepted" : ""}
+                </td>
+              );
+            })}
+          </tr>
+        </tbody>
+      </table>
+      <p className="wb-notice">{simulation.data.conclusion}</p>
+      {candidateRun?.revision && workspace && (
+        <div className="wb-decision">
+          <strong>Decision on candidate {candidateRun.revision.slice(0, 8)}</strong>
+          <span>
+            {workspace.data.accepted === candidateRun.revision
+              ? "Accepted: this validated revision is now the model's reference revision."
+              : candidateStatus === "validated"
+              ? "OpenModelica validation passed."
+              : candidateRun.revision === workspace.data.head
+                ? "Not yet validated by OpenModelica."
+                : "Only the head revision can be validated."}
+          </span>
+          <div className="wb-toolbar">
+            <button
+              disabled={busy || candidateStatus === "validated" || candidateRun.revision !== workspace.data.head}
+              onClick={onValidate}
+            >
+              Validate candidate (OpenModelica)
+            </button>
+            <button
+              className="wb-primary"
+              disabled={busy || candidateStatus !== "validated" || workspace.data.accepted === candidateRun.revision}
+              onClick={() => onAccept(candidateRun.revision)}
+            >
+              Accept candidate
+            </button>
+            {referenceRun?.revision && (
+              <button
+                disabled={busy}
+                onClick={() => {
+                  if (confirm("Restore the reference revision into a new working revision? The candidate stays in history."))
+                    onRollback(referenceRun.revision);
+                }}
+              >
+                Roll back to reference
+              </button>
+            )}
+          </div>
+          <small>
+            Acceptance requires a validated revision and your explicit click; roll back creates a new revision and
+            keeps the candidate in history.
+          </small>
+        </div>
+      )}
+      <select
+        aria-label="Follower response shown in 3D playback"
+        value={controller}
+        onChange={(e) => setController(e.target.value)}
+      >
+        {names.map((n) => (
+          <option key={n} value={n}>
+            3D playback: {label(n)} follower response
+          </option>
+        ))}
+      </select>
+      <Signal result={results[controller] || results[names[0]]} />
+      <details>
+        <summary>All joint metrics, delays and limitations</summary>
+        {names.map((n) => (
+          <pre key={n}>{label(n) + ":\n" + JSON.stringify(results[n].metrics, null, 2)}</pre>
+        ))}
+        <ul>
+          {(simulation.data.limitations || []).map((l: string) => (
+            <li key={l}>{l}</li>
+          ))}
+        </ul>
+      </details>
+    </div>
+  );
+}
+
+function TrackingComparison({
+  reference,
+  candidate,
+  index,
+  name,
+}: {
+  reference: any;
+  candidate?: any;
+  index: number;
+  name: string;
+}) {
+  const col = (rows: number[][]) => rows.map((r) => r[index]);
+  const lead = col(reference.q_reference),
+    a = col(reference.q_actual),
+    b = candidate ? col(candidate.q_actual) : [];
+  const all = [...lead, ...a, ...b],
+    lo = Math.min(...all),
+    hi = Math.max(...all),
+    span = Math.max(hi - lo, 1e-4);
+  const t0 = reference.time[0],
+    t1 = reference.time.at(-1) || 1;
+  const path = (time: number[], values: number[]) =>
+    values
+      .map(
+        (v, i) =>
+          `${i ? "L" : "M"}${(((time[i] - t0) / (t1 - t0)) * 600).toFixed(1)},${(95 - ((v - lo) / span) * 82).toFixed(1)}`,
+      )
+      .join(" ");
+  const err = candidate
+    ? candidate.q_actual.map((r: number[], i: number) => (r[index] - candidate.q_reference[i][index]) * 1000)
+    : [];
+  const emax = Math.max(1e-3, ...err.map(Math.abs));
+  return (
+    <div className="wb-signal">
+      <span>{name} · leader reference vs follower responses · rad · OpenModelica</span>
+      <svg viewBox="0 0 600 105" role="img" aria-label={`${name} reference and simulated follower angles`}>
+        <path d={path(reference.time, lead)} fill="none" stroke="#0D9488" strokeWidth="2.5" />
+        <path d={path(reference.time, a)} fill="none" stroke="#7aa7f7" strokeWidth="2" strokeDasharray="6 4" />
+        {candidate && <path d={path(candidate.time, b)} fill="none" stroke="#2563EB" strokeWidth="2" />}
+        <text x="4" y="11" fill="#8da5bd">{hi.toFixed(3)} rad</text>
+        <text x="4" y="103" fill="#8da5bd">{lo.toFixed(3)} rad</text>
+      </svg>
+      <p className="wb-legend">
+        <span className="leader">— leader reference (mapped)</span>
+        <span className="ref">- - reference revision follower</span>
+        {candidate && <span className="cand">— candidate revision follower</span>}
+      </p>
+      {candidate && (
+        <>
+          <span>{name} · candidate tracking error · mrad</span>
+          <svg viewBox="0 0 600 60" role="img" aria-label="Candidate tracking error">
+            <line x1="0" x2="600" y1="30" y2="30" stroke="#33465c" />
+            <path
+              d={err
+                .map(
+                  (v: number, i: number) =>
+                    `${i ? "L" : "M"}${(((candidate.time[i] - t0) / (t1 - t0)) * 600).toFixed(1)},${(30 - (v / emax) * 26).toFixed(1)}`,
+                )
+                .join(" ")}
+              fill="none"
+              stroke="#2563EB"
+              strokeWidth="1.5"
+            />
+            <text x="4" y="10" fill="#8da5bd">±{emax.toFixed(2)} mrad</text>
+          </svg>
+        </>
+      )}
     </div>
   );
 }
