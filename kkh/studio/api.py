@@ -242,3 +242,26 @@ def action(identity:str,body:Action):
     if body.action=="restore":return guard(lambda:models.restore(identity,body.revision,body.hashes))
     if body.action in {"check","simulate"}:return job("OpenModelica "+body.action,lambda:models.validate(identity,body.class_name,body.action=="simulate",body.stop_time))
     raise HTTPException(422,"Unknown action")
+
+
+class Proposal(BaseModel):
+    message:str
+    indices:list[int]=Field(default_factory=list)
+
+
+@router.post("/model/{identity}/propose")
+def propose(identity:str,body:Proposal):
+    """Turn structurally valid parameter changes from a STORED copilot answer into an 'AI proposal' revision.
+
+    Changes are read from the stored message, never from the browser payload. Nothing is accepted automatically:
+    the revision must be reviewed, validated by OpenModelica and explicitly accepted in the Modelica editor."""
+    msg=guard(lambda:store.get(body.message,"message"))
+    changes=[c for i,c in enumerate(msg["data"].get("parameter_changes") or []) if not body.indices or i in body.indices]
+    valid=[{k:c[k] for k in ("component","parameter","value")} for c in changes if c.get("structurally_valid")]
+    if not valid:raise HTTPException(422,"The answer contains no structurally valid parameter change")
+    path=(msg["data"].get("context") or {}).get("file","Arms/AlohaVX300s.mo")
+    reason=(f"AI proposal from copilot ({msg['data'].get('mode')} ontology, {msg['data'].get('settings',{}).get('model')}, "
+            f"message {msg['id'][:8]}): "+", ".join(f"{c['component']}.{c['parameter']}={c['value']}" for c in valid))
+    result=guard(lambda:models.propose_parameters(identity,path,valid,reason))
+    store.update(msg["id"],msg["version"],{**msg["data"],"proposal_revision":result["revision"],"proposal_model":identity})
+    return result

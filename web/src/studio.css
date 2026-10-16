@@ -1235,3 +1235,15 @@
 .wb-app [hidden] {
   display: none !important;
 }
+.wb-proposal {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #2e5a58;
+  border-radius: 6px;
+  background: #0f1e24;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wb-proposal table { font-size: 12px; }
+.wb-proposal button { align-self: flex-start; }

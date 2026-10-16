@@ -38,3 +38,24 @@ The frozen verifier writes a unique run and does not regenerate baseline files. 
 All new models use editable copies and immutable revision snapshots. Original generated `.mo` sources and regression outputs remain protected. Layout offsets for displaying the standalone leader beside the follower are presentation choices, not measured hardware registration. Kinematic replay is not physical tracking. Dynamics must expose sourced versus illustrative parameters and report only real OpenModelica results. Actual hardware control, friction, backlash, motor constants and load sharing have not been measured.
 
 Further implementation results and exact user testing instructions are appended as features are verified.
+
+## Takeover verification (16 October 2026) — how to test
+
+Start everything: `scripts\start.ps1` (add `-Restart` to force an API restart, `-NoBrowser` to stay in the shell).
+Expected: `[graphdb] running`, `[ollama] running`, `[status] GraphDB: ready | Ollama: 7 local models`.
+
+Automated: `.venv\Scripts\python -m pytest -q` → 52 passed (real OpenModelica, GraphDB, Ollama).
+
+Manual (http://127.0.0.1:8000):
+
+1. **Chat history** — Dual AI Copilot → New conversation → ask "Which links does the follower elbow joint connect,
+   and what is its axis?" → wait for both answers → reload the page → the conversation and both answers are listed.
+   Open "Read-only tool trace & context": the first entry `resolve_focus` shows robot/joint taken from the question.
+2. **AI proposal** — Modelica Engineering Editor → create/open an editable model → Dual AI Copilot → ask "Propose
+   setting j_shoulder q_max to 101 degrees in radians for review." → under the answer, "Structured parameter proposal"
+   shows current vs proposed and the structural check → "Create proposal revision for review" → Modelica editor:
+   a new revision with status "AI proposal"; review the diff, run Check, then accept or restore. It is never accepted
+   automatically.
+3. **Leader–Follower** — Joint drag or sliders → Record leader → Stop → Save recording → Play → choose the saved run
+   or run the dynamic follower comparison (real OpenModelica, illustrative gains).
+4. **Knowledge Explorer** — click a joint node → source values with units and provenance; the context bar updates.

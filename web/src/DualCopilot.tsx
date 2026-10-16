@@ -55,6 +55,21 @@ export default function DualCopilot({ context }: { context: Context }) {
       disposed = true;
     };
   }, []);
+  const propose = async (answer: Doc) => {
+    if (!context.model || !conversation) return;
+    setBusy(true);
+    setError("");
+    try {
+      await request("/model/" + context.model + "/propose", "POST", {
+        message: answer.id,
+      });
+      setMessages(await request("/conversation/" + conversation.id));
+    } catch (e) {
+      setError(message(e));
+    } finally {
+      setBusy(false);
+    }
+  };
   const ask = async () => {
     if (question.trim().length < 3 || busy) return;
     setBusy(true);
@@ -351,6 +366,75 @@ export default function DualCopilot({ context }: { context: Context }) {
                                     validation and acceptance.
                                   </p>
                                 </details>
+                              )}
+                              {answer.data.parameter_changes?.length > 0 && (
+                                <div className="wb-proposal">
+                                  <strong>Structured parameter proposal</strong>
+                                  <table className="wb-table">
+                                    <thead>
+                                      <tr>
+                                        <th>Component.parameter</th>
+                                        <th>Current</th>
+                                        <th>Proposed</th>
+                                        <th>Structural check</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {answer.data.parameter_changes.map(
+                                        (c: any, i: number) => (
+                                          <tr key={i} title={c.justification}>
+                                            <td>
+                                              <code>
+                                                {c.component}.{c.parameter}
+                                              </code>
+                                            </td>
+                                            <td>{c.current ?? "—"}</td>
+                                            <td>{c.value}</td>
+                                            <td>
+                                              {c.structurally_valid
+                                                ? "found"
+                                                : "not applicable"}
+                                            </td>
+                                          </tr>
+                                        ),
+                                      )}
+                                    </tbody>
+                                  </table>
+                                  {answer.data.proposal_revision ? (
+                                    <p className="wb-footnote">
+                                      Proposal revision{" "}
+                                      {answer.data.proposal_revision.slice(0, 8)}{" "}
+                                      created. Review the diff, run
+                                      OpenModelica and accept it in the Modelica
+                                      editor.
+                                    </p>
+                                  ) : (
+                                    <button
+                                      disabled={
+                                        !context.model ||
+                                        busy ||
+                                        !answer.data.parameter_changes.some(
+                                          (c: any) => c.structurally_valid,
+                                        )
+                                      }
+                                      title={
+                                        context.model
+                                          ? "Creates an unaccepted 'AI proposal' revision in the editable model"
+                                          : "Open an editable model in the Modelica editor first"
+                                      }
+                                      onClick={() => propose(answer)}
+                                    >
+                                      Create proposal revision for review
+                                    </button>
+                                  )}
+                                  <p className="wb-footnote">
+                                    Structural check only: the component and a
+                                    numeric parameter exist. Engineering
+                                    correctness requires your review and
+                                    OpenModelica validation; nothing is
+                                    accepted automatically.
+                                  </p>
+                                </div>
                               )}
                               {answer.data.assumptions?.length > 0 && (
                                 <details>

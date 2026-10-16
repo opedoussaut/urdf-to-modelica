@@ -187,3 +187,28 @@ def test_copilot_focus_follows_explicit_question():
     assert (r["robot"], r["selected"]) == ("aloha_wx250s", "elbow")
     r, _ = resolve_focus("Explain this joint", ui)                           # nothing named -> UI selection
     assert r == ui
+
+
+def test_ai_parameter_proposal_becomes_unaccepted_revision(tmp_path):
+    import shutil
+    from kkh.studio.models import BASELINE
+    baseline = tmp_path / 'baseline'
+    shutil.copytree(BASELINE, baseline, ignore=shutil.ignore_patterns('*.stl'))
+    before = manifest(baseline)
+    models = Models(Store(tmp_path / 'state.sqlite'), tmp_path / 'models', baseline)
+    w = models.create()
+    head = w['data']['head']
+    out = models.propose_parameters(w['id'], 'Arms/AlohaVX300s.mo',
+                                    [{'component': 'j_shoulder', 'parameter': 'q_max', 'value': 1.2}], 'test proposal')
+    assert out['applied'] == [{'component': 'j_shoulder', 'parameter': 'q_max', 'before': 1.256637061436, 'after': 1.2}]
+    rev = models.store.get(out['revision'], 'revision')
+    assert rev['data']['status'] == 'AI proposal' and rev['data']['parent'] == head
+    text = (models.directory(w['id']) / 'Arms/AlohaVX300s.mo').read_text()
+    assert 'q_max = 1.2,' in text and text.count('q_max = 1.2,') == 1
+    assert models.store.get(w['id'], 'model')['data']['accepted'] is None          # never auto-accepted
+    with pytest.raises(ValueError):
+        models.accept(w['id'], out['revision'])                                      # not validated -> refused
+    with pytest.raises(ValueError):
+        models.propose_parameters(w['id'], 'Arms/AlohaVX300s.mo',
+                                  [{'component': 'j_shoulder', 'parameter': 'n', 'value': 1.0}], 'vector rejected')
+    assert manifest(baseline) == before                                              # baseline untouched

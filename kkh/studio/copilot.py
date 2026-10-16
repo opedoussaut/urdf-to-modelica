@@ -18,8 +18,46 @@ Do not claim a controller improves tracking without measured results. Use SI uni
 Answer concisely with source paths, joint names, relevant equations, and actionable diagnostics.
 Return only your final answer in the requested JSON schema. Never include reasoning or thinking text.
 The selected robot's URDF and an open Modelica class can represent DIFFERENT robots: identify them by their source paths.
-Never claim experiments, real hardware discrepancies or measured improvements unless supplied simulation results establish them."""
-SCHEMA={"type":"object","properties":{"answer":{"type":"string"},"source_paths":{"type":"array","items":{"type":"string"}},"assumptions":{"type":"array","items":{"type":"string"}},"proposed_change":{"type":"string"}},"required":["answer","source_paths","assumptions","proposed_change"],"additionalProperties":False}
+Never claim experiments, real hardware discrepancies or measured improvements unless supplied simulation results establish them.
+If you propose changing a numeric Modelica parameter, ALSO list it in parameter_changes using the component and parameter
+names exactly as they appear in the supplied Modelica source; otherwise return an empty list. Listed changes only become a
+reviewable proposal revision after a human request; they are never applied automatically."""
+# Length/item bounds are enforced by Ollama's schema grammar: without them small models can loop inside "answer"
+# until the token budget is exhausted (observed with qwen3:4b at 1,800 and 3,000 tokens).
+SCHEMA={"type":"object","properties":{"answer":{"type":"string","maxLength":1500},"source_paths":{"type":"array","maxItems":6,"items":{"type":"string"}},"assumptions":{"type":"array","maxItems":6,"items":{"type":"string","maxLength":300}},"proposed_change":{"type":"string","maxLength":600},
+        "parameter_changes":{"type":"array","maxItems":6,"items":{"type":"object","properties":{"component":{"type":"string"},"parameter":{"type":"string"},"value":{"type":"number"},"justification":{"type":"string","maxLength":300}},"required":["component","parameter","value","justification"]}}},
+        "required":["answer","source_paths","assumptions","proposed_change","parameter_changes"],"additionalProperties":False}
+
+
+def check_parameter_changes(changes, sources):
+    """Mark each proposed change as structurally checkable against the supplied Modelica excerpt.
+
+    Structural only: the component exists and the parameter is a numeric literal. Engineering correctness is not
+    established here; that requires human review, OpenModelica validation and, where relevant, simulation."""
+    from kkh.engineering.modelica_inspect import parse_modifiers
+    text = "\n".join(entry.get("source", "") for entry in sources if str(entry.get("path", "")).endswith(".mo"))
+    out = []
+    for change in changes or []:
+        comp, key = str(change.get("component", "")), str(change.get("parameter", ""))
+        match = re.search(r"(?<![\w.])" + re.escape(comp) + r"\s*\(", text) if comp else None
+        current = None
+        if match:
+            depth, end = 0, len(text)
+            for i in range(match.end() - 1, len(text)):
+                depth += {"(": 1, ")": -1}.get(text[i], 0)
+                if depth == 0:
+                    end = i
+                    break
+            current = parse_modifiers(text[match.end():end]).get(key)
+        try:
+            numeric = current is not None and isinstance(float(current), float)
+        except ValueError:
+            numeric = False
+        valid = bool(match) and numeric and isinstance(change.get("value"), (int, float)) and not isinstance(change.get("value"), bool)
+        out.append({**change, "current": current, "structurally_valid": valid,
+                    "check": "component and numeric literal parameter found in the supplied source" if valid
+                    else "not found as a numeric literal parameter in the supplied source"})
+    return out
 
 
 ROBOT_WORDS = {"aloha_vx300s": ("follower", "viperx", "vx300s", "vx300"),
@@ -95,7 +133,7 @@ def base_context(context, store):
 def pair(store: Store, conversation, question, model, context):
     store.get(conversation,"conversation")
     identity = uuid.uuid4().hex
-    settings={"model":model,"seed":42,"temperature":0,"num_ctx":8192,"max_tokens":1800}
+    settings={"model":model,"seed":42,"temperature":0,"num_ctx":16384,"max_tokens":3000}  # identical for both sides
     user=store.create("message","user",{"conversation":conversation,"pair":identity,"role":"user","content":question,"context":context,"settings":settings})
     records={mode:store.create("message",mode,{"conversation":conversation,"pair":identity,"role":"assistant","mode":mode,"status":"pending","content":"","context":context,"settings":settings}) for mode in ("without","with")}
     try:
@@ -131,7 +169,7 @@ def pair(store: Store, conversation, question, model, context):
             messages=[{"role":"system","content":SYSTEM},*history,{"role":"user","content":base+extra+"\nQUESTION:\n"+question+"\n/no_think"}]
             client=Ollama(timeout=300)
             try:
-                response=client.chat(messages,model=model,seed=42,max_tokens=1800,schema=SCHEMA)
+                response=client.chat(messages,model=model,seed=42,max_tokens=settings["max_tokens"],num_ctx=settings["num_ctx"],schema=SCHEMA)
             finally:
                 client.close()
             content=response["content"].split("</think>")[-1].strip()
@@ -142,7 +180,8 @@ def pair(store: Store, conversation, question, model, context):
             if any(path not in allowed for path in cited):raise ValueError("Model cited a source path that was not supplied. Retry with a focused question.")
             proposal=parsed.get("proposed_change","").strip()
             if proposal.lower().strip(". ") in {"none","n/a","no change","no proposed change","not applicable"}:proposal=""
-            data={**record["data"],"status":"complete","content":parsed["answer"],"source_paths":cited,"assumptions":parsed.get("assumptions",[]),"proposed_change":proposal,"review_status":"Generated explanation; engineering claims require review against the displayed sources",
+            parameter_changes=check_parameter_changes(parsed.get("parameter_changes",[]),json.loads(base)["sources"])
+            data={**record["data"],"status":"complete","content":parsed["answer"],"source_paths":cited,"assumptions":parsed.get("assumptions",[]),"proposed_change":proposal,"parameter_changes":parameter_changes,"review_status":"Generated explanation; engineering claims require review against the displayed sources",
                   "metrics":response["metrics"],"prompt_sha256":hashlib.sha256(json.dumps(messages,sort_keys=True).encode()).hexdigest(),"base_context_sha256":hashlib.sha256(base.encode()).hexdigest()}
         except Exception as exc:
             data={**record["data"],"status":"error","content":"","error":str(exc)}

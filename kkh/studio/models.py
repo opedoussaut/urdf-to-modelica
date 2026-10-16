@@ -9,6 +9,7 @@ import uuid
 import threading
 from functools import wraps
 from pathlib import Path
+import numpy as np
 from kkh.domain.aloha.configuration import ROOT
 from kkh.engineering.modelica_inspect import parse_class, parse_modifiers
 from kkh.engineering.omc import OMCService, DEFAULT_OMHOME
@@ -196,6 +197,45 @@ class Models:
             omc.close()
 
     @synchronized
+    @synchronized
+    def propose_parameters(self, identity, name, changes, reason):
+        """Apply numeric literal parameter changes to the working copy as an 'AI proposal' revision.
+
+        Each change must name an existing component and an existing numeric literal parameter of that component in
+        the given file. Nothing is accepted: the human reviews the diff, runs OpenModelica and accepts explicitly."""
+        if self.changes(identity)["changes"]:
+            raise ValueError("The working copy has unreviewed changes. Import or reject them before creating a proposal.")
+        file = safe_file(self.directory(identity), name)
+        text = file.read_text(encoding="utf-8")
+        structure = parse_class(file)
+        components = {c["name"]: c for c in structure["components"]}
+        applied = []
+        for change in changes:
+            comp, key, value = change["component"], change["parameter"], change["value"]
+            if comp not in components:
+                raise ValueError(f"Component {comp} does not exist in {name}")
+            current = parse_modifiers(components[comp]["modifiers"]).get(key)
+            if current is None:
+                raise ValueError(f"Parameter {key} is not set on {comp}")
+            try:
+                old = float(current)
+            except ValueError:
+                raise ValueError(f"{comp}.{key} is not a numeric literal ({current}); edit it in source")
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or not np.isfinite(value):
+                raise ValueError(f"{comp}.{key}: proposed value must be a finite number")
+            match = re.search(r"^\s*(?:(?:parameter|constant|inner|final)\s+)*" + re.escape(components[comp]["type"])
+                              + r"(?:\[[^\]]*\])?\s+" + re.escape(comp) + r"\b", text, re.M)
+            start, end = match.start(), declaration_end(text, match.start())
+            block, count = re.subn(r"(?<![\w.])" + re.escape(key) + r"\s*=\s*" + re.escape(current) + r"(?![\w.])",
+                                   f"{key} = {float(value)!r}", text[start:end], count=1)
+            if count != 1:
+                raise ValueError(f"Could not locate {comp}.{key} = {current} in source")
+            text = text[:start] + block + text[end:]
+            applied.append({"component": comp, "parameter": key, "before": old, "after": float(value)})
+        file.write_text(text, encoding="utf-8")
+        workspace = self.snapshot(self.store.get(identity, "model"), "AI proposal", reason)
+        return {"workspace": workspace, "revision": workspace["data"]["head"], "applied": applied, "file": name}
+
     def accept(self, identity, revision_id):
         revision = self.store.get(revision_id, "revision")
         workspace = self.store.get(identity, "model")
