@@ -175,3 +175,15 @@ def test_recovery_does_not_resurrect_deleted_audit_history(tmp_path,monkeypatch)
     storage.recover_audits(Store(store.path))
     assert store.conversations()==[]
     assert store.messages(conversation['id'])[0]['data']['content']=='Real old question'
+
+
+def test_copilot_focus_follows_explicit_question():
+    from kkh.studio.copilot import resolve_focus
+    ui = {"robot": "aloha_wx250s", "selected": "shoulder"}
+    r, n = resolve_focus("Which links does the follower elbow joint connect?", ui)
+    assert (r["robot"], r["selected"]) == ("aloha_vx300s", "elbow")
+    assert n["robot"]["from"] == "question" and n["joint"]["from"] == "question"
+    r, _ = resolve_focus("Compare the leader and follower elbow", ui)       # ambiguous robot -> UI selection
+    assert (r["robot"], r["selected"]) == ("aloha_wx250s", "elbow")
+    r, _ = resolve_focus("Explain this joint", ui)                           # nothing named -> UI selection
+    assert r == ui

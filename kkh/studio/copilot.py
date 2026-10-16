@@ -22,6 +22,34 @@ Never claim experiments, real hardware discrepancies or measured improvements un
 SCHEMA={"type":"object","properties":{"answer":{"type":"string"},"source_paths":{"type":"array","items":{"type":"string"}},"assumptions":{"type":"array","items":{"type":"string"}},"proposed_change":{"type":"string"}},"required":["answer","source_paths","assumptions","proposed_change"],"additionalProperties":False}
 
 
+ROBOT_WORDS = {"aloha_vx300s": ("follower", "viperx", "vx300s", "vx300"),
+               "aloha_wx250s": ("leader", "widowx", "wx250s", "wx250")}
+JOINT_NAMES = ("forearm_roll", "wrist_rotate", "wrist_angle", "left_finger", "right_finger", "shoulder", "elbow",
+               "waist", "gripper")
+
+
+def resolve_focus(question: str, context: dict) -> tuple[dict, dict]:
+    """Robot and joint named explicitly in the question override the shared UI selection.
+
+    Only an unambiguous mention counts (exactly one robot / one joint named). Both copilot sides receive the
+    same resolved context, so the comparison stays fair; the decision is recorded in the tool trace."""
+    text = question.lower().replace(" ", "_").replace("-", "_")
+    robots = [m for m, words in ROBOT_WORDS.items() if any(re.search(r"(?<![a-z])" + w, text) for w in words)]
+    joints = [j for j in JOINT_NAMES if re.search(r"(?<![a-z])" + j + r"(?![a-z])", text)]
+    resolved, note = dict(context), {"tool": "resolve_focus"}
+    if len(robots) == 1 and robots[0] != context.get("robot"):
+        resolved["robot"] = robots[0]
+        note["robot"] = {"from": "question", "value": robots[0], "ui_selection": context.get("robot")}
+    else:
+        note["robot"] = {"from": "ui_selection" if len(robots) != 1 else "question+ui", "value": resolved.get("robot")}
+    if len(joints) == 1 and joints[0] != str(context.get("selected", "")).replace("j_", ""):
+        resolved["selected"] = joints[0]
+        note["joint"] = {"from": "question", "value": joints[0], "ui_selection": context.get("selected")}
+    else:
+        note["joint"] = {"from": "ui_selection" if len(joints) != 1 else "question+ui", "value": resolved.get("selected")}
+    return resolved, note
+
+
 def base_context(context, store):
     trace, sources = [], []
     model = context.get("robot", "aloha_vx300s")
@@ -71,7 +99,9 @@ def pair(store: Store, conversation, question, model, context):
     user=store.create("message","user",{"conversation":conversation,"pair":identity,"role":"user","content":question,"context":context,"settings":settings})
     records={mode:store.create("message",mode,{"conversation":conversation,"pair":identity,"role":"assistant","mode":mode,"status":"pending","content":"","context":context,"settings":settings}) for mode in ("without","with")}
     try:
-        base, trace, resolved = base_context(context,store)
+        focused, focus_note = resolve_focus(question, context)
+        base, trace, resolved = base_context(focused,store)
+        trace.insert(0, focus_note)
         store.update(user["id"],user["version"],{**user["data"],"context":resolved})
         previous=[m for m in store.messages(conversation) if m["data"].get("pair")!=identity]
         for mode,record in records.items():record["data"]["context"]=resolved

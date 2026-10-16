@@ -7,24 +7,19 @@ import {
   ShieldCheck,
   ChevronRight,
   PanelLeftClose,
-  LayoutDashboard,
-  Scale,
 } from "lucide-react";
 import { request, type Context, type Doc } from "./studio";
 import "./studio.css";
 const LeaderFollower = lazy(() => import("./LeaderFollower")),
   ModelicaEditor = lazy(() => import("./ModelicaEditor")),
   DualCopilot = lazy(() => import("./DualCopilot")),
-  Knowledge = lazy(() => import("./EngineeringKnowledge")),
-  Overview = lazy(() => import("./Overview")),
-  Benchmark = lazy(() => import("./ReasoningBenchmark"));
+  Knowledge = lazy(() => import("./EngineeringKnowledge"));
+// Overview.tsx and ReasoningBenchmark.tsx are kept for internal use but are not part of the product navigation.
 const tabs = [
-  ["Overview", LayoutDashboard, "Configuration, status & evidence"],
   ["Leader–Follower", Boxes, "Motion & dynamic response"],
   ["Modelica Engineering Editor", Code2, "Source & native authoring"],
   ["Dual AI Copilot", Bot, "Paired local intelligence"],
   ["Engineering Knowledge Explorer", Network, "Relationships & provenance"],
-  ["Reasoning Benchmark", Scale, "With vs without ontology"],
 ] as const;
 export default function App() {
   const [active, setActive] = useState(0),
@@ -155,14 +150,14 @@ export default function App() {
               : "ViperX follower"}
           </strong>
           <span>/</span>
-          <button onClick={() => choose(2)}>{context.selected}</button>
+          <button onClick={() => choose(1)}>{context.selected}</button>
           <span>·</span>
-          <button onClick={() => choose(2)}>
+          <button onClick={() => choose(1)}>
             revision{" "}
             {context.model_revision?.slice(0, 8) || "generated baseline"}
           </button>
           <span>·</span>
-          <button onClick={() => choose(1)}>
+          <button onClick={() => choose(0)}>
             trajectory {context.trajectory?.slice(0, 8) || "none selected"}
           </button>
         </div>
@@ -175,17 +170,13 @@ export default function App() {
             [...visited].map((i) => (
               <div key={i} hidden={active !== i}>
                 {i === 0 ? (
-                  <Overview open={choose} />
-                ) : i === 1 ? (
                   <LeaderFollower context={context} setContext={setContext} />
-                ) : i === 2 ? (
+                ) : i === 1 ? (
                   <ModelicaEditor context={context} setContext={setContext} />
-                ) : i === 3 ? (
+                ) : i === 2 ? (
                   <DualCopilot context={context} />
-                ) : i === 4 ? (
-                  <Knowledge context={context} setContext={setContext} />
                 ) : (
-                  <Benchmark />
+                  <Knowledge context={context} setContext={setContext} />
                 )}
               </div>
             ))}
