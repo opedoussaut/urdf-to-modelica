@@ -1,0 +1,2249 @@
+{
+  "variant": {
+    "id": "aloha_stationary_trossen",
+    "name": "ALOHA Stationary (Trossen Robotics / Interbotix ROS 2 'aloha' package)",
+    "rationale": "Best-documented public ALOHA configuration with machine-readable kinematics and inertials: official URDF/xacro + meshes for the ALOHA-specific arm variants (aloha_vx300s, aloha_wx250s), official bringup with workcell transforms, and official per-arm spec pages. The Kyoto University configuration could not be confirmed from public evidence. Original Stanford ALOHA (tonyzhaozh/aloha) and ALOHA 2 MJCF (mujoco_menagerie) are different variants and are NOT mixed in.",
+    "sources": {
+      "descriptions": "Interbotix/interbotix_ros_manipulators@b66d5b905725 (humble) interbotix_xsarm_descriptions",
+      "bringup": "Interbotix/aloha@4fa6b2c4428f launch/aloha_bringup.launch.py",
+      "constants": "Interbotix/aloha@4fa6b2c4428f aloha/constants.py",
+      "spec_follower": "https://docs.trossenrobotics.com/interbotix_xsarms_docs/specifications/avx300s.html",
+      "spec_leader": "https://docs.trossenrobotics.com/interbotix_xsarms_docs/specifications/awx250s.html"
+    }
+  },
+  "complete_robot_definition": "The complete documented mechanical assembly = 4 arms (2 follower ALOHA ViperX-300 6DOF, 2 leader ALOHA WidowX-250 6DOF) with every URDF link and joint (including grippers, finger mimic, leader handle), mounted in the world frame with the bringup transforms. Excluded because no public machine-readable geometry exists for this variant: table/frame, cameras, gravity compensators.",
+  "mount_source": "Interbotix/aloha launch/aloha_bringup.launch.py static_transform_publisher world->*/base_link (identity rotation). Classified 'verified' as published; it is the ROS visualisation frame layout, not a surveyed physical workcell measurement.",
+  "totals": {
+    "links": 59,
+    "joints": 58,
+    "driven": 32,
+    "mimic": 4
+  },
+  "arms": [
+    {
+      "id": "follower_left",
+      "modelica": "followerLeft",
+      "model": "aloha_vx300s",
+      "role": "follower",
+      "side": "left",
+      "mount_xyz": [
+        0.5,
+        0.25,
+        0.0
+      ],
+      "product": "ALOHA ViperX-300 6DOF",
+      "urdf": "data/urdf/aloha_vx300s.urdf",
+      "n_links": 14,
+      "n_joints": 13,
+      "joint_types": {
+        "revolute": 6,
+        "fixed": 4,
+        "continuous": 1,
+        "prismatic": 2
+      },
+      "driven_joints": [
+        "waist",
+        "shoulder",
+        "elbow",
+        "forearm_roll",
+        "wrist_angle",
+        "wrist_rotate",
+        "gripper",
+        "left_finger"
+      ],
+      "mimic_joints": [
+        "right_finger"
+      ],
+      "joints": [
+        {
+          "name": "waist",
+          "type": "revolute",
+          "parent": "base_link",
+          "child": "shoulder_link",
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.079
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -3.141582653589793,
+            "upper": 3.141582653589793,
+            "effort": 10.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM540-W270"
+          ],
+          "servo_ids": [
+            1
+          ]
+        },
+        {
+          "name": "shoulder",
+          "type": "revolute",
+          "parent": "shoulder_link",
+          "child": "upper_arm_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.04805
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -1.8500490071139892,
+            "upper": 1.2566370614359172,
+            "effort": 20.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM540-W270",
+            "XM540-W270"
+          ],
+          "servo_ids": [
+            2,
+            3
+          ]
+        },
+        {
+          "name": "elbow",
+          "type": "revolute",
+          "parent": "upper_arm_link",
+          "child": "upper_forearm_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.05955,
+            0.0,
+            0.3
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -1.7627825445142729,
+            "upper": 1.6057029118347832,
+            "effort": 15.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM540-W270",
+            "XM540-W270"
+          ],
+          "servo_ids": [
+            4,
+            5
+          ]
+        },
+        {
+          "name": "forearm_roll",
+          "type": "revolute",
+          "parent": "upper_forearm_link",
+          "child": "lower_forearm_link",
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.2,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -3.141582653589793,
+            "upper": 3.141582653589793,
+            "effort": 2.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM540-W270"
+          ],
+          "servo_ids": [
+            6
+          ]
+        },
+        {
+          "name": "wrist_angle",
+          "type": "revolute",
+          "parent": "lower_forearm_link",
+          "child": "wrist_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.1,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -1.8675022996339325,
+            "upper": 2.234021442552742,
+            "effort": 5.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM540-W270"
+          ],
+          "servo_ids": [
+            7
+          ]
+        },
+        {
+          "name": "wrist_rotate",
+          "type": "revolute",
+          "parent": "wrist_link",
+          "child": "gripper_link",
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.069744,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -3.141582653589793,
+            "upper": 3.141582653589793,
+            "effort": 1.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            8
+          ]
+        },
+        {
+          "name": "ee_arm",
+          "type": "fixed",
+          "parent": "gripper_link",
+          "child": "ee_arm_link",
+          "axis": null,
+          "origin_xyz": [
+            0.042825,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "gripper",
+          "type": "continuous",
+          "parent": "ee_arm_link",
+          "child": "gripper_prop_link",
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.005675,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": null,
+            "upper": null,
+            "effort": 1.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            9
+          ]
+        },
+        {
+          "name": "gripper_bar",
+          "type": "fixed",
+          "parent": "ee_arm_link",
+          "child": "gripper_bar_link",
+          "axis": null,
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "ee_bar",
+          "type": "fixed",
+          "parent": "gripper_bar_link",
+          "child": "fingers_link",
+          "axis": null,
+          "origin_xyz": [
+            0.025875,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "left_finger",
+          "type": "prismatic",
+          "parent": "fingers_link",
+          "child": "left_finger_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": 0.021,
+            "upper": 0.057,
+            "effort": 5.0,
+            "velocity": 1.0
+          },
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "right_finger",
+          "type": "prismatic",
+          "parent": "fingers_link",
+          "child": "right_finger_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -0.057,
+            "upper": -0.021,
+            "effort": 5.0,
+            "velocity": 1.0
+          },
+          "mimic": [
+            "left_finger",
+            -1.0,
+            0.0
+          ],
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "ee_gripper",
+          "type": "fixed",
+          "parent": "fingers_link",
+          "child": "ee_gripper_link",
+          "axis": null,
+          "origin_xyz": [
+            0.0385,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        }
+      ],
+      "links": [
+        {
+          "name": "base_link",
+          "inertial_status": "ok",
+          "mass": 0.969034,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/base.stl"
+        },
+        {
+          "name": "shoulder_link",
+          "inertial_status": "ok",
+          "mass": 0.798614,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/shoulder.stl"
+        },
+        {
+          "name": "upper_arm_link",
+          "inertial_status": "ok",
+          "mass": 0.792592,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_arm.stl"
+        },
+        {
+          "name": "upper_forearm_link",
+          "inertial_status": "ok",
+          "mass": 0.322228,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_forearm.stl"
+        },
+        {
+          "name": "lower_forearm_link",
+          "inertial_status": "ok",
+          "mass": 0.414823,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/lower_forearm.stl"
+        },
+        {
+          "name": "wrist_link",
+          "inertial_status": "ok",
+          "mass": 0.115395,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/wrist.stl"
+        },
+        {
+          "name": "gripper_link",
+          "inertial_status": "ok",
+          "mass": 0.097666,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper.stl"
+        },
+        {
+          "name": "ee_arm_link",
+          "inertial_status": "placeholder",
+          "mass": 0.001,
+          "mesh": null
+        },
+        {
+          "name": "gripper_prop_link",
+          "inertial_status": "ok",
+          "mass": 0.008009,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_prop.stl"
+        },
+        {
+          "name": "gripper_bar_link",
+          "inertial_status": "ok",
+          "mass": 0.150986,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_bar.stl"
+        },
+        {
+          "name": "fingers_link",
+          "inertial_status": "placeholder",
+          "mass": 0.001,
+          "mesh": null
+        },
+        {
+          "name": "left_finger_link",
+          "inertial_status": "ok",
+          "mass": 0.034796,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl"
+        },
+        {
+          "name": "right_finger_link",
+          "inertial_status": "ok",
+          "mass": 0.034796,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl"
+        },
+        {
+          "name": "ee_gripper_link",
+          "inertial_status": "placeholder",
+          "mass": 0.001,
+          "mesh": null
+        }
+      ]
+    },
+    {
+      "id": "follower_right",
+      "modelica": "followerRight",
+      "model": "aloha_vx300s",
+      "role": "follower",
+      "side": "right",
+      "mount_xyz": [
+        0.5,
+        -0.25,
+        0.0
+      ],
+      "product": "ALOHA ViperX-300 6DOF",
+      "urdf": "data/urdf/aloha_vx300s.urdf",
+      "n_links": 14,
+      "n_joints": 13,
+      "joint_types": {
+        "revolute": 6,
+        "fixed": 4,
+        "continuous": 1,
+        "prismatic": 2
+      },
+      "driven_joints": [
+        "waist",
+        "shoulder",
+        "elbow",
+        "forearm_roll",
+        "wrist_angle",
+        "wrist_rotate",
+        "gripper",
+        "left_finger"
+      ],
+      "mimic_joints": [
+        "right_finger"
+      ],
+      "joints": [
+        {
+          "name": "waist",
+          "type": "revolute",
+          "parent": "base_link",
+          "child": "shoulder_link",
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.079
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -3.141582653589793,
+            "upper": 3.141582653589793,
+            "effort": 10.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM540-W270"
+          ],
+          "servo_ids": [
+            1
+          ]
+        },
+        {
+          "name": "shoulder",
+          "type": "revolute",
+          "parent": "shoulder_link",
+          "child": "upper_arm_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.04805
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -1.8500490071139892,
+            "upper": 1.2566370614359172,
+            "effort": 20.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM540-W270",
+            "XM540-W270"
+          ],
+          "servo_ids": [
+            2,
+            3
+          ]
+        },
+        {
+          "name": "elbow",
+          "type": "revolute",
+          "parent": "upper_arm_link",
+          "child": "upper_forearm_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.05955,
+            0.0,
+            0.3
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -1.7627825445142729,
+            "upper": 1.6057029118347832,
+            "effort": 15.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM540-W270",
+            "XM540-W270"
+          ],
+          "servo_ids": [
+            4,
+            5
+          ]
+        },
+        {
+          "name": "forearm_roll",
+          "type": "revolute",
+          "parent": "upper_forearm_link",
+          "child": "lower_forearm_link",
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.2,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -3.141582653589793,
+            "upper": 3.141582653589793,
+            "effort": 2.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM540-W270"
+          ],
+          "servo_ids": [
+            6
+          ]
+        },
+        {
+          "name": "wrist_angle",
+          "type": "revolute",
+          "parent": "lower_forearm_link",
+          "child": "wrist_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.1,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -1.8675022996339325,
+            "upper": 2.234021442552742,
+            "effort": 5.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM540-W270"
+          ],
+          "servo_ids": [
+            7
+          ]
+        },
+        {
+          "name": "wrist_rotate",
+          "type": "revolute",
+          "parent": "wrist_link",
+          "child": "gripper_link",
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.069744,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -3.141582653589793,
+            "upper": 3.141582653589793,
+            "effort": 1.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            8
+          ]
+        },
+        {
+          "name": "ee_arm",
+          "type": "fixed",
+          "parent": "gripper_link",
+          "child": "ee_arm_link",
+          "axis": null,
+          "origin_xyz": [
+            0.042825,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "gripper",
+          "type": "continuous",
+          "parent": "ee_arm_link",
+          "child": "gripper_prop_link",
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.005675,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": null,
+            "upper": null,
+            "effort": 1.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            9
+          ]
+        },
+        {
+          "name": "gripper_bar",
+          "type": "fixed",
+          "parent": "ee_arm_link",
+          "child": "gripper_bar_link",
+          "axis": null,
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "ee_bar",
+          "type": "fixed",
+          "parent": "gripper_bar_link",
+          "child": "fingers_link",
+          "axis": null,
+          "origin_xyz": [
+            0.025875,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "left_finger",
+          "type": "prismatic",
+          "parent": "fingers_link",
+          "child": "left_finger_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": 0.021,
+            "upper": 0.057,
+            "effort": 5.0,
+            "velocity": 1.0
+          },
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "right_finger",
+          "type": "prismatic",
+          "parent": "fingers_link",
+          "child": "right_finger_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -0.057,
+            "upper": -0.021,
+            "effort": 5.0,
+            "velocity": 1.0
+          },
+          "mimic": [
+            "left_finger",
+            -1.0,
+            0.0
+          ],
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "ee_gripper",
+          "type": "fixed",
+          "parent": "fingers_link",
+          "child": "ee_gripper_link",
+          "axis": null,
+          "origin_xyz": [
+            0.0385,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        }
+      ],
+      "links": [
+        {
+          "name": "base_link",
+          "inertial_status": "ok",
+          "mass": 0.969034,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/base.stl"
+        },
+        {
+          "name": "shoulder_link",
+          "inertial_status": "ok",
+          "mass": 0.798614,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/shoulder.stl"
+        },
+        {
+          "name": "upper_arm_link",
+          "inertial_status": "ok",
+          "mass": 0.792592,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_arm.stl"
+        },
+        {
+          "name": "upper_forearm_link",
+          "inertial_status": "ok",
+          "mass": 0.322228,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_forearm.stl"
+        },
+        {
+          "name": "lower_forearm_link",
+          "inertial_status": "ok",
+          "mass": 0.414823,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/lower_forearm.stl"
+        },
+        {
+          "name": "wrist_link",
+          "inertial_status": "ok",
+          "mass": 0.115395,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/wrist.stl"
+        },
+        {
+          "name": "gripper_link",
+          "inertial_status": "ok",
+          "mass": 0.097666,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper.stl"
+        },
+        {
+          "name": "ee_arm_link",
+          "inertial_status": "placeholder",
+          "mass": 0.001,
+          "mesh": null
+        },
+        {
+          "name": "gripper_prop_link",
+          "inertial_status": "ok",
+          "mass": 0.008009,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_prop.stl"
+        },
+        {
+          "name": "gripper_bar_link",
+          "inertial_status": "ok",
+          "mass": 0.150986,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_bar.stl"
+        },
+        {
+          "name": "fingers_link",
+          "inertial_status": "placeholder",
+          "mass": 0.001,
+          "mesh": null
+        },
+        {
+          "name": "left_finger_link",
+          "inertial_status": "ok",
+          "mass": 0.034796,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl"
+        },
+        {
+          "name": "right_finger_link",
+          "inertial_status": "ok",
+          "mass": 0.034796,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl"
+        },
+        {
+          "name": "ee_gripper_link",
+          "inertial_status": "placeholder",
+          "mass": 0.001,
+          "mesh": null
+        }
+      ]
+    },
+    {
+      "id": "leader_left",
+      "modelica": "leaderLeft",
+      "model": "aloha_wx250s",
+      "role": "leader",
+      "side": "left",
+      "mount_xyz": [
+        -0.5,
+        0.25,
+        0.0
+      ],
+      "product": "ALOHA WidowX-250 6DOF",
+      "urdf": "data/urdf/aloha_wx250s.urdf",
+      "n_links": 15,
+      "n_joints": 14,
+      "joint_types": {
+        "revolute": 6,
+        "fixed": 5,
+        "continuous": 1,
+        "prismatic": 2
+      },
+      "driven_joints": [
+        "waist",
+        "shoulder",
+        "elbow",
+        "forearm_roll",
+        "wrist_angle",
+        "wrist_rotate",
+        "gripper",
+        "left_finger"
+      ],
+      "mimic_joints": [
+        "right_finger"
+      ],
+      "joints": [
+        {
+          "name": "waist",
+          "type": "revolute",
+          "parent": "base_link",
+          "child": "shoulder_link",
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.072
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -3.141582653589793,
+            "upper": 3.141582653589793,
+            "effort": 10.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            1
+          ]
+        },
+        {
+          "name": "shoulder",
+          "type": "revolute",
+          "parent": "shoulder_link",
+          "child": "upper_arm_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.03865
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -1.8849555921538759,
+            "upper": 1.9896753472735358,
+            "effort": 20.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350",
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            2,
+            3
+          ]
+        },
+        {
+          "name": "elbow",
+          "type": "revolute",
+          "parent": "upper_arm_link",
+          "child": "upper_forearm_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.04975,
+            0.0,
+            0.25
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -2.1467549799530254,
+            "upper": 1.6057029118347832,
+            "effort": 15.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350",
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            4,
+            5
+          ]
+        },
+        {
+          "name": "forearm_roll",
+          "type": "revolute",
+          "parent": "upper_forearm_link",
+          "child": "lower_forearm_link",
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.175,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -3.141582653589793,
+            "upper": 3.141582653589793,
+            "effort": 2.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            6
+          ]
+        },
+        {
+          "name": "wrist_angle",
+          "type": "revolute",
+          "parent": "lower_forearm_link",
+          "child": "wrist_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.075,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -1.7453292519943295,
+            "upper": 2.1467549799530254,
+            "effort": 5.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            7
+          ]
+        },
+        {
+          "name": "wrist_rotate",
+          "type": "revolute",
+          "parent": "wrist_link",
+          "child": "gripper_link",
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.065,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -3.141582653589793,
+            "upper": 3.141582653589793,
+            "effort": 1.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            8
+          ]
+        },
+        {
+          "name": "gripper_handle",
+          "type": "fixed",
+          "parent": "gripper_link",
+          "child": "handle_link",
+          "axis": null,
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "ee_arm",
+          "type": "fixed",
+          "parent": "gripper_link",
+          "child": "ee_arm_link",
+          "axis": null,
+          "origin_xyz": [
+            0.043,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "gripper",
+          "type": "continuous",
+          "parent": "ee_arm_link",
+          "child": "gripper_prop_link",
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0055,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": null,
+            "upper": null,
+            "effort": 1.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XC430-W150"
+          ],
+          "servo_ids": [
+            9
+          ]
+        },
+        {
+          "name": "gripper_bar",
+          "type": "fixed",
+          "parent": "ee_arm_link",
+          "child": "gripper_bar_link",
+          "axis": null,
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "ee_bar",
+          "type": "fixed",
+          "parent": "gripper_bar_link",
+          "child": "fingers_link",
+          "axis": null,
+          "origin_xyz": [
+            0.023,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "left_finger",
+          "type": "prismatic",
+          "parent": "fingers_link",
+          "child": "left_finger_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": 0.015,
+            "upper": 0.037,
+            "effort": 5.0,
+            "velocity": 1.0
+          },
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "right_finger",
+          "type": "prismatic",
+          "parent": "fingers_link",
+          "child": "right_finger_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -0.037,
+            "upper": -0.015,
+            "effort": 5.0,
+            "velocity": 1.0
+          },
+          "mimic": [
+            "left_finger",
+            -1.0,
+            0.0
+          ],
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "ee_gripper",
+          "type": "fixed",
+          "parent": "fingers_link",
+          "child": "ee_gripper_link",
+          "axis": null,
+          "origin_xyz": [
+            0.027575,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        }
+      ],
+      "links": [
+        {
+          "name": "base_link",
+          "inertial_status": "ok",
+          "mass": 0.538736,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/base.stl"
+        },
+        {
+          "name": "shoulder_link",
+          "inertial_status": "ok",
+          "mass": 0.480879,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/shoulder.stl"
+        },
+        {
+          "name": "upper_arm_link",
+          "inertial_status": "ok",
+          "mass": 0.489715,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/upper_arm.stl"
+        },
+        {
+          "name": "upper_forearm_link",
+          "inertial_status": "ok",
+          "mass": 0.234589,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/upper_forearm.stl"
+        },
+        {
+          "name": "lower_forearm_link",
+          "inertial_status": "ok",
+          "mass": 0.252924,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/lower_forearm.stl"
+        },
+        {
+          "name": "wrist_link",
+          "inertial_status": "ok",
+          "mass": 0.156052,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/wrist.stl"
+        },
+        {
+          "name": "gripper_link",
+          "inertial_status": "ok",
+          "mass": 0.103095,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/gripper.stl"
+        },
+        {
+          "name": "handle_link",
+          "inertial_status": "ok",
+          "mass": 0.062224,
+          "mesh": null
+        },
+        {
+          "name": "ee_arm_link",
+          "inertial_status": "placeholder",
+          "mass": 0.001,
+          "mesh": null
+        },
+        {
+          "name": "gripper_prop_link",
+          "inertial_status": "ok",
+          "mass": 0.01034,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/gripper_prop.stl"
+        },
+        {
+          "name": "gripper_bar_link",
+          "inertial_status": "ok",
+          "mass": 0.133504,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/gripper_bar.stl"
+        },
+        {
+          "name": "fingers_link",
+          "inertial_status": "placeholder",
+          "mass": 0.001,
+          "mesh": null
+        },
+        {
+          "name": "left_finger_link",
+          "inertial_status": "ok",
+          "mass": 0.040526,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/gripper_finger.stl"
+        },
+        {
+          "name": "right_finger_link",
+          "inertial_status": "ok",
+          "mass": 0.040995,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/gripper_finger.stl"
+        },
+        {
+          "name": "ee_gripper_link",
+          "inertial_status": "placeholder",
+          "mass": 0.001,
+          "mesh": null
+        }
+      ]
+    },
+    {
+      "id": "leader_right",
+      "modelica": "leaderRight",
+      "model": "aloha_wx250s",
+      "role": "leader",
+      "side": "right",
+      "mount_xyz": [
+        -0.5,
+        -0.25,
+        0.0
+      ],
+      "product": "ALOHA WidowX-250 6DOF",
+      "urdf": "data/urdf/aloha_wx250s.urdf",
+      "n_links": 15,
+      "n_joints": 14,
+      "joint_types": {
+        "revolute": 6,
+        "fixed": 5,
+        "continuous": 1,
+        "prismatic": 2
+      },
+      "driven_joints": [
+        "waist",
+        "shoulder",
+        "elbow",
+        "forearm_roll",
+        "wrist_angle",
+        "wrist_rotate",
+        "gripper",
+        "left_finger"
+      ],
+      "mimic_joints": [
+        "right_finger"
+      ],
+      "joints": [
+        {
+          "name": "waist",
+          "type": "revolute",
+          "parent": "base_link",
+          "child": "shoulder_link",
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.072
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -3.141582653589793,
+            "upper": 3.141582653589793,
+            "effort": 10.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            1
+          ]
+        },
+        {
+          "name": "shoulder",
+          "type": "revolute",
+          "parent": "shoulder_link",
+          "child": "upper_arm_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.03865
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -1.8849555921538759,
+            "upper": 1.9896753472735358,
+            "effort": 20.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350",
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            2,
+            3
+          ]
+        },
+        {
+          "name": "elbow",
+          "type": "revolute",
+          "parent": "upper_arm_link",
+          "child": "upper_forearm_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.04975,
+            0.0,
+            0.25
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -2.1467549799530254,
+            "upper": 1.6057029118347832,
+            "effort": 15.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350",
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            4,
+            5
+          ]
+        },
+        {
+          "name": "forearm_roll",
+          "type": "revolute",
+          "parent": "upper_forearm_link",
+          "child": "lower_forearm_link",
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.175,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -3.141582653589793,
+            "upper": 3.141582653589793,
+            "effort": 2.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            6
+          ]
+        },
+        {
+          "name": "wrist_angle",
+          "type": "revolute",
+          "parent": "lower_forearm_link",
+          "child": "wrist_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.075,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -1.7453292519943295,
+            "upper": 2.1467549799530254,
+            "effort": 5.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            7
+          ]
+        },
+        {
+          "name": "wrist_rotate",
+          "type": "revolute",
+          "parent": "wrist_link",
+          "child": "gripper_link",
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.065,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -3.141582653589793,
+            "upper": 3.141582653589793,
+            "effort": 1.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XM430-W350"
+          ],
+          "servo_ids": [
+            8
+          ]
+        },
+        {
+          "name": "gripper_handle",
+          "type": "fixed",
+          "parent": "gripper_link",
+          "child": "handle_link",
+          "axis": null,
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "ee_arm",
+          "type": "fixed",
+          "parent": "gripper_link",
+          "child": "ee_arm_link",
+          "axis": null,
+          "origin_xyz": [
+            0.043,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "gripper",
+          "type": "continuous",
+          "parent": "ee_arm_link",
+          "child": "gripper_prop_link",
+          "axis": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0055,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": null,
+            "upper": null,
+            "effort": 1.0,
+            "velocity": 3.141592653589793
+          },
+          "mimic": null,
+          "actuators": [
+            "XC430-W150"
+          ],
+          "servo_ids": [
+            9
+          ]
+        },
+        {
+          "name": "gripper_bar",
+          "type": "fixed",
+          "parent": "ee_arm_link",
+          "child": "gripper_bar_link",
+          "axis": null,
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "ee_bar",
+          "type": "fixed",
+          "parent": "gripper_bar_link",
+          "child": "fingers_link",
+          "axis": null,
+          "origin_xyz": [
+            0.023,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "left_finger",
+          "type": "prismatic",
+          "parent": "fingers_link",
+          "child": "left_finger_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": 0.015,
+            "upper": 0.037,
+            "effort": 5.0,
+            "velocity": 1.0
+          },
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "right_finger",
+          "type": "prismatic",
+          "parent": "fingers_link",
+          "child": "right_finger_link",
+          "axis": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "origin_xyz": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": {
+            "lower": -0.037,
+            "upper": -0.015,
+            "effort": 5.0,
+            "velocity": 1.0
+          },
+          "mimic": [
+            "left_finger",
+            -1.0,
+            0.0
+          ],
+          "actuators": null,
+          "servo_ids": null
+        },
+        {
+          "name": "ee_gripper",
+          "type": "fixed",
+          "parent": "fingers_link",
+          "child": "ee_gripper_link",
+          "axis": null,
+          "origin_xyz": [
+            0.027575,
+            0.0,
+            0.0
+          ],
+          "origin_rpy": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "limit": null,
+          "mimic": null,
+          "actuators": null,
+          "servo_ids": null
+        }
+      ],
+      "links": [
+        {
+          "name": "base_link",
+          "inertial_status": "ok",
+          "mass": 0.538736,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/base.stl"
+        },
+        {
+          "name": "shoulder_link",
+          "inertial_status": "ok",
+          "mass": 0.480879,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/shoulder.stl"
+        },
+        {
+          "name": "upper_arm_link",
+          "inertial_status": "ok",
+          "mass": 0.489715,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/upper_arm.stl"
+        },
+        {
+          "name": "upper_forearm_link",
+          "inertial_status": "ok",
+          "mass": 0.234589,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/upper_forearm.stl"
+        },
+        {
+          "name": "lower_forearm_link",
+          "inertial_status": "ok",
+          "mass": 0.252924,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/lower_forearm.stl"
+        },
+        {
+          "name": "wrist_link",
+          "inertial_status": "ok",
+          "mass": 0.156052,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/wrist.stl"
+        },
+        {
+          "name": "gripper_link",
+          "inertial_status": "ok",
+          "mass": 0.103095,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/gripper.stl"
+        },
+        {
+          "name": "handle_link",
+          "inertial_status": "ok",
+          "mass": 0.062224,
+          "mesh": null
+        },
+        {
+          "name": "ee_arm_link",
+          "inertial_status": "placeholder",
+          "mass": 0.001,
+          "mesh": null
+        },
+        {
+          "name": "gripper_prop_link",
+          "inertial_status": "ok",
+          "mass": 0.01034,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/gripper_prop.stl"
+        },
+        {
+          "name": "gripper_bar_link",
+          "inertial_status": "ok",
+          "mass": 0.133504,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/gripper_bar.stl"
+        },
+        {
+          "name": "fingers_link",
+          "inertial_status": "placeholder",
+          "mass": 0.001,
+          "mesh": null
+        },
+        {
+          "name": "left_finger_link",
+          "inertial_status": "ok",
+          "mass": 0.040526,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/gripper_finger.stl"
+        },
+        {
+          "name": "right_finger_link",
+          "inertial_status": "ok",
+          "mass": 0.040995,
+          "mesh": "package://interbotix_xsarm_descriptions/meshes/aloha_wx250s_meshes/gripper_finger.stl"
+        },
+        {
+          "name": "ee_gripper_link",
+          "inertial_status": "placeholder",
+          "mass": 0.001,
+          "mesh": null
+        }
+      ]
+    }
+  ],
+  "start_pose": {
+    "arm_joints": [
+      0.0,
+      -0.96,
+      1.16,
+      0.0,
+      -0.3,
+      0.0
+    ],
+    "left_finger": 0.02239,
+    "source": "Interbotix/aloha@4fa6b2c4428f aloha/constants.py START_ARM_POSE"
+  },
+  "gripper_constants": {
+    "leader": {
+      "open": 0.0323,
+      "close": 0.0185
+    },
+    "follower": {
+      "open": 0.0579,
+      "close": 0.044
+    }
+  },
+  "missing_information": [
+    "Gripper motor-to-finger linkage: URDF models the gripper prop rotation (continuous) and finger translation (prismatic) as independent joints; the mechanical coupling is not in the URDF. aloha/constants.py gives a calibrated linear map only between the ALOHA close/open points.",
+    "Gearbox ratios, motor constants, friction and efficiency of the Dynamixel servos (datasheet values not ingested yet; URDF <dynamics friction=0.1 damping=0.1> are generic defaults, not identified values).",
+    "Dual-servo (shoulder/elbow shadow) load sharing.",
+    "Workcell frame, table and camera mounts for this variant.",
+    "Placeholder inertials (mass 0.001 kg, I = 1e-4 kg m^2) on ee_arm_link, fingers_link, ee_gripper_link: rendered as massless frames."
+  ],
+  "assumptions": [
+    "Gripper prop (continuous) joint held at 0 rad in baseline experiments (no documented coupling).",
+    "Followers and leaders use the same START_ARM_POSE (as in aloha/constants.py)."
+  ],
+  "discrepancies": [
+    {
+      "arm": "follower_left",
+      "item": "shoulder limit",
+      "urdf_deg": [
+        -106,
+        72
+      ],
+      "spec_deg": [
+        -101,
+        101
+      ]
+    },
+    {
+      "arm": "follower_left",
+      "item": "wrist_angle limit",
+      "urdf_deg": [
+        -107,
+        128
+      ],
+      "spec_deg": [
+        -107,
+        130
+      ]
+    },
+    {
+      "arm": "follower_left",
+      "item": "gripper opening (2 x left_finger)",
+      "urdf_mm": [
+        42.0,
+        114.0
+      ],
+      "spec_mm": [
+        42,
+        116
+      ]
+    },
+    {
+      "arm": "follower_right",
+      "item": "shoulder limit",
+      "urdf_deg": [
+        -106,
+        72
+      ],
+      "spec_deg": [
+        -101,
+        101
+      ]
+    },
+    {
+      "arm": "follower_right",
+      "item": "wrist_angle limit",
+      "urdf_deg": [
+        -107,
+        128
+      ],
+      "spec_deg": [
+        -107,
+        130
+      ]
+    },
+    {
+      "arm": "follower_right",
+      "item": "gripper opening (2 x left_finger)",
+      "urdf_mm": [
+        42.0,
+        114.0
+      ],
+      "spec_mm": [
+        42,
+        116
+      ]
+    },
+    {
+      "arm": "followers",
+      "item": "FOLLOWER_GRIPPER_POSITION_OPEN (aloha/constants.py)",
+      "value": 0.0579,
+      "urdf_upper": 0.057,
+      "resolution": "trajectories clamp to the URDF limit"
+    },
+    {
+      "arm": "followers",
+      "item": "spec page servo-ID table vs servo configuration table",
+      "detail": "Joint-limit table lists Wrist Angle as ID 6 / Forearm Roll ID 7; servo table lists 6 forearm_roll / 7 wrist_angle. URDF joint order (forearm_roll before wrist_angle) matches the servo table."
+    }
+  ]
+}

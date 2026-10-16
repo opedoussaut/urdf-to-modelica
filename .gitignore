@@ -1,0 +1,30 @@
+# Environments and caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+web/dist/
+.chroma/
+data/index/
+
+# Pinned public sources are fetched by tools/fetch_sources.py (read-only reference assets)
+third_party/
+
+# Simulation outputs, run workspaces, scratch
+build/
+runs/
+*.mat
+*.log
+*_res.csv
+
+# Secrets / local settings
+.env
+*.key
+config/local*.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

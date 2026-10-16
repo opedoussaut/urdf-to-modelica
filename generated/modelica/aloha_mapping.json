@@ -1,0 +1,1922 @@
+{
+ "package": "ALOHA",
+ "assembly": "ALOHA.AlohaStationary",
+ "arms": [
+  {
+   "arm": "follower_left",
+   "modelica_instance": "followerLeft",
+   "class": "ALOHA.Arms.AlohaVX300s",
+   "mount": {
+    "modelica": "mount_followerLeft",
+    "urdf_joint": "follower_left_mount",
+    "xyz": [
+     0.5,
+     0.25,
+     0.0
+    ]
+   },
+   "links": [
+    {
+     "urdf": "follower_left/base_link",
+     "urdf_local": "base_link",
+     "modelica": "followerLeft.base_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.base_link.frame_a.r_0[1]",
+       "aloha.followerLeft.base_link.frame_a.r_0[2]",
+       "aloha.followerLeft.base_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.base_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.base_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.base_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.base_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.base_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.base_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.base_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.base_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.base_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/shoulder_link",
+     "urdf_local": "shoulder_link",
+     "modelica": "followerLeft.shoulder_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.shoulder_link.frame_a.r_0[1]",
+       "aloha.followerLeft.shoulder_link.frame_a.r_0[2]",
+       "aloha.followerLeft.shoulder_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.shoulder_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.shoulder_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.shoulder_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.shoulder_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.shoulder_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.shoulder_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.shoulder_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.shoulder_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.shoulder_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/upper_arm_link",
+     "urdf_local": "upper_arm_link",
+     "modelica": "followerLeft.upper_arm_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.upper_arm_link.frame_a.r_0[1]",
+       "aloha.followerLeft.upper_arm_link.frame_a.r_0[2]",
+       "aloha.followerLeft.upper_arm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.upper_arm_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.upper_arm_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.upper_arm_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.upper_arm_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.upper_arm_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.upper_arm_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.upper_arm_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.upper_arm_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.upper_arm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/upper_forearm_link",
+     "urdf_local": "upper_forearm_link",
+     "modelica": "followerLeft.upper_forearm_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.upper_forearm_link.frame_a.r_0[1]",
+       "aloha.followerLeft.upper_forearm_link.frame_a.r_0[2]",
+       "aloha.followerLeft.upper_forearm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.upper_forearm_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.upper_forearm_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.upper_forearm_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.upper_forearm_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.upper_forearm_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.upper_forearm_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.upper_forearm_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.upper_forearm_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.upper_forearm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/lower_forearm_link",
+     "urdf_local": "lower_forearm_link",
+     "modelica": "followerLeft.lower_forearm_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.lower_forearm_link.frame_a.r_0[1]",
+       "aloha.followerLeft.lower_forearm_link.frame_a.r_0[2]",
+       "aloha.followerLeft.lower_forearm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.lower_forearm_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.lower_forearm_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.lower_forearm_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.lower_forearm_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.lower_forearm_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.lower_forearm_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.lower_forearm_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.lower_forearm_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.lower_forearm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/wrist_link",
+     "urdf_local": "wrist_link",
+     "modelica": "followerLeft.wrist_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.wrist_link.frame_a.r_0[1]",
+       "aloha.followerLeft.wrist_link.frame_a.r_0[2]",
+       "aloha.followerLeft.wrist_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.wrist_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.wrist_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.wrist_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.wrist_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.wrist_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.wrist_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.wrist_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.wrist_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.wrist_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/gripper_link",
+     "urdf_local": "gripper_link",
+     "modelica": "followerLeft.gripper_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.gripper_link.frame_a.r_0[1]",
+       "aloha.followerLeft.gripper_link.frame_a.r_0[2]",
+       "aloha.followerLeft.gripper_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.gripper_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.gripper_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.gripper_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.gripper_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.gripper_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.gripper_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.gripper_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.gripper_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.gripper_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/ee_arm_link",
+     "urdf_local": "ee_arm_link",
+     "modelica": "followerLeft.ee_arm_link",
+     "placeholder": true,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.ee_arm_link.frame_a.r_0[1]",
+       "aloha.followerLeft.ee_arm_link.frame_a.r_0[2]",
+       "aloha.followerLeft.ee_arm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.ee_arm_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.ee_arm_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.ee_arm_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.ee_arm_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.ee_arm_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.ee_arm_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.ee_arm_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.ee_arm_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.ee_arm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/gripper_prop_link",
+     "urdf_local": "gripper_prop_link",
+     "modelica": "followerLeft.gripper_prop_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.gripper_prop_link.frame_a.r_0[1]",
+       "aloha.followerLeft.gripper_prop_link.frame_a.r_0[2]",
+       "aloha.followerLeft.gripper_prop_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.gripper_prop_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.gripper_prop_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.gripper_prop_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.gripper_prop_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.gripper_prop_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.gripper_prop_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.gripper_prop_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.gripper_prop_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.gripper_prop_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/gripper_bar_link",
+     "urdf_local": "gripper_bar_link",
+     "modelica": "followerLeft.gripper_bar_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.gripper_bar_link.frame_a.r_0[1]",
+       "aloha.followerLeft.gripper_bar_link.frame_a.r_0[2]",
+       "aloha.followerLeft.gripper_bar_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.gripper_bar_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.gripper_bar_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.gripper_bar_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.gripper_bar_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.gripper_bar_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.gripper_bar_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.gripper_bar_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.gripper_bar_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.gripper_bar_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/fingers_link",
+     "urdf_local": "fingers_link",
+     "modelica": "followerLeft.fingers_link",
+     "placeholder": true,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.fingers_link.frame_a.r_0[1]",
+       "aloha.followerLeft.fingers_link.frame_a.r_0[2]",
+       "aloha.followerLeft.fingers_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.fingers_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.fingers_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.fingers_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.fingers_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.fingers_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.fingers_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.fingers_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.fingers_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.fingers_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/left_finger_link",
+     "urdf_local": "left_finger_link",
+     "modelica": "followerLeft.left_finger_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.left_finger_link.frame_a.r_0[1]",
+       "aloha.followerLeft.left_finger_link.frame_a.r_0[2]",
+       "aloha.followerLeft.left_finger_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.left_finger_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.left_finger_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.left_finger_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.left_finger_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.left_finger_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.left_finger_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.left_finger_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.left_finger_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.left_finger_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/right_finger_link",
+     "urdf_local": "right_finger_link",
+     "modelica": "followerLeft.right_finger_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.right_finger_link.frame_a.r_0[1]",
+       "aloha.followerLeft.right_finger_link.frame_a.r_0[2]",
+       "aloha.followerLeft.right_finger_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.right_finger_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.right_finger_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.right_finger_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.right_finger_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.right_finger_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.right_finger_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.right_finger_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.right_finger_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.right_finger_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_left/ee_gripper_link",
+     "urdf_local": "ee_gripper_link",
+     "modelica": "followerLeft.ee_gripper_link",
+     "placeholder": true,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerLeft.ee_gripper_link.frame_a.r_0[1]",
+       "aloha.followerLeft.ee_gripper_link.frame_a.r_0[2]",
+       "aloha.followerLeft.ee_gripper_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerLeft.ee_gripper_link.frame_a.R.T[1,1]",
+       "aloha.followerLeft.ee_gripper_link.frame_a.R.T[1,2]",
+       "aloha.followerLeft.ee_gripper_link.frame_a.R.T[1,3]",
+       "aloha.followerLeft.ee_gripper_link.frame_a.R.T[2,1]",
+       "aloha.followerLeft.ee_gripper_link.frame_a.R.T[2,2]",
+       "aloha.followerLeft.ee_gripper_link.frame_a.R.T[2,3]",
+       "aloha.followerLeft.ee_gripper_link.frame_a.R.T[3,1]",
+       "aloha.followerLeft.ee_gripper_link.frame_a.R.T[3,2]",
+       "aloha.followerLeft.ee_gripper_link.frame_a.R.T[3,3]"
+      ]
+     }
+    }
+   ],
+   "joints": [
+    {
+     "urdf": "follower_left/waist",
+     "urdf_local": "waist",
+     "modelica": "followerLeft.j_waist",
+     "driven_index": 1,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_left/shoulder",
+     "urdf_local": "shoulder",
+     "modelica": "followerLeft.j_shoulder",
+     "driven_index": 2,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_left/elbow",
+     "urdf_local": "elbow",
+     "modelica": "followerLeft.j_elbow",
+     "driven_index": 3,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_left/forearm_roll",
+     "urdf_local": "forearm_roll",
+     "modelica": "followerLeft.j_forearm_roll",
+     "driven_index": 4,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_left/wrist_angle",
+     "urdf_local": "wrist_angle",
+     "modelica": "followerLeft.j_wrist_angle",
+     "driven_index": 5,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_left/wrist_rotate",
+     "urdf_local": "wrist_rotate",
+     "modelica": "followerLeft.j_wrist_rotate",
+     "driven_index": 6,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_left/ee_arm",
+     "urdf_local": "ee_arm",
+     "modelica": "followerLeft.j_ee_arm",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_left/gripper",
+     "urdf_local": "gripper",
+     "modelica": "followerLeft.j_gripper",
+     "driven_index": 7,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_left/gripper_bar",
+     "urdf_local": "gripper_bar",
+     "modelica": "followerLeft.j_gripper_bar",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_left/ee_bar",
+     "urdf_local": "ee_bar",
+     "modelica": "followerLeft.j_ee_bar",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_left/left_finger",
+     "urdf_local": "left_finger",
+     "modelica": "followerLeft.j_left_finger",
+     "driven_index": 8,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_left/right_finger",
+     "urdf_local": "right_finger",
+     "modelica": "followerLeft.j_right_finger",
+     "driven_index": null,
+     "mimic": [
+      "left_finger",
+      -1.0,
+      0.0
+     ]
+    },
+    {
+     "urdf": "follower_left/ee_gripper",
+     "urdf_local": "ee_gripper",
+     "modelica": "followerLeft.j_ee_gripper",
+     "driven_index": null,
+     "mimic": null
+    }
+   ]
+  },
+  {
+   "arm": "follower_right",
+   "modelica_instance": "followerRight",
+   "class": "ALOHA.Arms.AlohaVX300s",
+   "mount": {
+    "modelica": "mount_followerRight",
+    "urdf_joint": "follower_right_mount",
+    "xyz": [
+     0.5,
+     -0.25,
+     0.0
+    ]
+   },
+   "links": [
+    {
+     "urdf": "follower_right/base_link",
+     "urdf_local": "base_link",
+     "modelica": "followerRight.base_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.base_link.frame_a.r_0[1]",
+       "aloha.followerRight.base_link.frame_a.r_0[2]",
+       "aloha.followerRight.base_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.base_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.base_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.base_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.base_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.base_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.base_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.base_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.base_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.base_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/shoulder_link",
+     "urdf_local": "shoulder_link",
+     "modelica": "followerRight.shoulder_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.shoulder_link.frame_a.r_0[1]",
+       "aloha.followerRight.shoulder_link.frame_a.r_0[2]",
+       "aloha.followerRight.shoulder_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.shoulder_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.shoulder_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.shoulder_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.shoulder_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.shoulder_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.shoulder_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.shoulder_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.shoulder_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.shoulder_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/upper_arm_link",
+     "urdf_local": "upper_arm_link",
+     "modelica": "followerRight.upper_arm_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.upper_arm_link.frame_a.r_0[1]",
+       "aloha.followerRight.upper_arm_link.frame_a.r_0[2]",
+       "aloha.followerRight.upper_arm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.upper_arm_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.upper_arm_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.upper_arm_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.upper_arm_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.upper_arm_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.upper_arm_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.upper_arm_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.upper_arm_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.upper_arm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/upper_forearm_link",
+     "urdf_local": "upper_forearm_link",
+     "modelica": "followerRight.upper_forearm_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.upper_forearm_link.frame_a.r_0[1]",
+       "aloha.followerRight.upper_forearm_link.frame_a.r_0[2]",
+       "aloha.followerRight.upper_forearm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.upper_forearm_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.upper_forearm_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.upper_forearm_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.upper_forearm_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.upper_forearm_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.upper_forearm_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.upper_forearm_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.upper_forearm_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.upper_forearm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/lower_forearm_link",
+     "urdf_local": "lower_forearm_link",
+     "modelica": "followerRight.lower_forearm_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.lower_forearm_link.frame_a.r_0[1]",
+       "aloha.followerRight.lower_forearm_link.frame_a.r_0[2]",
+       "aloha.followerRight.lower_forearm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.lower_forearm_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.lower_forearm_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.lower_forearm_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.lower_forearm_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.lower_forearm_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.lower_forearm_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.lower_forearm_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.lower_forearm_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.lower_forearm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/wrist_link",
+     "urdf_local": "wrist_link",
+     "modelica": "followerRight.wrist_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.wrist_link.frame_a.r_0[1]",
+       "aloha.followerRight.wrist_link.frame_a.r_0[2]",
+       "aloha.followerRight.wrist_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.wrist_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.wrist_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.wrist_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.wrist_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.wrist_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.wrist_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.wrist_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.wrist_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.wrist_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/gripper_link",
+     "urdf_local": "gripper_link",
+     "modelica": "followerRight.gripper_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.gripper_link.frame_a.r_0[1]",
+       "aloha.followerRight.gripper_link.frame_a.r_0[2]",
+       "aloha.followerRight.gripper_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.gripper_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.gripper_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.gripper_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.gripper_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.gripper_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.gripper_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.gripper_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.gripper_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.gripper_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/ee_arm_link",
+     "urdf_local": "ee_arm_link",
+     "modelica": "followerRight.ee_arm_link",
+     "placeholder": true,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.ee_arm_link.frame_a.r_0[1]",
+       "aloha.followerRight.ee_arm_link.frame_a.r_0[2]",
+       "aloha.followerRight.ee_arm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.ee_arm_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.ee_arm_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.ee_arm_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.ee_arm_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.ee_arm_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.ee_arm_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.ee_arm_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.ee_arm_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.ee_arm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/gripper_prop_link",
+     "urdf_local": "gripper_prop_link",
+     "modelica": "followerRight.gripper_prop_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.gripper_prop_link.frame_a.r_0[1]",
+       "aloha.followerRight.gripper_prop_link.frame_a.r_0[2]",
+       "aloha.followerRight.gripper_prop_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.gripper_prop_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.gripper_prop_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.gripper_prop_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.gripper_prop_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.gripper_prop_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.gripper_prop_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.gripper_prop_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.gripper_prop_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.gripper_prop_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/gripper_bar_link",
+     "urdf_local": "gripper_bar_link",
+     "modelica": "followerRight.gripper_bar_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.gripper_bar_link.frame_a.r_0[1]",
+       "aloha.followerRight.gripper_bar_link.frame_a.r_0[2]",
+       "aloha.followerRight.gripper_bar_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.gripper_bar_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.gripper_bar_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.gripper_bar_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.gripper_bar_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.gripper_bar_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.gripper_bar_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.gripper_bar_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.gripper_bar_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.gripper_bar_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/fingers_link",
+     "urdf_local": "fingers_link",
+     "modelica": "followerRight.fingers_link",
+     "placeholder": true,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.fingers_link.frame_a.r_0[1]",
+       "aloha.followerRight.fingers_link.frame_a.r_0[2]",
+       "aloha.followerRight.fingers_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.fingers_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.fingers_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.fingers_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.fingers_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.fingers_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.fingers_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.fingers_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.fingers_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.fingers_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/left_finger_link",
+     "urdf_local": "left_finger_link",
+     "modelica": "followerRight.left_finger_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.left_finger_link.frame_a.r_0[1]",
+       "aloha.followerRight.left_finger_link.frame_a.r_0[2]",
+       "aloha.followerRight.left_finger_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.left_finger_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.left_finger_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.left_finger_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.left_finger_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.left_finger_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.left_finger_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.left_finger_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.left_finger_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.left_finger_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/right_finger_link",
+     "urdf_local": "right_finger_link",
+     "modelica": "followerRight.right_finger_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.right_finger_link.frame_a.r_0[1]",
+       "aloha.followerRight.right_finger_link.frame_a.r_0[2]",
+       "aloha.followerRight.right_finger_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.right_finger_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.right_finger_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.right_finger_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.right_finger_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.right_finger_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.right_finger_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.right_finger_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.right_finger_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.right_finger_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "follower_right/ee_gripper_link",
+     "urdf_local": "ee_gripper_link",
+     "modelica": "followerRight.ee_gripper_link",
+     "placeholder": true,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.followerRight.ee_gripper_link.frame_a.r_0[1]",
+       "aloha.followerRight.ee_gripper_link.frame_a.r_0[2]",
+       "aloha.followerRight.ee_gripper_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.followerRight.ee_gripper_link.frame_a.R.T[1,1]",
+       "aloha.followerRight.ee_gripper_link.frame_a.R.T[1,2]",
+       "aloha.followerRight.ee_gripper_link.frame_a.R.T[1,3]",
+       "aloha.followerRight.ee_gripper_link.frame_a.R.T[2,1]",
+       "aloha.followerRight.ee_gripper_link.frame_a.R.T[2,2]",
+       "aloha.followerRight.ee_gripper_link.frame_a.R.T[2,3]",
+       "aloha.followerRight.ee_gripper_link.frame_a.R.T[3,1]",
+       "aloha.followerRight.ee_gripper_link.frame_a.R.T[3,2]",
+       "aloha.followerRight.ee_gripper_link.frame_a.R.T[3,3]"
+      ]
+     }
+    }
+   ],
+   "joints": [
+    {
+     "urdf": "follower_right/waist",
+     "urdf_local": "waist",
+     "modelica": "followerRight.j_waist",
+     "driven_index": 9,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_right/shoulder",
+     "urdf_local": "shoulder",
+     "modelica": "followerRight.j_shoulder",
+     "driven_index": 10,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_right/elbow",
+     "urdf_local": "elbow",
+     "modelica": "followerRight.j_elbow",
+     "driven_index": 11,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_right/forearm_roll",
+     "urdf_local": "forearm_roll",
+     "modelica": "followerRight.j_forearm_roll",
+     "driven_index": 12,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_right/wrist_angle",
+     "urdf_local": "wrist_angle",
+     "modelica": "followerRight.j_wrist_angle",
+     "driven_index": 13,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_right/wrist_rotate",
+     "urdf_local": "wrist_rotate",
+     "modelica": "followerRight.j_wrist_rotate",
+     "driven_index": 14,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_right/ee_arm",
+     "urdf_local": "ee_arm",
+     "modelica": "followerRight.j_ee_arm",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_right/gripper",
+     "urdf_local": "gripper",
+     "modelica": "followerRight.j_gripper",
+     "driven_index": 15,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_right/gripper_bar",
+     "urdf_local": "gripper_bar",
+     "modelica": "followerRight.j_gripper_bar",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_right/ee_bar",
+     "urdf_local": "ee_bar",
+     "modelica": "followerRight.j_ee_bar",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_right/left_finger",
+     "urdf_local": "left_finger",
+     "modelica": "followerRight.j_left_finger",
+     "driven_index": 16,
+     "mimic": null
+    },
+    {
+     "urdf": "follower_right/right_finger",
+     "urdf_local": "right_finger",
+     "modelica": "followerRight.j_right_finger",
+     "driven_index": null,
+     "mimic": [
+      "left_finger",
+      -1.0,
+      0.0
+     ]
+    },
+    {
+     "urdf": "follower_right/ee_gripper",
+     "urdf_local": "ee_gripper",
+     "modelica": "followerRight.j_ee_gripper",
+     "driven_index": null,
+     "mimic": null
+    }
+   ]
+  },
+  {
+   "arm": "leader_left",
+   "modelica_instance": "leaderLeft",
+   "class": "ALOHA.Arms.AlohaWX250s",
+   "mount": {
+    "modelica": "mount_leaderLeft",
+    "urdf_joint": "leader_left_mount",
+    "xyz": [
+     -0.5,
+     0.25,
+     0.0
+    ]
+   },
+   "links": [
+    {
+     "urdf": "leader_left/base_link",
+     "urdf_local": "base_link",
+     "modelica": "leaderLeft.base_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.base_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.base_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.base_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.base_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.base_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.base_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.base_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.base_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.base_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.base_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.base_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.base_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/shoulder_link",
+     "urdf_local": "shoulder_link",
+     "modelica": "leaderLeft.shoulder_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.shoulder_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.shoulder_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.shoulder_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.shoulder_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.shoulder_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.shoulder_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.shoulder_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.shoulder_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.shoulder_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.shoulder_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.shoulder_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.shoulder_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/upper_arm_link",
+     "urdf_local": "upper_arm_link",
+     "modelica": "leaderLeft.upper_arm_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.upper_arm_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.upper_arm_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.upper_arm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.upper_arm_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.upper_arm_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.upper_arm_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.upper_arm_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.upper_arm_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.upper_arm_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.upper_arm_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.upper_arm_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.upper_arm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/upper_forearm_link",
+     "urdf_local": "upper_forearm_link",
+     "modelica": "leaderLeft.upper_forearm_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.upper_forearm_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.upper_forearm_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.upper_forearm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.upper_forearm_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.upper_forearm_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.upper_forearm_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.upper_forearm_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.upper_forearm_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.upper_forearm_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.upper_forearm_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.upper_forearm_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.upper_forearm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/lower_forearm_link",
+     "urdf_local": "lower_forearm_link",
+     "modelica": "leaderLeft.lower_forearm_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.lower_forearm_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.lower_forearm_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.lower_forearm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.lower_forearm_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.lower_forearm_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.lower_forearm_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.lower_forearm_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.lower_forearm_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.lower_forearm_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.lower_forearm_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.lower_forearm_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.lower_forearm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/wrist_link",
+     "urdf_local": "wrist_link",
+     "modelica": "leaderLeft.wrist_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.wrist_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.wrist_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.wrist_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.wrist_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.wrist_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.wrist_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.wrist_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.wrist_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.wrist_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.wrist_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.wrist_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.wrist_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/gripper_link",
+     "urdf_local": "gripper_link",
+     "modelica": "leaderLeft.gripper_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.gripper_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.gripper_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.gripper_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.gripper_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.gripper_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.gripper_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.gripper_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.gripper_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.gripper_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.gripper_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.gripper_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.gripper_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/handle_link",
+     "urdf_local": "handle_link",
+     "modelica": "leaderLeft.handle_link",
+     "placeholder": false,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.handle_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.handle_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.handle_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.handle_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.handle_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.handle_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.handle_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.handle_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.handle_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.handle_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.handle_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.handle_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/ee_arm_link",
+     "urdf_local": "ee_arm_link",
+     "modelica": "leaderLeft.ee_arm_link",
+     "placeholder": true,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.ee_arm_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.ee_arm_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.ee_arm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.ee_arm_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.ee_arm_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.ee_arm_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.ee_arm_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.ee_arm_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.ee_arm_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.ee_arm_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.ee_arm_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.ee_arm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/gripper_prop_link",
+     "urdf_local": "gripper_prop_link",
+     "modelica": "leaderLeft.gripper_prop_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.gripper_prop_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.gripper_prop_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.gripper_prop_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.gripper_prop_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.gripper_prop_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.gripper_prop_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.gripper_prop_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.gripper_prop_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.gripper_prop_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.gripper_prop_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.gripper_prop_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.gripper_prop_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/gripper_bar_link",
+     "urdf_local": "gripper_bar_link",
+     "modelica": "leaderLeft.gripper_bar_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.gripper_bar_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.gripper_bar_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.gripper_bar_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.gripper_bar_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.gripper_bar_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.gripper_bar_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.gripper_bar_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.gripper_bar_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.gripper_bar_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.gripper_bar_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.gripper_bar_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.gripper_bar_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/fingers_link",
+     "urdf_local": "fingers_link",
+     "modelica": "leaderLeft.fingers_link",
+     "placeholder": true,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.fingers_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.fingers_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.fingers_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.fingers_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.fingers_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.fingers_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.fingers_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.fingers_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.fingers_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.fingers_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.fingers_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.fingers_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/left_finger_link",
+     "urdf_local": "left_finger_link",
+     "modelica": "leaderLeft.left_finger_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.left_finger_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.left_finger_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.left_finger_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.left_finger_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.left_finger_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.left_finger_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.left_finger_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.left_finger_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.left_finger_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.left_finger_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.left_finger_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.left_finger_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/right_finger_link",
+     "urdf_local": "right_finger_link",
+     "modelica": "leaderLeft.right_finger_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.right_finger_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.right_finger_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.right_finger_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.right_finger_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.right_finger_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.right_finger_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.right_finger_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.right_finger_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.right_finger_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.right_finger_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.right_finger_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.right_finger_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_left/ee_gripper_link",
+     "urdf_local": "ee_gripper_link",
+     "modelica": "leaderLeft.ee_gripper_link",
+     "placeholder": true,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderLeft.ee_gripper_link.frame_a.r_0[1]",
+       "aloha.leaderLeft.ee_gripper_link.frame_a.r_0[2]",
+       "aloha.leaderLeft.ee_gripper_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderLeft.ee_gripper_link.frame_a.R.T[1,1]",
+       "aloha.leaderLeft.ee_gripper_link.frame_a.R.T[1,2]",
+       "aloha.leaderLeft.ee_gripper_link.frame_a.R.T[1,3]",
+       "aloha.leaderLeft.ee_gripper_link.frame_a.R.T[2,1]",
+       "aloha.leaderLeft.ee_gripper_link.frame_a.R.T[2,2]",
+       "aloha.leaderLeft.ee_gripper_link.frame_a.R.T[2,3]",
+       "aloha.leaderLeft.ee_gripper_link.frame_a.R.T[3,1]",
+       "aloha.leaderLeft.ee_gripper_link.frame_a.R.T[3,2]",
+       "aloha.leaderLeft.ee_gripper_link.frame_a.R.T[3,3]"
+      ]
+     }
+    }
+   ],
+   "joints": [
+    {
+     "urdf": "leader_left/waist",
+     "urdf_local": "waist",
+     "modelica": "leaderLeft.j_waist",
+     "driven_index": 17,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_left/shoulder",
+     "urdf_local": "shoulder",
+     "modelica": "leaderLeft.j_shoulder",
+     "driven_index": 18,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_left/elbow",
+     "urdf_local": "elbow",
+     "modelica": "leaderLeft.j_elbow",
+     "driven_index": 19,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_left/forearm_roll",
+     "urdf_local": "forearm_roll",
+     "modelica": "leaderLeft.j_forearm_roll",
+     "driven_index": 20,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_left/wrist_angle",
+     "urdf_local": "wrist_angle",
+     "modelica": "leaderLeft.j_wrist_angle",
+     "driven_index": 21,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_left/wrist_rotate",
+     "urdf_local": "wrist_rotate",
+     "modelica": "leaderLeft.j_wrist_rotate",
+     "driven_index": 22,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_left/gripper_handle",
+     "urdf_local": "gripper_handle",
+     "modelica": "leaderLeft.j_gripper_handle",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_left/ee_arm",
+     "urdf_local": "ee_arm",
+     "modelica": "leaderLeft.j_ee_arm",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_left/gripper",
+     "urdf_local": "gripper",
+     "modelica": "leaderLeft.j_gripper",
+     "driven_index": 23,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_left/gripper_bar",
+     "urdf_local": "gripper_bar",
+     "modelica": "leaderLeft.j_gripper_bar",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_left/ee_bar",
+     "urdf_local": "ee_bar",
+     "modelica": "leaderLeft.j_ee_bar",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_left/left_finger",
+     "urdf_local": "left_finger",
+     "modelica": "leaderLeft.j_left_finger",
+     "driven_index": 24,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_left/right_finger",
+     "urdf_local": "right_finger",
+     "modelica": "leaderLeft.j_right_finger",
+     "driven_index": null,
+     "mimic": [
+      "left_finger",
+      -1.0,
+      0.0
+     ]
+    },
+    {
+     "urdf": "leader_left/ee_gripper",
+     "urdf_local": "ee_gripper",
+     "modelica": "leaderLeft.j_ee_gripper",
+     "driven_index": null,
+     "mimic": null
+    }
+   ]
+  },
+  {
+   "arm": "leader_right",
+   "modelica_instance": "leaderRight",
+   "class": "ALOHA.Arms.AlohaWX250s",
+   "mount": {
+    "modelica": "mount_leaderRight",
+    "urdf_joint": "leader_right_mount",
+    "xyz": [
+     -0.5,
+     -0.25,
+     0.0
+    ]
+   },
+   "links": [
+    {
+     "urdf": "leader_right/base_link",
+     "urdf_local": "base_link",
+     "modelica": "leaderRight.base_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.base_link.frame_a.r_0[1]",
+       "aloha.leaderRight.base_link.frame_a.r_0[2]",
+       "aloha.leaderRight.base_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.base_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.base_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.base_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.base_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.base_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.base_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.base_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.base_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.base_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/shoulder_link",
+     "urdf_local": "shoulder_link",
+     "modelica": "leaderRight.shoulder_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.shoulder_link.frame_a.r_0[1]",
+       "aloha.leaderRight.shoulder_link.frame_a.r_0[2]",
+       "aloha.leaderRight.shoulder_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.shoulder_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.shoulder_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.shoulder_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.shoulder_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.shoulder_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.shoulder_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.shoulder_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.shoulder_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.shoulder_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/upper_arm_link",
+     "urdf_local": "upper_arm_link",
+     "modelica": "leaderRight.upper_arm_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.upper_arm_link.frame_a.r_0[1]",
+       "aloha.leaderRight.upper_arm_link.frame_a.r_0[2]",
+       "aloha.leaderRight.upper_arm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.upper_arm_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.upper_arm_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.upper_arm_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.upper_arm_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.upper_arm_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.upper_arm_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.upper_arm_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.upper_arm_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.upper_arm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/upper_forearm_link",
+     "urdf_local": "upper_forearm_link",
+     "modelica": "leaderRight.upper_forearm_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.upper_forearm_link.frame_a.r_0[1]",
+       "aloha.leaderRight.upper_forearm_link.frame_a.r_0[2]",
+       "aloha.leaderRight.upper_forearm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.upper_forearm_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.upper_forearm_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.upper_forearm_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.upper_forearm_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.upper_forearm_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.upper_forearm_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.upper_forearm_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.upper_forearm_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.upper_forearm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/lower_forearm_link",
+     "urdf_local": "lower_forearm_link",
+     "modelica": "leaderRight.lower_forearm_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.lower_forearm_link.frame_a.r_0[1]",
+       "aloha.leaderRight.lower_forearm_link.frame_a.r_0[2]",
+       "aloha.leaderRight.lower_forearm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.lower_forearm_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.lower_forearm_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.lower_forearm_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.lower_forearm_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.lower_forearm_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.lower_forearm_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.lower_forearm_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.lower_forearm_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.lower_forearm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/wrist_link",
+     "urdf_local": "wrist_link",
+     "modelica": "leaderRight.wrist_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.wrist_link.frame_a.r_0[1]",
+       "aloha.leaderRight.wrist_link.frame_a.r_0[2]",
+       "aloha.leaderRight.wrist_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.wrist_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.wrist_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.wrist_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.wrist_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.wrist_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.wrist_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.wrist_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.wrist_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.wrist_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/gripper_link",
+     "urdf_local": "gripper_link",
+     "modelica": "leaderRight.gripper_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.gripper_link.frame_a.r_0[1]",
+       "aloha.leaderRight.gripper_link.frame_a.r_0[2]",
+       "aloha.leaderRight.gripper_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.gripper_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.gripper_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.gripper_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.gripper_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.gripper_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.gripper_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.gripper_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.gripper_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.gripper_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/handle_link",
+     "urdf_local": "handle_link",
+     "modelica": "leaderRight.handle_link",
+     "placeholder": false,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.handle_link.frame_a.r_0[1]",
+       "aloha.leaderRight.handle_link.frame_a.r_0[2]",
+       "aloha.leaderRight.handle_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.handle_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.handle_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.handle_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.handle_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.handle_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.handle_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.handle_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.handle_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.handle_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/ee_arm_link",
+     "urdf_local": "ee_arm_link",
+     "modelica": "leaderRight.ee_arm_link",
+     "placeholder": true,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.ee_arm_link.frame_a.r_0[1]",
+       "aloha.leaderRight.ee_arm_link.frame_a.r_0[2]",
+       "aloha.leaderRight.ee_arm_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.ee_arm_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.ee_arm_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.ee_arm_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.ee_arm_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.ee_arm_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.ee_arm_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.ee_arm_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.ee_arm_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.ee_arm_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/gripper_prop_link",
+     "urdf_local": "gripper_prop_link",
+     "modelica": "leaderRight.gripper_prop_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.gripper_prop_link.frame_a.r_0[1]",
+       "aloha.leaderRight.gripper_prop_link.frame_a.r_0[2]",
+       "aloha.leaderRight.gripper_prop_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.gripper_prop_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.gripper_prop_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.gripper_prop_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.gripper_prop_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.gripper_prop_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.gripper_prop_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.gripper_prop_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.gripper_prop_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.gripper_prop_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/gripper_bar_link",
+     "urdf_local": "gripper_bar_link",
+     "modelica": "leaderRight.gripper_bar_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.gripper_bar_link.frame_a.r_0[1]",
+       "aloha.leaderRight.gripper_bar_link.frame_a.r_0[2]",
+       "aloha.leaderRight.gripper_bar_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.gripper_bar_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.gripper_bar_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.gripper_bar_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.gripper_bar_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.gripper_bar_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.gripper_bar_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.gripper_bar_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.gripper_bar_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.gripper_bar_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/fingers_link",
+     "urdf_local": "fingers_link",
+     "modelica": "leaderRight.fingers_link",
+     "placeholder": true,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.fingers_link.frame_a.r_0[1]",
+       "aloha.leaderRight.fingers_link.frame_a.r_0[2]",
+       "aloha.leaderRight.fingers_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.fingers_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.fingers_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.fingers_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.fingers_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.fingers_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.fingers_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.fingers_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.fingers_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.fingers_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/left_finger_link",
+     "urdf_local": "left_finger_link",
+     "modelica": "leaderRight.left_finger_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.left_finger_link.frame_a.r_0[1]",
+       "aloha.leaderRight.left_finger_link.frame_a.r_0[2]",
+       "aloha.leaderRight.left_finger_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.left_finger_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.left_finger_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.left_finger_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.left_finger_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.left_finger_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.left_finger_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.left_finger_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.left_finger_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.left_finger_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/right_finger_link",
+     "urdf_local": "right_finger_link",
+     "modelica": "leaderRight.right_finger_link",
+     "placeholder": false,
+     "mesh": true,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.right_finger_link.frame_a.r_0[1]",
+       "aloha.leaderRight.right_finger_link.frame_a.r_0[2]",
+       "aloha.leaderRight.right_finger_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.right_finger_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.right_finger_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.right_finger_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.right_finger_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.right_finger_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.right_finger_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.right_finger_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.right_finger_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.right_finger_link.frame_a.R.T[3,3]"
+      ]
+     }
+    },
+    {
+     "urdf": "leader_right/ee_gripper_link",
+     "urdf_local": "ee_gripper_link",
+     "modelica": "leaderRight.ee_gripper_link",
+     "placeholder": true,
+     "mesh": false,
+     "result_vars": {
+      "r_0": [
+       "aloha.leaderRight.ee_gripper_link.frame_a.r_0[1]",
+       "aloha.leaderRight.ee_gripper_link.frame_a.r_0[2]",
+       "aloha.leaderRight.ee_gripper_link.frame_a.r_0[3]"
+      ],
+      "R": [
+       "aloha.leaderRight.ee_gripper_link.frame_a.R.T[1,1]",
+       "aloha.leaderRight.ee_gripper_link.frame_a.R.T[1,2]",
+       "aloha.leaderRight.ee_gripper_link.frame_a.R.T[1,3]",
+       "aloha.leaderRight.ee_gripper_link.frame_a.R.T[2,1]",
+       "aloha.leaderRight.ee_gripper_link.frame_a.R.T[2,2]",
+       "aloha.leaderRight.ee_gripper_link.frame_a.R.T[2,3]",
+       "aloha.leaderRight.ee_gripper_link.frame_a.R.T[3,1]",
+       "aloha.leaderRight.ee_gripper_link.frame_a.R.T[3,2]",
+       "aloha.leaderRight.ee_gripper_link.frame_a.R.T[3,3]"
+      ]
+     }
+    }
+   ],
+   "joints": [
+    {
+     "urdf": "leader_right/waist",
+     "urdf_local": "waist",
+     "modelica": "leaderRight.j_waist",
+     "driven_index": 25,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_right/shoulder",
+     "urdf_local": "shoulder",
+     "modelica": "leaderRight.j_shoulder",
+     "driven_index": 26,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_right/elbow",
+     "urdf_local": "elbow",
+     "modelica": "leaderRight.j_elbow",
+     "driven_index": 27,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_right/forearm_roll",
+     "urdf_local": "forearm_roll",
+     "modelica": "leaderRight.j_forearm_roll",
+     "driven_index": 28,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_right/wrist_angle",
+     "urdf_local": "wrist_angle",
+     "modelica": "leaderRight.j_wrist_angle",
+     "driven_index": 29,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_right/wrist_rotate",
+     "urdf_local": "wrist_rotate",
+     "modelica": "leaderRight.j_wrist_rotate",
+     "driven_index": 30,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_right/gripper_handle",
+     "urdf_local": "gripper_handle",
+     "modelica": "leaderRight.j_gripper_handle",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_right/ee_arm",
+     "urdf_local": "ee_arm",
+     "modelica": "leaderRight.j_ee_arm",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_right/gripper",
+     "urdf_local": "gripper",
+     "modelica": "leaderRight.j_gripper",
+     "driven_index": 31,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_right/gripper_bar",
+     "urdf_local": "gripper_bar",
+     "modelica": "leaderRight.j_gripper_bar",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_right/ee_bar",
+     "urdf_local": "ee_bar",
+     "modelica": "leaderRight.j_ee_bar",
+     "driven_index": null,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_right/left_finger",
+     "urdf_local": "left_finger",
+     "modelica": "leaderRight.j_left_finger",
+     "driven_index": 32,
+     "mimic": null
+    },
+    {
+     "urdf": "leader_right/right_finger",
+     "urdf_local": "right_finger",
+     "modelica": "leaderRight.j_right_finger",
+     "driven_index": null,
+     "mimic": [
+      "left_finger",
+      -1.0,
+      0.0
+     ]
+    },
+    {
+     "urdf": "leader_right/ee_gripper",
+     "urdf_local": "ee_gripper",
+     "modelica": "leaderRight.j_ee_gripper",
+     "driven_index": null,
+     "mimic": null
+    }
+   ]
+  }
+ ]
+}

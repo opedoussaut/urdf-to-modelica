@@ -1,0 +1,55 @@
+{
+  "generator": "tools/expand_xacro.py",
+  "arms": [
+    {
+      "robot_name": "follower_left",
+      "model": "aloha_vx300s",
+      "mount_xyz": [
+        0.5,
+        0.25,
+        0.0
+      ],
+      "xacro": "third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/aloha_vx300s.urdf.xacro",
+      "xacro_sha256": "2848f300a2c1a99d0db1ada4ed62370c52d557215d26397764c98decb0c6ddab",
+      "urdf": "data/urdf/follower_left.urdf"
+    },
+    {
+      "robot_name": "follower_right",
+      "model": "aloha_vx300s",
+      "mount_xyz": [
+        0.5,
+        -0.25,
+        0.0
+      ],
+      "xacro": "third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/aloha_vx300s.urdf.xacro",
+      "xacro_sha256": "2848f300a2c1a99d0db1ada4ed62370c52d557215d26397764c98decb0c6ddab",
+      "urdf": "data/urdf/follower_right.urdf"
+    },
+    {
+      "robot_name": "leader_left",
+      "model": "aloha_wx250s",
+      "mount_xyz": [
+        -0.5,
+        0.25,
+        0.0
+      ],
+      "xacro": "third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/aloha_wx250s.urdf.xacro",
+      "xacro_sha256": "c2ef18739d07dbb24baee3345224671126b4674cd1d411d748f515e33dffcb39",
+      "urdf": "data/urdf/leader_left.urdf"
+    },
+    {
+      "robot_name": "leader_right",
+      "model": "aloha_wx250s",
+      "mount_xyz": [
+        -0.5,
+        -0.25,
+        0.0
+      ],
+      "xacro": "third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/urdf/aloha_wx250s.urdf.xacro",
+      "xacro_sha256": "c2ef18739d07dbb24baee3345224671126b4674cd1d411d748f515e33dffcb39",
+      "urdf": "data/urdf/leader_right.urdf"
+    }
+  ],
+  "combined_urdf": "data/urdf/aloha_stationary.urdf",
+  "combined_sha256": "e21a6c588ec3684a0583984788355dba57a65a52c2d5df4472462a08a39a5f3f"
+}

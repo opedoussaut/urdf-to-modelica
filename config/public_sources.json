@@ -1,0 +1,18 @@
+{
+  "_comment": "Pinned public engineering sources. Fetched read-only into third_party/ by tools/fetch_sources.py.",
+  "sources": [
+    {"id": "interbotix_xsarm_descriptions", "url": "https://github.com/Interbotix/interbotix_ros_manipulators.git",
+     "ref": "humble", "commit": "b66d5b905725351dd71d3251a06cd3f4c777940f", "license": "BSD-3-Clause",
+     "sparse": ["interbotix_ros_xsarms/interbotix_xsarm_descriptions"], "dir": "interbotix_ros_manipulators",
+     "role": "URDF/xacro + STL meshes for aloha_vx300s (follower) and aloha_wx250s (leader)"},
+    {"id": "interbotix_aloha", "url": "https://github.com/Interbotix/aloha.git",
+     "ref": "main", "commit": "4fa6b2c4428f5334441a7bee5ab2b2e8071cff93", "license": "MIT",
+     "dir": "aloha", "role": "ALOHA Stationary bringup: arm models, workcell base transforms, operating modes"},
+    {"id": "urdfmodelica", "url": "https://github.com/DLR-RM/urdfmodelica.git",
+     "ref": "main", "commit": "92541b6f6aa76fd510983a25afd3082377b4028f", "license": "BSD-3-Clause",
+     "dir": "urdfmodelica", "role": "Deterministic URDF->Modelica baseline converter (DLR)"},
+    {"id": "tonyzhaozh_aloha", "url": "https://github.com/tonyzhaozh/aloha.git",
+     "ref": "main", "commit": "06369f03cd8e0a47e16d3a90167853fd33af7557", "license": "MIT",
+     "dir": "tonyzhaozh_aloha", "role": "Original Stanford ALOHA (context only; NOT used for geometry, different variant)"}
+  ]
+}
