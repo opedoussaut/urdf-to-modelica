@@ -94,13 +94,55 @@ MUTATIONS = [
 ]
 
 
+# Held-out set: written AFTER the rule set was frozen (commit 53405d7). Includes error types for which no
+# C_RULE rule exists (child connectivity, origin rpy, inertia tensor, dropped body) to measure true coverage.
+HELD_OUT = [
+    {"id": "H1-wrist-axis-sign", "entity": "wrist_angle", "category": "axis", "accept": ["axis"],
+     "description": "Wrist angle axis sign flipped.",
+     "apply": _sub(r"(j_wrist_angle\(r = \{0\.1, 0, 0\}, rpy = \{0, 0, 0\}, n = )\{0, 1\.0, 0\}", r"\1{0, -1.0, 0}")},
+    {"id": "H2-waist-degrees", "entity": "waist", "category": "unit", "accept": ["unit", "limit"],
+     "description": "Waist lower limit written in degrees (-180).",
+     "apply": _sub(r"(j_waist\([^;]*?q_min = )[-0-9.e]+", r"\g<1>-180.0")},
+    {"id": "H3-finger-millimetres", "entity": "left_finger", "category": "unit", "accept": ["unit", "limit"],
+     "description": "Left finger upper limit written in millimetres (57) in a metre parameter.",
+     "apply": _sub(r"(j_left_finger\([^;]*?s_max = )0\.057", r"\g<1>57.0")},
+    {"id": "H4-wrong-child", "entity": "wrist_angle", "category": "connectivity", "accept": ["connectivity"],
+     "description": "Wrist angle joint drives gripper_link instead of wrist_link (wrong child).",
+     "apply": _sub(r"connect\(j_wrist_angle\.frame_b, wrist_link\.frame_a\);", "connect(j_wrist_angle.frame_b, gripper_link.frame_a);")},
+    {"id": "H5-origin-rpy", "entity": "ee_arm", "category": "geometry", "accept": ["geometry"],
+     "description": "End-effector frame rotated 90 deg about z (rpy typo).",
+     "apply": _sub(r"(j_ee_arm\(r = \{0\.042825, 0, 0\}, rpy = )\{0, 0, 0\}", r"\1{0, 0, 1.5708}")},
+    {"id": "H6-inertia-tensor", "entity": "wrist_link", "category": "parameter_provenance",
+     "accept": ["parameter_provenance", "other"],
+     "description": "Wrist link Ixx changed from 4.514e-05 to 4.514e-04 kg m2 (unsourced).",
+     "apply": _sub(r"(wrist_link\(hasInertia = true, m = 0\.115395, r_CM = \{[^}]*\}, I = \[)4\.514e-05", r"\g<1>4.514e-04")},
+    {"id": "H7-dropped-body", "entity": "gripper_bar_link", "category": "parameter_provenance",
+     "accept": ["parameter_provenance", "missing_component", "other"],
+     "description": "Gripper bar body made massless although the URDF gives 0.150986 kg.",
+     "apply": _sub(r"gripper_bar_link\(hasInertia = true, m = 0\.150986", "gripper_bar_link(hasInertia = false, m = 0.150986")},
+]
+for _h in HELD_OUT:
+    _h["held_out"] = True
+MUTATIONS = MUTATIONS + HELD_OUT
+
+
 def _norm(entity: str | None) -> str:
     e = (entity or "").lower().strip()
     e = e.split("/")[-1].split(".")[-1].removeprefix("j_")
     return e
 
 
-def score(mut: dict, findings: list[dict]) -> dict:
+_AFFIRM = re.compile(r"\b(consistent|correct|correctly|matches|match|aligned|valid|no (issue|inconsistenc|discrepanc)\w*)\b", re.I)
+_NEGATE = re.compile(r"\b(not|inconsistent|incorrect|mismatch\w*|wrong|differ\w*|invalid|missing|error|instead|should)\b", re.I)
+
+
+def is_affirmation(f: dict) -> bool:
+    """A reported 'finding' whose own text says the item is consistent (and contains no negative wording)."""
+    text = f.get("explanation") or ""
+    return bool(_AFFIRM.search(text)) and not _NEGATE.search(text)
+
+
+def _score_one(mut: dict, findings: list[dict]) -> dict:
     target = mut["entity"]
     names = {target, *mut.get("aliases", [])} if target else set()
     on_target = [f for f in findings if _norm(f.get("entity")) in names]
@@ -109,6 +151,35 @@ def score(mut: dict, findings: list[dict]) -> dict:
             "classified": any(f.get("category") == mut["category"] for f in on_target) if target else None,
             "accepted_category": any(f.get("category") in mut["accept"] for f in on_target) if target else None,
             "false_positives": len(other)}
+
+
+def score(mut: dict, findings: list[dict]) -> dict:
+    """Primary metric = accepted_category (finding on the mutated entity with an acceptable error type).
+    Findings that merely affirm consistency are excluded (documented filter); strict_* keeps the raw count."""
+    kept = [f for f in findings if not is_affirmation(f)]
+    out = _score_one(mut, kept)
+    strict = _score_one(mut, findings)
+    out.update({"strict_" + k: v for k, v in strict.items()})
+    out["affirmations_filtered"] = len(findings) - len(kept)
+    return out
+
+
+def rescore(report: dict) -> dict:
+    """Recompute all per-run scores from stored raw findings (no re-execution)."""
+    muts = {m["id"]: m for m in MUTATIONS}
+    for c in report["candidates"]:
+        m = muts[c["id"]]
+        for name, d in c["detectors"].items():
+            for r in d.get("runs", [d]):
+                if "findings" in r and "error" not in r:
+                    r.update(score(m, r["findings"]))
+                elif name == "SIM":
+                    # Model-level flag only: counts as detection, never as localisation/classification.
+                    r["accepted_category"] = r.get("detected")
+    report["summary"] = summarize(report)
+    report["scoring"] = ("primary = finding on mutated entity with accepted category; findings affirming consistency "
+                         "(regex, see detection.is_affirmation) excluded; strict_* fields keep unfiltered scores")
+    return report
 
 
 # ------------------------------------------------------------------------------------- detectors
@@ -155,7 +226,7 @@ def det_sim(package: Path, work: Path) -> dict:
 
 SCHEMA = {"type": "object", "properties": {"findings": {"type": "array", "maxItems": 12, "items": {
     "type": "object", "properties": {"entity": {"type": "string"}, "category": {"type": "string", "enum": CATEGORIES},
-                                     "explanation": {"type": "string"}},
+                                     "explanation": {"type": "string", "maxLength": 300}},
     "required": ["entity", "category", "explanation"]}}}, "required": ["findings"]}
 
 SYSTEM = ("You are an engineering model reviewer. Compare the candidate Modelica arm model with the supplied "
@@ -213,7 +284,7 @@ def det_llm(client, model, seed, reference_name, reference, class_file) -> dict:
     messages = [{"role": "system", "content": SYSTEM},
                 {"role": "user", "content": f"{reference_name}:\n{reference}\n\nCandidate Modelica model:\n{_modelica_excerpt(class_file)}"}]
     t = time.perf_counter()
-    out = client.chat(messages, model=model, schema=SCHEMA, seed=seed, max_tokens=1500, num_ctx=16384)
+    out = client.chat(messages, model=model, schema=SCHEMA, seed=seed, max_tokens=3000, num_ctx=16384)
     findings = json.loads(out["content"]).get("findings", [])
     return {"findings": findings, "seconds": round(time.perf_counter() - t, 2), "metrics": out["metrics"],
             "prompt_chars": sum(len(m["content"]) for m in messages)}
@@ -232,7 +303,7 @@ def run(model="qwen3:4b", seeds=(42, 43), with_sim=True, llm=True, only: list[st
     report = {"run_id": run_id, "model": model, "seeds": list(seeds), "frozen_class_sha256": frozen_hash,
               "started": dt.datetime.now(dt.timezone.utc).isoformat(), "categories": CATEGORIES,
               "protocol": ("Each candidate = frozen ALOHA2 package with one seeded error in Arms/AlohaVX300s.mo "
-                           "(isolated copy). B and C_LLM use the same model, seed, temperature 0, 16k context, "
+                           "(isolated copy). B and C_LLM use the same model, seed, temperature 0, 16k context, 3000-token output budget, "
                            "JSON schema and system prompt; B receives the URDF (visual/collision geometry removed), "
                            "C_LLM receives GraphDB evidence retrieved by fixed SPARQL for the same arm. Both receive "
                            "the identical candidate Modelica excerpt. C_RULE uses no LLM."),
@@ -256,6 +327,7 @@ def run(model="qwen3:4b", seeds=(42, 43), with_sim=True, llm=True, only: list[st
             f = pkg / CLASS_REL
             f.write_text(mut["apply"](f.read_text()), encoding="utf-8")
             rec = {k: mut[k] for k in ("id", "entity", "category", "description")}
+            rec["held_out"] = mut.get("held_out", False)
             rec["detectors"] = {}
             # DIFF
             t = time.perf_counter()
@@ -275,6 +347,7 @@ def run(model="qwen3:4b", seeds=(42, 43), with_sim=True, llm=True, only: list[st
                 flagged = not (s["check_ok"] and s["simulate_ok"] and s["validation_ok"])
                 rec["detectors"]["SIM"] = {**s, "seconds": round(time.perf_counter() - t, 2),
                                            "detected": flagged if mut["entity"] else None,
+                                           "accepted_category": flagged if mut["entity"] else None,
                                            "false_positives": int(flagged and not mut["entity"]),
                                            "classified": None, "note": "flags the model; does not localise or classify"}
             # LLM detectors
@@ -310,32 +383,34 @@ def run(model="qwen3:4b", seeds=(42, 43), with_sim=True, llm=True, only: list[st
 
 
 def summarize(report: dict) -> dict:
-    seeded = [c for c in report["candidates"] if c["entity"]]
-    control = [c for c in report["candidates"] if not c["entity"]]
-    out = {}
+    """Per detector and per set (design = rules written with knowledge of these errors; held_out = written
+    after the rules were frozen). Control (M0) false findings are reported once."""
     names = sorted({n for c in report["candidates"] for n in c["detectors"]})
+    out = {}
     for n in names:
-        rows = []  # (candidate, run) pairs
-        for c in report["candidates"]:
-            det = c["detectors"].get(n)
-            if det is None:
-                continue
-            for r in det.get("runs", [det]):
-                rows.append((c, r))
-        s = [(c, r) for c, r in rows if c["entity"]]
-        ctrl = [(c, r) for c, r in rows if not c["entity"]]
-        out[n] = {
-            "trials": len(s),
-            "detected": sum(bool(r.get("detected")) for _, r in s),
-            "correctly_classified": sum(bool(r.get("classified")) for _, r in s),
-            "accepted_category": sum(bool(r.get("accepted_category")) for _, r in s),
-            "control_false_findings": sum(r.get("false_positives", 0) for _, r in ctrl),
-            "off_target_findings_on_seeded": sum(r.get("false_positives", 0) for _, r in s),
-            "errors": sum("error" in r for _, r in rows),
-            "mean_seconds": round(sum(r.get("seconds", 0) for _, r in rows) / max(1, len(rows)), 2),
-            "per_candidate": {c["id"]: [r.get("detected") for r in c["detectors"][n].get("runs", [c["detectors"][n]])]
-                              for c in seeded + control if n in c["detectors"]},
-        }
+        out[n] = {}
+        for group, sel in (("design", lambda c: c["entity"] and not c.get("held_out")),
+                           ("held_out", lambda c: c["entity"] and c.get("held_out")),
+                           ("all_seeded", lambda c: c["entity"])):
+            rows = [(c, r) for c in report["candidates"] if sel(c) and n in c["detectors"]
+                    for r in c["detectors"][n].get("runs", [c["detectors"][n]])]
+            out[n][group] = {"trials": len(rows),
+                             "detected": sum(bool(r.get("detected")) for _, r in rows),
+                             "correctly_classified": sum(bool(r.get("classified")) for _, r in rows),
+                             "accepted_category": sum(bool(r.get("accepted_category")) for _, r in rows),
+                             "off_target_findings": sum(r.get("false_positives", 0) for _, r in rows),
+                             "strict_accepted_category": sum(bool(r.get("strict_accepted_category")) for _, r in rows),
+                             "strict_off_target_findings": sum(r.get("strict_false_positives", r.get("false_positives", 0)) for _, r in rows),
+                             "errors": sum("error" in r for _, r in rows)}
+        ctrl = [r for c in report["candidates"] if not c["entity"] and n in c["detectors"]
+                for r in c["detectors"][n].get("runs", [c["detectors"][n]])]
+        allr = [r for c in report["candidates"] if n in c["detectors"] for r in c["detectors"][n].get("runs", [c["detectors"][n]])]
+        out[n]["control_false_findings"] = sum(r.get("false_positives", 0) for r in ctrl)
+        out[n]["strict_control_false_findings"] = sum(r.get("strict_false_positives", r.get("false_positives", 0)) for r in ctrl)
+        out[n]["control_trials"] = len(ctrl)
+        out[n]["mean_seconds"] = round(sum(r.get("seconds", 0) for r in allr) / max(1, len(allr)), 2)
+        out[n]["per_candidate"] = {c["id"]: [r.get("detected") for r in c["detectors"][n].get("runs", [c["detectors"][n]])]
+                                   for c in report["candidates"] if n in c["detectors"]}
     return out
 
 
@@ -346,7 +421,19 @@ if __name__ == "__main__":
     ap.add_argument("--no-sim", action="store_true")
     ap.add_argument("--no-llm", action="store_true")
     ap.add_argument("--only", default="")
+    ap.add_argument("--rescore", default="", help="path to a report.json to re-score from stored findings")
     a = ap.parse_args()
+    if a.rescore:
+        rep = rescore(json.loads(Path(a.rescore).read_text(encoding="utf-8")))
+        Path(a.rescore).write_text(json.dumps(rep, indent=1), encoding="utf-8")
+        if rep.get("finished") and len(rep["candidates"]) == len(MUTATIONS):
+            (ROOT / "reports/detection.json").write_text(json.dumps(rep, indent=1), encoding="utf-8")
+        for k, v in rep["summary"].items():
+            print(k, {g: (v[g]["accepted_category"], v[g]["strict_accepted_category"], v[g]["trials"]) for g in ("design", "held_out")},
+                  "control FP", v["control_false_findings"], "strict", v["strict_control_false_findings"])
+        raise SystemExit(0)
     r = run(a.model, tuple(int(s) for s in a.seeds.split(",")), not a.no_sim, not a.no_llm,
             [x for x in a.only.split(",") if x] or None)
-    print(json.dumps({k: {kk: vv for kk, vv in v.items() if kk != "per_candidate"} for k, v in r["summary"].items()}, indent=1))
+    for k, v in r["summary"].items():
+        print(k, {g: (v[g]["accepted_category"], v[g]["correctly_classified"], v[g]["trials"]) for g in ("design", "held_out")},
+              "control FP", v["control_false_findings"], "s", v["mean_seconds"])
