@@ -69,4 +69,4 @@ C: drive has little free space — keep large artefacts on E:.
 - Ontology rule set for candidate checking lives in `kkh/domain/aloha/candidate.py`. Rules were frozen at `53405d7`
   before the held-out mutations; if rules change, write a NEW held-out set before re-measuring.
 - Inside a SPARQL `GRAPH <g> {}` clause GraphDB sees only explicit triples; put inferred patterns (e.g. `?j a kkh:Joint`) outside.
-- Writing regexes through bash heredocs can turn `` into backspace characters — check files for chr(8).
+- Writing regexes through bash heredocs can turn the regex word boundary (backslash-b) into a backspace character — check files for chr(8).
