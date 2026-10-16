@@ -1,8 +1,8 @@
 {
  "generator": "kkh.domain.aloha.build",
  "generator_version": "1.1.0",
- "generated_at": "2026-10-16T05:50:09+00:00",
- "repo_commit": "65e886ddbf2048370b264c5819870bf671548638",
+ "generated_at": "2026-10-16T13:18:23+00:00",
+ "repo_commit": "6fb13f4941d584c0fbfc4cb18c993ac69b9b7cff",
  "msl_version": "4.1.0",
  "inputs": {
   "data/urdf/aloha_vx300s.urdf": "da63d4cd3b056f79b7a136ec1fafca58c86248b0ecd9b9502bf825b71102995e",
@@ -24,13 +24,17 @@
   "Components/RigidLink.mo": "0887669579f372fde49bc5e3e9da5555ef4ab34c2011c689bc7b4e6ff6d50b7b",
   "Components/package.mo": "29a227d55c2f357d5aaa19636c5ba08329dbafaad6f521bd9530195e7d0f852f",
   "Components/package.order": "c2d80b861e4ce83f9287823c02dde507cf717cc639509574f792b5f54a688c37",
+  "Control/FollowerServoSettings.mo": "7b955cebe1796ffa30f4098b6c517acc7670515d503bb05cfb213a2bf2e3c25f",
+  "Control/ServoGains.mo": "a3a1ef6855f19d22d6a839fb33777009a6375b38b0fae3fc9de2f4985b05be81",
+  "Control/package.mo": "917d9a596cbf7bfcb3280763bec9c138651bd9c94740700cc271e831cf550648",
+  "Control/package.order": "765c68b8571a4e8b038b1ec1274bd3b19cd89d228029ee8acde0c051f6ae9147",
   "Experiments/HoldStartPose.mo": "bd89740d8b8ee54015a32c2160910c045d9972a745ed61d4b45a7831b7274f6a",
   "Experiments/LeaderArmCheck.mo": "627805c51909eab89eb8733c91d1c6560ed605c46fa12f20185796db2bfd60ed",
   "Experiments/RightArmReach.mo": "f164551646f54c76667a5bf7b9f18ddc5b6adac06896e78470c48090280af9d5",
   "Experiments/package.mo": "50f1353b294266c1115d904e6a316bec4db39ee90007fd1de8ca2ff4542ae177",
   "Experiments/package.order": "83f0693111de9cf40009acf2deebc58551a3ece32b6541e2e8b3e2afc92b2bc2",
   "package.mo": "6d3c0fc85d77b175f3aeee2096457bbbccbec8c517311560c78fa1c1c05ac2d7",
-  "package.order": "8dbd96a10d86920ae7c5d03d1614a427651bab19dcaf0fceff6cd8557a99952c"
+  "package.order": "b8e77c9aec94c0a04ce4633b8e9f1bf78777d98288c69f834faa1d8df19d43be"
  },
  "totals": {
   "links": 29,

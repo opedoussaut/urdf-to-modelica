@@ -57,6 +57,27 @@ def declaration_end(text, start):
     return len(text)
 
 
+def declared_bounds(package_dir, type_name, parameter):
+    """(min, max) declared on `parameter` in the Modelica class `type_name` inside the package, else None.
+
+    Example: ALOHA2.Control.ServoGains / kp -> (1.0, 500.0) from `parameter Real kp(..., min = 1, max = 500)`."""
+    parts = type_name.split(".")
+    if len(parts) < 2 or parts[0] != "ALOHA2":
+        return None
+    file = Path(package_dir).joinpath(*parts[1:-1], parts[-1] + ".mo")
+    if not file.exists():
+        return None
+    m = re.search(r"parameter\s+[\w.]+\s+" + re.escape(parameter) + r"\s*\(([^)]*)\)", file.read_text(encoding="utf-8"))
+    if not m:
+        return None
+    attrs = parse_modifiers(m.group(1))
+    try:
+        lo, hi = float(attrs["min"]), float(attrs["max"])
+    except (KeyError, ValueError):
+        return None
+    return (lo, hi)
+
+
 class Models:
     def __init__(self, store: Store, root=WORKSPACES, baseline=BASELINE):
         self.store, self.root, self.baseline = store, Path(root), Path(baseline)
@@ -198,43 +219,73 @@ class Models:
 
     @synchronized
     @synchronized
-    def propose_parameters(self, identity, name, changes, reason):
-        """Apply numeric literal parameter changes to the working copy as an 'AI proposal' revision.
+    def ensure_control(self, identity):
+        """Add the generator's Control package (servo settings) to a working copy that predates it, as its own
+        recorded revision. Existing files are never modified. Returns the new revision id or None."""
+        directory = self.directory(identity)
+        if (directory / "Control/FollowerServoSettings.mo").exists():
+            return None
+        if self.changes(identity)["changes"]:
+            raise ValueError("The working copy has unreviewed changes. Import or reject them first.")
+        from .dynamics import ensure_control
+        ensure_control(directory)
+        workspace = self.snapshot(self.store.get(identity, "model"), "working",
+                                  "Added Control package (follower servo settings, generator defaults)")
+        return workspace["data"]["head"]
 
-        Each change must name an existing component and an existing numeric literal parameter of that component in
-        the given file. Nothing is accepted: the human reviews the diff, runs OpenModelica and accepts explicitly."""
+    @synchronized
+    def propose_parameters(self, identity, name, changes, reason):
+        """Apply numeric literal parameter changes to the working copy as one 'AI proposal' revision.
+
+        `name` is the default file; a change may carry its own "file". Every change is checked before anything is
+        written (component exists, numeric literal parameter, finite value, within Modelica-declared bounds).
+        Nothing is accepted: the human reviews the diff, runs OpenModelica and accepts explicitly."""
+        if any(str(c.get("file") or name).startswith("Control/") for c in changes):
+            self.ensure_control(identity)
         if self.changes(identity)["changes"]:
             raise ValueError("The working copy has unreviewed changes. Import or reject them before creating a proposal.")
-        file = safe_file(self.directory(identity), name)
-        text = file.read_text(encoding="utf-8")
-        structure = parse_class(file)
-        components = {c["name"]: c for c in structure["components"]}
-        applied = []
+        texts, applied = {}, []
         for change in changes:
+            name_ = change.get("file") or name
+            file = safe_file(self.directory(identity), name_)
+            text = texts.get(name_, file.read_text(encoding="utf-8"))
+            components = {c["name"]: c for c in parse_class(file)["components"]}
             comp, key, value = change["component"], change["parameter"], change["value"]
             if comp not in components:
-                raise ValueError(f"Component {comp} does not exist in {name}")
+                raise ValueError(f"Component {comp} does not exist in {name_}")
             current = parse_modifiers(components[comp]["modifiers"]).get(key)
             if current is None:
-                raise ValueError(f"Parameter {key} is not set on {comp}")
+                raise ValueError(f"Parameter {key} is not set on {comp} in {name_}")
             try:
                 old = float(current)
             except ValueError:
                 raise ValueError(f"{comp}.{key} is not a numeric literal ({current}); edit it in source")
             if not isinstance(value, (int, float)) or isinstance(value, bool) or not np.isfinite(value):
                 raise ValueError(f"{comp}.{key}: proposed value must be a finite number")
+            bounds = declared_bounds(self.directory(identity), components[comp]["type"], key)
+            if bounds and not bounds[0] <= value <= bounds[1]:
+                raise ValueError(f"{comp}.{key} = {value} is outside the bounds declared in Modelica [{bounds[0]:g}, {bounds[1]:g}]")
             match = re.search(r"^\s*(?:(?:parameter|constant|inner|final)\s+)*" + re.escape(components[comp]["type"])
                               + r"(?:\[[^\]]*\])?\s+" + re.escape(comp) + r"\b", text, re.M)
             start, end = match.start(), declaration_end(text, match.start())
             block, count = re.subn(r"(?<![\w.])" + re.escape(key) + r"\s*=\s*" + re.escape(current) + r"(?![\w.])",
                                    f"{key} = {float(value)!r}", text[start:end], count=1)
             if count != 1:
-                raise ValueError(f"Could not locate {comp}.{key} = {current} in source")
-            text = text[:start] + block + text[end:]
-            applied.append({"component": comp, "parameter": key, "before": old, "after": float(value)})
-        file.write_text(text, encoding="utf-8")
+                raise ValueError(f"Could not locate {comp}.{key} = {current} in {name_}")
+            texts[name_] = text[:start] + block + text[end:]
+            applied.append({"file": name_, "component": comp, "parameter": key, "before": old, "after": float(value),
+                            "bounds": list(bounds) if bounds else None})
+        # Written only after every change passed its checks (all or nothing).
+        for name_, text in texts.items():
+            safe_file(self.directory(identity), name_).write_text(text, encoding="utf-8")
         workspace = self.snapshot(self.store.get(identity, "model"), "AI proposal", reason)
         return {"workspace": workspace, "revision": workspace["data"]["head"], "applied": applied, "file": name}
+
+    def revisions(self, identity):
+        """All revisions of a model workspace, newest first (the last one is the initial baseline copy)."""
+        self.store.get(identity, "model")
+        rows = [r for r in self.store.list("revision", identity, 2000) if r["data"].get("workspace") == identity]
+        return sorted(rows, key=lambda r: r["created"], reverse=True)
 
     def accept(self, identity, revision_id):
         revision = self.store.get(revision_id, "revision")

@@ -35,28 +35,48 @@ def check_parameter_changes(changes, sources):
     Structural only: the component exists and the parameter is a numeric literal. Engineering correctness is not
     established here; that requires human review, OpenModelica validation and, where relevant, simulation."""
     from kkh.engineering.modelica_inspect import parse_modifiers
-    text = "\n".join(entry.get("source", "") for entry in sources if str(entry.get("path", "")).endswith(".mo"))
+    from .models import declared_bounds
+    mo = [(str(e["path"]), e.get("source", "")) for e in sources if str(e.get("path", "")).endswith(".mo")]
     out = []
     for change in changes or []:
-        comp, key = str(change.get("component", "")), str(change.get("parameter", ""))
-        match = re.search(r"(?<![\w.])" + re.escape(comp) + r"\s*\(", text) if comp else None
-        current = None
-        if match:
-            depth, end = 0, len(text)
-            for i in range(match.end() - 1, len(text)):
-                depth += {"(": 1, ")": -1}.get(text[i], 0)
-                if depth == 0:
-                    end = i
-                    break
-            current = parse_modifiers(text[match.end():end]).get(key)
+        comp, key, value = str(change.get("component", "")), str(change.get("parameter", "")), change.get("value")
+        file = type_name = current = bounds = None
+        for path, text in mo:
+            match = re.search(r"([A-Z][\w.]*)\s+" + re.escape(comp) + r"\s*\(", text) if comp else None
+            if match:
+                depth, end = 0, len(text)
+                for i in range(match.end() - 1, len(text)):
+                    depth += {"(": 1, ")": -1}.get(text[i], 0)
+                    if depth == 0:
+                        end = i
+                        break
+                type_name, current = match.group(1), parse_modifiers(text[match.end():end]).get(key)
+                file = path.split("ALOHA2/", 1)[-1]
+                break
         try:
             numeric = current is not None and isinstance(float(current), float)
         except ValueError:
             numeric = False
-        valid = bool(match) and numeric and isinstance(change.get("value"), (int, float)) and not isinstance(change.get("value"), bool)
-        out.append({**change, "current": current, "structurally_valid": valid,
-                    "check": "component and numeric literal parameter found in the supplied source" if valid
-                    else "not found as a numeric literal parameter in the supplied source"})
+        number = isinstance(value, (int, float)) and not isinstance(value, bool)
+        if file:
+            bounds = declared_bounds(BASELINE, type_name, key)
+        if not file:
+            reason = (f"'{comp}' is not a component instance in the supplied Modelica sources"
+                      + (" (it looks like a class name; use the instance name, e.g. j_shoulder or shoulder)" if "." in comp else ""))
+        elif current is None:
+            reason = f"{comp} ({type_name}) has no parameter '{key}' set in {file}"
+        elif not numeric:
+            reason = f"{comp}.{key} = {current} is not a numeric literal; edit it in source"
+        elif not number:
+            reason = "proposed value is not a number"
+        elif bounds and not bounds[0] <= value <= bounds[1]:
+            reason = f"{value} is outside the bounds declared in Modelica [{bounds[0]:g}, {bounds[1]:g}]"
+        else:
+            reason = ""
+        out.append({**change, "file": file, "type": type_name, "current": current,
+                    "bounds": list(bounds) if bounds else None, "structurally_valid": not reason,
+                    "check": reason or ("component instance and numeric parameter found in " + file
+                                        + (f"; within declared bounds [{bounds[0]:g}, {bounds[1]:g}]" if bounds else "; no bounds declared"))})
     return out
 
 
@@ -78,6 +98,10 @@ def resolve_focus(question: str, context: dict) -> tuple[dict, dict]:
     if len(robots) == 1 and robots[0] != context.get("robot"):
         resolved["robot"] = robots[0]
         note["robot"] = {"from": "question", "value": robots[0], "ui_selection": context.get("robot")}
+        arm_file = "Arms/" + C.ARM_CLASS[robots[0]] + ".mo"
+        if str(context.get("file", "")).startswith("Arms/") and context.get("file") != arm_file:
+            resolved["file"] = arm_file  # the open arm class follows the robot named in the question
+            note["file"] = {"from": "question", "value": arm_file, "ui_selection": context.get("file")}
     else:
         note["robot"] = {"from": "ui_selection" if len(robots) != 1 else "question+ui", "value": resolved.get("robot")}
     if len(joints) == 1 and joints[0] != str(context.get("selected", "")).replace("j_", ""):
@@ -104,11 +128,17 @@ def base_context(context, store):
         directory = BASELINE
     from .models import safe_file
     paths.append(safe_file(directory,context.get("file","Arms/AlohaVX300s.mo")))
+    if model == "aloha_vx300s":
+        # Follower servo parameters (assumed values) drive the dynamic follower: both sides receive them.
+        settings_file = directory / "Control/FollowerServoSettings.mo"
+        paths.append(settings_file if settings_file.exists() else BASELINE / "Control/FollowerServoSettings.mo")
     for path in paths:
         text = path.read_text(encoding="utf-8")
         # Bounded, equal base context keeps the selected evidence inside the model's context window.
         selected=str(context.get("selected","elbow")).replace("j_", "")
-        if path.suffix==".urdf":
+        if path.name=="FollowerServoSettings.mo":
+            start, excerpt = 0, text.split("  annotation (")[0]
+        elif path.suffix==".urdf":
             match=re.search(r'<joint\b[^>]*\bname="(?:[^"/]*/)?'+re.escape(selected)+r'"[^>]*>.*?</joint>',text,re.S)
             at=match.start() if match else 0
             excerpt=match[0] if match else text[:3500]
@@ -122,9 +152,12 @@ def base_context(context, store):
     for field,kind in [("trajectory","trajectory"),("run","simulation")]:
         if context.get(field):
             record=store.get(context[field],kind)
-            summary={k:v for k,v in record["data"].items() if k not in {"q","qd","qdd","gripper","time","results"}}
+            summary={k:v for k,v in record["data"].items() if k not in {"q","qd","qdd","gripper","time","results","runs","baseline_hashes"}}
             if kind == "simulation":
                 summary["metrics"]={k:v["metrics"] for k,v in record["data"].get("results",{}).items()}
+                summary["servo_settings_per_run"]={k:(v.get("config") or {}).get("servo") for k,v in record["data"].get("results",{}).items()}
+                summary["runs"]=[{k:r.get(k) for k in ("name","label","revision")} for r in record["data"].get("runs",[])]
+                summary["metric_order"]="joint arrays are ordered waist, shoulder, elbow, forearm_roll, wrist_angle, wrist_rotate"
             sources.append({"record":record["id"],"data":summary})
             trace.append({"tool":"read_saved_"+kind,"record":record["id"]})
     return json.dumps({"context":context,"sources":sources}),trace,context

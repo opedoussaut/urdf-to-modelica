@@ -135,32 +135,45 @@ def smooth(identity:str,window:int=9):
 
 
 class Control(BaseModel):
-    kp:float=Field(default=80,ge=1,le=500)
-    kd:float=Field(default=8,ge=0,le=80)
-    lag:float=Field(default=.03,ge=.005,le=.3)
     model:str|None=None
+    candidate_revision:str|None=None
+    reference_revision:str|None=None
+    focus:str="shoulder"
 
 
 @router.post("/trajectory/{identity}/simulate")
 def dynamics(identity:str,body:Control,axes:int=6):
+    """Simulate the recorded reference on the model's reference revision and (if different) its candidate revision.
+
+    Servo gains/lag/feed-forward are read from each revision's Control/FollowerServoSettings.mo. Defaults:
+    reference = accepted revision, else the model's initial revision; candidate = current head."""
     old=guard(lambda:store.get(identity,"trajectory"))
     if axes not in {1,6}: raise HTTPException(422,"Use 1 or 6 dynamic axes")
     from .models import BASELINE
-    source_package=BASELINE
-    revision_id=None
+    from .robotics import JOINTS
+    if body.focus not in JOINTS[:6]: raise HTTPException(422,"Focus must be one of the six arm joints")
+    runs=[{"name":"reference","package":BASELINE,"revision":None,"label":"generated baseline"}]
     if body.model:
         workspace=guard(lambda:store.get(body.model,"model"))
         if guard(lambda:models.changes(body.model))["changes"]:raise HTTPException(409,"Import or reject external model changes first")
-        revision_id=workspace["data"]["head"]
-        revision=store.get(revision_id,"revision")
-        source_package=models.revision_dir(revision)
-    options=body.model_dump(exclude={"model"})
-    settings=store.create("controller","Illustrative follower configuration",{"options":options,"model_revision":revision_id})
+        revisions=guard(lambda:models.revisions(body.model))
+        reference=body.reference_revision or workspace["data"].get("accepted") or revisions[-1]["id"]
+        candidate=body.candidate_revision or workspace["data"]["head"]
+        def described(rid,name):
+            rev=guard(lambda:store.get(rid,"revision"))
+            if rev["data"]["workspace"]!=body.model:raise HTTPException(422,"Revision belongs to another model")
+            return {"name":name,"package":models.revision_dir(rev),"revision":rid,
+                    "label":f"{rev['data']['status']} · {rev['name'][:60]}","status":rev["data"]["status"]}
+        runs=[described(reference,"reference")]
+        if candidate!=reference:runs.append(described(candidate,"candidate"))
     def run():
         from .dynamics import compare
-        result=compare(old["data"],axes,source_package,options)
-        return store.create("simulation",old["name"]+f" · {axes} dynamic axes",{**result,"trajectory":identity,"model_revision":revision_id,"controller_revision":settings["id"]})
-    return job("Follower control comparison",run)
+        result=compare(old["data"],axes,runs,body.focus)
+        labels=" vs ".join(r["label"].split(" · ")[0] for r in runs)
+        return store.create("simulation",old["name"]+f" · {body.focus} · {labels}",
+                            {**result,"trajectory":identity,"model":body.model,
+                             "model_revision":runs[-1]["revision"],"reference_revision":runs[0]["revision"]})
+    return job("Follower revision comparison",run)
 
 
 @router.get("/conversation/{identity}")
@@ -257,7 +270,7 @@ def propose(identity:str,body:Proposal):
     the revision must be reviewed, validated by OpenModelica and explicitly accepted in the Modelica editor."""
     msg=guard(lambda:store.get(body.message,"message"))
     changes=[c for i,c in enumerate(msg["data"].get("parameter_changes") or []) if not body.indices or i in body.indices]
-    valid=[{k:c[k] for k in ("component","parameter","value")} for c in changes if c.get("structurally_valid")]
+    valid=[{k:c.get(k) for k in ("component","parameter","value","file")} for c in changes if c.get("structurally_valid")]
     if not valid:raise HTTPException(422,"The answer contains no structurally valid parameter change")
     path=(msg["data"].get("context") or {}).get("file","Arms/AlohaVX300s.mo")
     reason=(f"AI proposal from copilot ({msg['data'].get('mode')} ontology, {msg['data'].get('settings',{}).get('model')}, "

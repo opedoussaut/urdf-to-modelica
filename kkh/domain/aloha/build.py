@@ -145,6 +145,50 @@ def _arm_mapping(arm: dict, cm, prefix: str, base_index: int) -> dict:
     }
 
 
+# Follower servo parameters used by the dynamic (torque-driven) follower experiments of the studio.
+# They are ASSUMED illustrative values (no identified hardware data exists); bounds are declared in Modelica so that
+# editors and AI proposals can be checked against them.
+SERVO_DEFAULTS = {"kp": 40.0, "kd": 4.0, "actuatorTime": 0.03, "feedforward": 0.0}
+SERVO_BOUNDS = {"kp": (1, 500), "kd": (0, 80), "actuatorTime": (0.005, 0.3), "feedforward": (0, 1)}
+SERVO_JOINTS = ["waist", "shoulder", "elbow", "forearm_roll", "wrist_angle", "wrist_rotate"]
+
+
+def control_package() -> dict[str, str]:
+    files = {}
+    files["Control/package.mo"] = f'''within {PKG};
+package Control "Follower servo settings for dynamic follower experiments (assumed values, not hardware-identified)"
+  extends Modelica.Icons.Package;
+end Control;
+'''
+    files["Control/package.order"] = "ServoGains\nFollowerServoSettings\n"
+    b = SERVO_BOUNDS
+    files["Control/ServoGains.mo"] = f'''within {PKG}.Control;
+record ServoGains "Joint servo parameters of the follower (assumed, illustrative; not identified on hardware)"
+  extends Modelica.Icons.Record;
+  parameter Real kp(unit = "N.m/rad", min = {b["kp"][0]}, max = {b["kp"][1]}) = {SERVO_DEFAULTS["kp"]} "Proportional position gain";
+  parameter Real kd(unit = "N.m.s/rad", min = {b["kd"][0]}, max = {b["kd"][1]}) = {SERVO_DEFAULTS["kd"]} "Derivative (velocity) gain";
+  parameter Modelica.Units.SI.Time actuatorTime(min = {b["actuatorTime"][0]}, max = {b["actuatorTime"][1]}) = {SERVO_DEFAULTS["actuatorTime"]} "First-order torque lag of the actuator";
+  parameter Real feedforward(unit = "1", min = {b["feedforward"][0]}, max = {b["feedforward"][1]}) = {SERVO_DEFAULTS["feedforward"]} "Inverse-dynamics feed-forward gain (0 off, 1 full)";
+end ServoGains;
+'''
+    servo = {"aloha_vx300s": C.ACTUATORS["aloha_vx300s"]}
+    decl = []
+    for j in SERVO_JOINTS:
+        models = "+".join(servo["aloha_vx300s"][j])
+        ids = ",".join(str(i) for i in C.SERVO_IDS[j])
+        args = ", ".join(f"{k} = {v}" for k, v in SERVO_DEFAULTS.items())
+        decl.append(f'  parameter {PKG}.Control.ServoGains {j}({args}) "Follower servo for URDF joint {j} ({models}, ID {ids})";')
+    files["Control/FollowerServoSettings.mo"] = f'''within {PKG}.Control;
+model FollowerServoSettings "Servo settings of the follower arm, read by the dynamic follower experiment"
+{chr(10).join(decl)}
+  annotation (Documentation(info="<html><p>One <code>ServoGains</code> instance per torque-driven follower joint.
+Values are assumptions for illustration (no identified motor, transmission, friction or latency data is public);
+edit them here, in the Modelica editor or OMEdit. The studio reads them from the revision being simulated.</p></html>"));
+end FollowerServoSettings;
+'''
+    return files
+
+
 def build(out_root: Path | None = None) -> dict:
     out_root = out_root or OUT_ROOT
     pkg_dir = out_root / PKG
@@ -190,7 +234,8 @@ Masses and inertias are URDF values; URDF placeholder inertials are massless.</p
 <p>Run <code>{PKG}.Experiments.RightArmReach</code>. Meshes: Interbotix, BSD-3-Clause (Resources/Licenses).</p></html>"));
 end {PKG};
 '''
-    files["package.order"] = f"Components\nBlocks\nArms\n{ASSEMBLY}\nExperiments\n"
+    files.update(control_package())
+    files["package.order"] = f"Components\nBlocks\nArms\nControl\n{ASSEMBLY}\nExperiments\n"
     for rel, text in files.items():
         _write(pkg_dir / rel, text)
     for model in C.ARM_CLASS:

@@ -200,7 +200,8 @@ def test_ai_parameter_proposal_becomes_unaccepted_revision(tmp_path):
     head = w['data']['head']
     out = models.propose_parameters(w['id'], 'Arms/AlohaVX300s.mo',
                                     [{'component': 'j_shoulder', 'parameter': 'q_max', 'value': 1.2}], 'test proposal')
-    assert out['applied'] == [{'component': 'j_shoulder', 'parameter': 'q_max', 'before': 1.256637061436, 'after': 1.2}]
+    assert out['applied'] == [{'file': 'Arms/AlohaVX300s.mo', 'component': 'j_shoulder', 'parameter': 'q_max',
+                               'before': 1.256637061436, 'after': 1.2, 'bounds': None}]
     rev = models.store.get(out['revision'], 'revision')
     assert rev['data']['status'] == 'AI proposal' and rev['data']['parent'] == head
     text = (models.directory(w['id']) / 'Arms/AlohaVX300s.mo').read_text()
@@ -212,3 +213,26 @@ def test_ai_parameter_proposal_becomes_unaccepted_revision(tmp_path):
         models.propose_parameters(w['id'], 'Arms/AlohaVX300s.mo',
                                   [{'component': 'j_shoulder', 'parameter': 'n', 'value': 1.0}], 'vector rejected')
     assert manifest(baseline) == before                                              # baseline untouched
+
+
+def test_servo_proposal_bounds_and_control_injection(tmp_path):
+    import shutil
+    from kkh.studio.models import BASELINE
+    baseline = tmp_path / 'baseline'
+    shutil.copytree(BASELINE, baseline, ignore=shutil.ignore_patterns('*.stl', 'Control'))   # model predating Control
+    order = (baseline / 'package.order').read_text().split()
+    (baseline / 'package.order').write_text('\n'.join(x for x in order if x != 'Control') + '\n')
+    models = Models(Store(tmp_path / 'state.sqlite'), tmp_path / 'models', baseline)
+    w = models.create()
+    with pytest.raises(ValueError, match=r'outside the bounds declared in Modelica \[1, 500\]'):
+        models.propose_parameters(w['id'], 'Arms/AlohaVX300s.mo',
+                                  [{'file': 'Control/FollowerServoSettings.mo', 'component': 'shoulder', 'parameter': 'kp', 'value': 900.0}], 'too high')
+    revs = models.revisions(w['id'])
+    assert revs[0]['name'].startswith('Added Control package')           # injected as its own recorded revision
+    out = models.propose_parameters(w['id'], 'Arms/AlohaVX300s.mo',
+                                    [{'file': 'Control/FollowerServoSettings.mo', 'component': 'shoulder', 'parameter': 'kp', 'value': 120.0},
+                                     {'component': 'j_shoulder', 'parameter': 'q_max', 'value': 1.5}], 'two files')
+    assert {a['file'] for a in out['applied']} == {'Control/FollowerServoSettings.mo', 'Arms/AlohaVX300s.mo'}
+    assert out['applied'][0]['bounds'] == [1.0, 500.0]
+    from kkh.studio.dynamics import read_servo
+    assert read_servo(models.directory(w['id']))['shoulder']['kp'] == 120.0
