@@ -1,4 +1,4 @@
-within ALOHA.Components;
+within ALOHA2.Components;
 model PrismaticJoint "URDF prismatic joint with prescribed motion (s, v, a)"
   import SI = Modelica.Units.SI;
   extends Modelica.Mechanics.MultiBody.Interfaces.PartialTwoFrames;

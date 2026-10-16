@@ -1,4 +1,4 @@
-within ALOHA;
+within ALOHA2;
 package Components "Generic link and joint components generated from URDF semantics"
   extends Modelica.Icons.Package;
   annotation (Documentation(info="<html><p>Reusable building blocks emitted by the KKH URDF-to-Modelica generator.

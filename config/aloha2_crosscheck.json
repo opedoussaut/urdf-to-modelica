@@ -1,0 +1,138 @@
+{
+ "mjcf": "mujoco_menagerie/aloha/aloha.xml@62ab00f",
+ "urdf": "data/urdf/aloha_vx300s.urdf",
+ "engine": "mujoco 3.16.0",
+ "n_configs": 50,
+ "arms": {
+  "follower_left": {
+   "mount_xyz": [
+    -0.469,
+    -0.019,
+    0.02
+   ],
+   "max_position_diff_m": 3.3766115072321297e-16,
+   "max_rotation_diff": 1.4335870677143304e-15
+  },
+  "follower_right": {
+   "mount_xyz": [
+    0.469,
+    -0.019,
+    0.02
+   ],
+   "max_position_diff_m": 3.6506759942727966e-16,
+   "max_rotation_diff": 1.5100665727558131e-15
+  }
+ },
+ "joints": {
+  "waist": {
+   "axis_equal": true,
+   "range_mjcf": [
+    -3.14158,
+    3.14158
+   ],
+   "range_urdf": [
+    -3.14158,
+    3.14158
+   ],
+   "range_equal": true
+  },
+  "shoulder": {
+   "axis_equal": true,
+   "range_mjcf": [
+    -1.85005,
+    1.25664
+   ],
+   "range_urdf": [
+    -1.85005,
+    1.25664
+   ],
+   "range_equal": true
+  },
+  "elbow": {
+   "axis_equal": true,
+   "range_mjcf": [
+    -1.76278,
+    1.6057
+   ],
+   "range_urdf": [
+    -1.76278,
+    1.6057
+   ],
+   "range_equal": true
+  },
+  "forearm_roll": {
+   "axis_equal": true,
+   "range_mjcf": [
+    -3.14158,
+    3.14158
+   ],
+   "range_urdf": [
+    -3.14158,
+    3.14158
+   ],
+   "range_equal": true
+  },
+  "wrist_angle": {
+   "axis_equal": true,
+   "range_mjcf": [
+    -1.8675,
+    2.23402
+   ],
+   "range_urdf": [
+    -1.8675,
+    2.23402
+   ],
+   "range_equal": true
+  },
+  "wrist_rotate": {
+   "axis_equal": true,
+   "range_mjcf": [
+    -3.14158,
+    3.14158
+   ],
+   "range_urdf": [
+    -3.14158,
+    3.14158
+   ],
+   "range_equal": true
+  }
+ },
+ "gripper": {
+  "same_model": false,
+  "mjcf": {
+   "finger_joints": [
+    "left_finger",
+    "right_finger"
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "range_m": [
+    0.0,
+    0.041
+   ],
+   "gripper_prop_joint": false,
+   "note": "MJCF README: default ViperX gripper replaced by the updated ALOHA 2 design; finger coupling via equality constraint."
+  },
+  "urdf": {
+   "finger_joints": [
+    "left_finger",
+    "right_finger (mimic -1)"
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "range_m": [
+    0.021,
+    0.057
+   ],
+   "gripper_prop_joint": true
+  }
+ },
+ "verdict": "Arm kinematics (6 joints, 6 links) of the vendor URDF are identical to the official ALOHA 2 MJCF within numerical precision; joint axes and ranges are identical. Gripper parameterisation differs between the two sources and is reported, not reconciled.",
+ "pass": true
+}

@@ -1,52 +1,54 @@
 {
  "generator": "kkh.domain.aloha.build",
- "generator_version": "1.0.0",
- "generated_at": "2026-10-16T05:38:30+00:00",
- "repo_commit": null,
+ "generator_version": "1.1.0",
+ "generated_at": "2026-10-16T05:50:09+00:00",
+ "repo_commit": "65e886ddbf2048370b264c5819870bf671548638",
  "msl_version": "4.1.0",
  "inputs": {
   "data/urdf/aloha_vx300s.urdf": "da63d4cd3b056f79b7a136ec1fafca58c86248b0ecd9b9502bf825b71102995e",
   "data/urdf/aloha_wx250s.urdf": "a2367051deda1c7f870c5ed292c204b1cfc1a09eaadee03a858fcfedda874ebe"
  },
  "files": {
-  "AlohaStationary.mo": "752bbeb448357d68bd76507d0d6142c00c0a5135d06bb78a5b3708468bf555e9",
-  "Arms/AlohaVX300s.mo": "a1a4a5f405d1e511719322a7ce61d64beccc06604b3c76bfc4e5f7e704fb8dea",
-  "Arms/AlohaWX250s.mo": "0ef345454b58a319c1340000b29abadb04fc57bce59f0db29a83e55ef140ba24",
-  "Arms/package.mo": "4f25c97491c3ea1732eefef6bbec3e6d67abc9572901cbde14b31263f414ff40",
+  "Aloha2.mo": "0426bcb3553f922aa53630b491ad97181b98db4fd7bddfb169fbd4c2c7ec3974",
+  "Arms/AlohaVX300s.mo": "dfdac030a05b71db1a64f0e348631a15e9e295d83ccbb37aa18585c652a3ea3f",
+  "Arms/AlohaWX250s.mo": "2748200d71f0b478f61b3361e423b4e6047a4dca3301d261d69fcb8b21564c9e",
+  "Arms/package.mo": "9887186a91bce23a8c55c4b3c7bc5116001553d3851205dd70191870377f49d8",
   "Arms/package.order": "22c82d8c735a420db90ced212cdbe6bd8dbbae35e89ae92464e1b9e6f1fe0403",
-  "Blocks/WaypointTrajectory.mo": "4bbaf1fe15268079ee56ef5a4e7de6ffc06fdf79f65d3fff1594fdd6bd6fab5f",
-  "Blocks/cosineBlend.mo": "37f9c31ca7b6b97aa15aaad2e99f70b5dfe5835bc4d9163084d687efd111302c",
-  "Blocks/package.mo": "dd55a896cf32c54cd37eeec4a18171c918ffc82da30b0f1b043e0326a31e1007",
+  "Blocks/WaypointTrajectory.mo": "d2ad7c72aa59d4039215f7ed582bf2516bf0f04e54af1ee840a9141ca382ab03",
+  "Blocks/cosineBlend.mo": "ccf944863cfc795943c774432411eb86a853ce72d4a25968e28a14b1f594666d",
+  "Blocks/package.mo": "f807c3111b1c57c3af2934516c79a97ad6ed904d976c7b172867d15757d8138d",
   "Blocks/package.order": "85c55ab9c0269a27fa9ed17de5df730b1bb124f284b7c403c1ff7459c13a0eb1",
-  "Components/FixedJoint.mo": "a2cba10549430c5630c1c04131dfc19bbb7d40f88681a27263d4c9ded2a832dc",
-  "Components/PrismaticJoint.mo": "ea615b659fe057eebfc722a6caa8cd2d7d60ff42dce2e5df5de273b3878b804e",
-  "Components/RevoluteJoint.mo": "f5cd13c12670e29f2c5f43f9041df7622ec55c8bcb5f890752870aaa11de840e",
-  "Components/RigidLink.mo": "ed33f83315184a5f42e3f365d22d225f9f150d63361dc846025de3237c05c301",
-  "Components/package.mo": "5d0652e699aa199efdc44ff36042fca43e5626af9ba7741f0ca45680cc258a0b",
+  "Components/FixedJoint.mo": "3ed1b5bbf20928bedb17691fef330bb10e094b83e732418b7b6c2942bf147820",
+  "Components/PrismaticJoint.mo": "6da4fd41633a82f2fdd5ea4674244bb4f9e3b7539c3e74abd47d42eaa0bad6fc",
+  "Components/RevoluteJoint.mo": "95755038396598ef5aebffa9ddd5929fd72ce1b8f6f6c16bf4b23e02adab2414",
+  "Components/RigidLink.mo": "0887669579f372fde49bc5e3e9da5555ef4ab34c2011c689bc7b4e6ff6d50b7b",
+  "Components/package.mo": "29a227d55c2f357d5aaa19636c5ba08329dbafaad6f521bd9530195e7d0f852f",
   "Components/package.order": "c2d80b861e4ce83f9287823c02dde507cf717cc639509574f792b5f54a688c37",
-  "Experiments/FollowerRightReach.mo": "45e91462644b2fc27a1d874bc72087ad3cc2eb252b0a3bd84004aff2ce9285a1",
-  "Experiments/HoldStartPose.mo": "994acfbd565c3d61f8dea37956b1bfda14be59b9842e14486623d3e151a5b321",
-  "Experiments/TeleopMirror.mo": "d07ed76e9796a22fde67e4de66e74f229122524e27df2e29099ce356d091a6be",
-  "Experiments/package.mo": "57e1e6096d5f9b23adad887eda168f1f7ab02736e5e16475796180bc31467f23",
-  "Experiments/package.order": "1aa91fffd8e45e7cb9155fb852965fd7b7ae5d06a8a1f3514df671dfdc91a6f1",
-  "package.mo": "7591975a816a2ebaaffb3c317eac6f7c6982cf9a91bf40795e38828c8bab596d",
-  "package.order": "94e73d3d3fd0a418727e48e564dbb3411bf522d47e47a2da2d0a2daad775b1d9"
+  "Experiments/HoldStartPose.mo": "bd89740d8b8ee54015a32c2160910c045d9972a745ed61d4b45a7831b7274f6a",
+  "Experiments/LeaderArmCheck.mo": "627805c51909eab89eb8733c91d1c6560ed605c46fa12f20185796db2bfd60ed",
+  "Experiments/RightArmReach.mo": "f164551646f54c76667a5bf7b9f18ddc5b6adac06896e78470c48090280af9d5",
+  "Experiments/package.mo": "50f1353b294266c1115d904e6a316bec4db39ee90007fd1de8ca2ff4542ae177",
+  "Experiments/package.order": "83f0693111de9cf40009acf2deebc58551a3ece32b6541e2e8b3e2afc92b2bc2",
+  "package.mo": "6d3c0fc85d77b175f3aeee2096457bbbccbec8c517311560c78fa1c1c05ac2d7",
+  "package.order": "8dbd96a10d86920ae7c5d03d1614a427651bab19dcaf0fceff6cd8557a99952c"
  },
  "totals": {
-  "links": 59,
-  "joints": 58,
-  "driven": 32,
-  "mimic": 4
+  "links": 29,
+  "joints": 28,
+  "driven": 16,
+  "mimic": 2
  },
  "scenarios": {
   "HoldStartPose": {
+   "target": "assembly",
    "t": [
     0.0,
     2.0
    ],
    "stop_time": 2.0
   },
-  "FollowerRightReach": {
+  "RightArmReach": {
+   "target": "assembly",
    "t": [
     0.0,
     1.0,
@@ -58,23 +60,17 @@
    ],
    "stop_time": 9.0
   },
-  "TeleopMirror": {
+  "LeaderArmCheck": {
+   "target": "leader",
    "t": [
     0.0,
-    1.0,
+    0.5,
+    2.5,
     3.5,
-    4.5,
-    5.5,
-    8.0,
-    9.0
+    5.5
    ],
-   "stop_time": 9.0
+   "stop_time": 6.0
   }
- },
- "scenario_limit_check": {
-  "HoldStartPose": [],
-  "FollowerRightReach": [],
-  "TeleopMirror": []
  },
  "placeholders": {
   "aloha_vx300s": [

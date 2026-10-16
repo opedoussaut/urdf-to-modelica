@@ -25,8 +25,9 @@ from kkh.engineering.validation import compare_frames
 
 ROOT = Path(__file__).resolve().parents[2]
 UMO = ROOT / "third_party" / "urdfmodelica" / "URDFModelica"
-URDF = ROOT / "data" / "urdf" / "aloha_stationary.urdf"
-PREFIX = "aloha_stationaryRun.aloha_stationary"
+URDF = ROOT / "data" / "urdf" / "aloha2_bimanual.urdf"
+NAME = "aloha2_bimanual"
+PREFIX = f"{NAME}Run.{NAME}"
 
 
 def _cls(name: str) -> str:
@@ -56,13 +57,13 @@ def run(out_dir: Path | None = None, stop_time: float = 3.0, log=print) -> dict:
     if p.returncode != 0:
         metrics["converter_error"] = p.stderr[-2000:]
         return _finish(metrics, out_dir, t0)
-    gen = ws / "URDFModelica" / "Examples" / "Aloha_stationary"
+    gen = ws / "URDFModelica" / "Examples" / NAME.capitalize()
     robot = load_urdf(URDF)
     link_cls = {f.stem for f in (gen / "Links").glob("*.mo") if not f.stem.endswith("Params") and f.stem != "package"}
     joint_cls = {f.stem for f in (gen / "Joints").glob("*.mo") if not f.stem.endswith("Params") and f.stem != "package"}
     metrics["link_coverage"] = round(sum(_cls(l) in link_cls or _cls(l) + "0" in link_cls for l in robot.links) / len(robot.links), 4)
     metrics["joint_coverage"] = round(sum(_cls(j) in joint_cls for j in robot.joints) / len(robot.joints), 4)
-    asm = (gen / "Aloha_stationary.mo").read_text()
+    asm = (gen / f"{NAME.capitalize()}.mo").read_text()
     metrics["connections"] = asm.count("connect(")
     metrics["mimic_enforced"] = "mimic" in asm.lower() and "multiplier" in asm.lower()
     placeholder = [l for l, v in robot.links.items() if v.is_placeholder]
@@ -71,10 +72,10 @@ def run(out_dir: Path | None = None, stop_time: float = 3.0, log=print) -> dict:
     omc = OMCService(out_dir / "omc", msl_version="4.0.0")
     try:
         lr = omc.load_package(ws / "URDFModelica" / "package.mo")
-        model = "URDFModelica.Examples.Aloha_stationary.Aloha_stationaryTest"
+        model = f"URDFModelica.Examples.{NAME.capitalize()}.{NAME.capitalize()}Test"
         chk = omc.check(model)
         metrics.update(load_ok=lr.ok, check_ok=chk.ok, equations=chk.data.get("equations"))
-        flt = (r"time|aloha_stationaryRun\.aloha_stationary\.[A-Za-z0-9_]+\.(revolute\.phi|prismatic\.s|frame_a\.r_0\[.*|frame_a\.R\.T\[.*)")
+        flt = (rf"time|{NAME}Run\.{NAME}\.[A-Za-z0-9_]+\.(revolute\.phi|prismatic\.s|frame_a\.r_0\[.*|frame_a\.R\.T\[.*)")
         sim = omc.simulate(model, stop_time=stop_time, intervals=int(stop_time / 0.02), variable_filter=flt)
         metrics.update(simulate_ok=sim.ok, compile_seconds=sim.data.get("timeTotal"),
                        limit_assertions=sim.data.get("assert_warnings"))

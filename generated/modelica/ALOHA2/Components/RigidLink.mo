@@ -1,4 +1,4 @@
-within ALOHA.Components;
+within ALOHA2.Components;
 model RigidLink "URDF link: rigid body with optional source inertia and mesh visualisation"
   import SI = Modelica.Units.SI;
   Modelica.Mechanics.MultiBody.Interfaces.Frame_a frame_a "URDF link frame"

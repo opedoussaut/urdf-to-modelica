@@ -1,4 +1,4 @@
-within ALOHA.Components;
+within ALOHA2.Components;
 model RevoluteJoint "URDF revolute/continuous joint with prescribed motion (q, qd, qdd)"
   import SI = Modelica.Units.SI;
   extends Modelica.Mechanics.MultiBody.Interfaces.PartialTwoFrames;

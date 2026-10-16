@@ -12,3 +12,4 @@ xacro>=2.0
 urdf_parser_py>=0.0.4
 rospkg>=1.5
 pytest>=8.0
+mujoco>=3.1

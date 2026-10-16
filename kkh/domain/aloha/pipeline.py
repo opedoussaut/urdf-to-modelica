@@ -21,8 +21,8 @@ from kkh.engineering.urdf_model import load_urdf
 from kkh.engineering.validation import compare_frames, compare_trajectory
 
 from . import configuration as C
-from .build import PKG, build, variable_filter
-from .scenarios import scenarios
+from .build import ASSEMBLY, PKG, build, variable_filter
+from .scenarios import arms_for, scenarios
 
 RUNS = C.ROOT / "runs"
 REPORTS = C.ROOT / "reports"
@@ -47,7 +47,7 @@ def _quat(R: np.ndarray) -> list[float]:
 
 
 class Pipeline:
-    def __init__(self, experiment: str = "FollowerRightReach", log=print, run_dir: Path | None = None):
+    def __init__(self, experiment: str = "RightArmReach", log=print, run_dir: Path | None = None):
         self.experiment = experiment
         self.log = log
         self.run_id = dt.datetime.now().strftime("%Y%m%d-%H%M%S") + f"-{experiment}"
@@ -98,7 +98,7 @@ class Pipeline:
                 rep = C.arm_robot(m).validate_structure()
                 out[m] = {k: rep[k] for k in ("ok", "n_links", "n_joints", "joint_types", "n_actuated", "errors")}
                 out["ok"] &= rep["ok"]
-            full = load_urdf(C.URDF_DIR / "aloha_stationary.urdf").validate_structure()
+            full = load_urdf(C.ASSEMBLY_URDF).validate_structure()
             out["assembly"] = {k: full[k] for k in ("ok", "n_links", "n_joints", "joint_types", "n_actuated")}
             out["ok"] &= full["ok"]
             return out
@@ -106,17 +106,17 @@ class Pipeline:
 
         rec = self.step("generate_modelica", lambda: {"ok": True, **build()})
         R["generation"] = {"files": len(rec["files"]), "placeholders": rec["placeholders"],
-                           "package": str((C.ROOT / "generated/modelica/ALOHA").relative_to(C.ROOT))}
+                           "package": f"generated/modelica/{PKG}"}
 
         def comp():
             out = {"ok": True, "arms": {}}
             for m, cls in C.ARM_CLASS.items():
-                rep = completeness(C.arm_robot(m), C.ROOT / f"generated/modelica/ALOHA/Arms/{cls}.mo")
+                rep = completeness(C.arm_robot(m), C.ROOT / f"generated/modelica/{PKG}/Arms/{cls}.mo")
                 out["arms"][m] = rep
                 out["ok"] &= rep["complete"]
-            asm = (C.ROOT / "generated/modelica/ALOHA/AlohaStationary.mo").read_text()
+            asm = (C.ROOT / f"generated/modelica/{PKG}/{ASSEMBLY}.mo").read_text()
             n_inst = sum(asm.count(f"{PKG}.Arms.{c} ") for c in C.ARM_CLASS.values())
-            n_mount = asm.count("FixedTranslation mount_")
+            n_mount = asm.count("FixedRotation mount_")
             out["assembly"] = {"arm_instances": n_inst, "mounts": n_mount, "expected": len(C.ARMS)}
             out["ok"] &= n_inst == len(C.ARMS) == n_mount
             t = C.build_manifest()["totals"]
@@ -131,9 +131,9 @@ class Pipeline:
             R["tools"] = {"omc": omc.version(), "msl": omc.loaded_libraries()}
 
             def load_check():
-                lr = omc.load_package(C.ROOT / "generated/modelica/ALOHA/package.mo")
+                lr = omc.load_package(C.ROOT / f"generated/modelica/{PKG}/package.mo")
                 out = {"ok": lr.ok, "load": lr.ok, "checks": {}}
-                for m in [f"{PKG}.Arms.{c}" for c in C.ARM_CLASS.values()] + [f"{PKG}.AlohaStationary",
+                for m in [f"{PKG}.Arms.{c}" for c in C.ARM_CLASS.values()] + [f"{PKG}.{ASSEMBLY}",
                                                                                 f"{PKG}.Experiments.{self.experiment}"]:
                     r = omc.check(m)
                     out["checks"][m] = {"ok": r.ok, **r.data, "errors": r.errors[:5]}
@@ -145,7 +145,7 @@ class Pipeline:
 
             def sim():
                 r = omc.simulate(f"{PKG}.Experiments.{self.experiment}", stop_time=sc["stop_time"],
-                                 intervals=int(round(sc["stop_time"] / 0.02)), variable_filter=variable_filter())
+                                 intervals=int(round(sc["stop_time"] / 0.02)), variable_filter=variable_filter(sc))
                 out = r.to_dict()
                 out["messages"] = out["messages"][-4000:]
                 return out
@@ -153,25 +153,27 @@ class Pipeline:
             if not R["simulation"]["ok"]:
                 return
             res = MatResult(R["simulation"]["data"]["resultFile"])
-            mapping = json.loads((C.ROOT / "generated/modelica/aloha_mapping.json").read_text())
-            R["results"] = self.step("extract_results", lambda: self._extract(res, mapping, sc))
-            R["validation"] = self.step("kinematic_validation", lambda: self._validate(res, mapping, sc))
+            mapping = json.loads((C.ROOT / "generated/modelica/aloha2_mapping.json").read_text())
+            arms = mapping["arms"] if sc["target"] == "assembly" else [mapping["leader"]]
+            self.report["target"] = sc["target"]
+            R["results"] = self.step("extract_results", lambda: self._extract(res, arms, sc))
+            R["validation"] = self.step("kinematic_validation", lambda: self._validate(res, arms, sc))
         finally:
             omc.close()
 
     # ----------------------------------------------------------------------------------------
     def _jvars(self, j):
-        base = f"aloha.{j['modelica']}"
+        base = j["modelica"]
         local = j["urdf_local"]
         prismatic = local.endswith("finger")
         return (f"{base}.{'s' if prismatic else 'phi'}", f"{base}.{'v' if prismatic else 'w'}",
                 f"{base}.{'f' if prismatic else 'tau'}", "m" if prismatic else "rad")
 
-    def _extract(self, res: MatResult, mapping: dict, sc: dict) -> dict:
+    def _extract(self, res: MatResult, arms: list, sc: dict) -> dict:
         step = 2  # 0.04 s for playback
         t = res.time[::step]
         out = {"time": [round(float(x), 4) for x in t], "joints": {}, "links": {}, "end_effectors": {}}
-        for arm in mapping["arms"]:
+        for arm in arms:
             for j in arm["joints"]:
                 if j["driven_index"] is None and not j["mimic"]:
                     continue
@@ -205,33 +207,36 @@ class Pipeline:
         summary["n_moving_joints"] = len(summary["moving_joints"])
         return summary
 
-    def _validate(self, res: MatResult, mapping: dict, sc: dict) -> dict:
-        ref = load_urdf(C.URDF_DIR / "aloha_stationary.urdf")
+    def _validate(self, res: MatResult, arms: list, sc: dict) -> dict:
+        if sc["target"] == "assembly":
+            ref, key, ref_name = load_urdf(C.ASSEMBLY_URDF), "urdf", C.ASSEMBLY_URDF.name
+        else:
+            ref, key, ref_name = C.arm_robot(C.LEADER["model"]), "urdf_local", f"{C.LEADER['model']}.urdf"
         links, joints = [], []
-        for arm in mapping["arms"]:
+        for arm in arms:
             for l in arm["links"]:
-                links.append({"urdf": l["urdf"], "r_vars": l["result_vars"]["r_0"], "R_vars": l["result_vars"]["R"]})
+                links.append({"urdf": l[key], "r_vars": l["result_vars"]["r_0"], "R_vars": l["result_vars"]["R"]})
             for j in arm["joints"]:
                 if j["driven_index"] is not None:
-                    joints.append({"urdf": j["urdf"], "var": self._jvars(j)[0]})
+                    joints.append({"urdf": j[key], "var": self._jvars(j)[0]})
         fk = compare_frames(res, ref, links, joints)
         # Trajectory fidelity: simulated driven coordinates vs independent numpy evaluation of the waypoints
         Q = np.array(sc["Q"])
         traj_err = 0.0
-        for arm in mapping["arms"]:
+        for arm in arms:
             for j in arm["joints"]:
                 if j["driven_index"] is not None:
                     traj_err = max(traj_err, compare_trajectory(res, self._jvars(j)[0], sc["t"], Q[:, j["driven_index"] - 1]))
         # Mimic: right_finger == -left_finger
         mimic_err = 0.0
-        for arm in mapping["arms"]:
+        for arm in arms:
             m = arm["modelica_instance"]
-            mimic_err = max(mimic_err, float(np.max(np.abs(res.get(f"aloha.{m}.j_right_finger.s")
-                                                           + res.get(f"aloha.{m}.j_left_finger.s")))))
+            mimic_err = max(mimic_err, float(np.max(np.abs(res.get(f"{m}.j_right_finger.s")
+                                                           + res.get(f"{m}.j_left_finger.s")))))
         # Limits on simulated values
         viol = []
-        for arm in mapping["arms"]:
-            r = C.arm_robot(next(a["model"] for a in C.ARMS if a["id"] == arm["arm"]))
+        for arm in arms:
+            r = C.arm_robot(arm["model"])
             for j in arm["joints"]:
                 jt = r.joints[j["urdf_local"]]
                 if jt.type in ("revolute", "prismatic"):
@@ -241,11 +246,11 @@ class Pipeline:
         fk.pop("per_link")
         return {"ok": fk["pass"] and traj_err < 1e-9 and mimic_err < 1e-12 and not viol,
                 "forward_kinematics": fk, "trajectory_max_error": traj_err, "mimic_max_error": mimic_err,
-                "limit_violations": viol, "reference": "numpy URDF FK on data/urdf/aloha_stationary.urdf"}
+                "limit_violations": viol, "reference": f"independent numpy URDF FK on data/urdf/{ref_name}"}
 
 
 def main(argv):
-    exp = argv[0] if argv else "FollowerRightReach"
+    exp = argv[0] if argv else "RightArmReach"
     rep = Pipeline(exp).run()
     print(json.dumps({k: rep.get(k) for k in ("run_id", "success", "steps")}, indent=1))
     return 0 if rep["success"] else 1

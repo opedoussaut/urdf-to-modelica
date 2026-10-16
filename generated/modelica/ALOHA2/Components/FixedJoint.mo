@@ -1,4 +1,4 @@
-within ALOHA.Components;
+within ALOHA2.Components;
 model FixedJoint "URDF fixed joint: constant transform from parent to child link frame"
   import SI = Modelica.Units.SI;
   extends Modelica.Mechanics.MultiBody.Interfaces.PartialTwoFrames;

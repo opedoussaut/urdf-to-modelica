@@ -1,4 +1,4 @@
-within ALOHA.Blocks;
+within ALOHA2.Blocks;
 function cosineBlend "Position (order 0), velocity (1) or acceleration (2) of a cosine-blended waypoint path"
   extends Modelica.Icons.Function;
   input Real t "Time";

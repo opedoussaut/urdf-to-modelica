@@ -1,0 +1,262 @@
+{
+ "run_id": "20261016-074941-LeaderArmCheck",
+ "experiment": "LeaderArmCheck",
+ "workflow": "D-deterministic-kkh",
+ "started": "2026-10-16T07:49:41",
+ "configuration": {
+  "variant": "ALOHA 2 (bimanual follower robot)",
+  "totals": {
+   "links": 29,
+   "joints": 28,
+   "driven": 16,
+   "mimic": 2
+  },
+  "discrepancies": 6
+ },
+ "urdf_validation": {
+  "ok": true,
+  "aloha_vx300s": {
+   "ok": true,
+   "n_links": 14,
+   "n_joints": 13,
+   "joint_types": {
+    "revolute": 6,
+    "fixed": 4,
+    "continuous": 1,
+    "prismatic": 2
+   },
+   "n_actuated": 8,
+   "errors": []
+  },
+  "aloha_wx250s": {
+   "ok": true,
+   "n_links": 15,
+   "n_joints": 14,
+   "joint_types": {
+    "revolute": 6,
+    "fixed": 5,
+    "continuous": 1,
+    "prismatic": 2
+   },
+   "n_actuated": 8,
+   "errors": []
+  },
+  "assembly": {
+   "ok": true,
+   "n_links": 29,
+   "n_joints": 28,
+   "joint_types": {
+    "fixed": 10,
+    "revolute": 12,
+    "continuous": 2,
+    "prismatic": 4
+   },
+   "n_actuated": 16
+  }
+ },
+ "generation": {
+  "files": 22,
+  "placeholders": {
+   "aloha_vx300s": [
+    "ee_arm_link",
+    "fingers_link",
+    "ee_gripper_link"
+   ],
+   "aloha_wx250s": [
+    "ee_arm_link",
+    "fingers_link",
+    "ee_gripper_link"
+   ]
+  },
+  "package": "generated/modelica/ALOHA2"
+ },
+ "completeness": {
+  "ok": true,
+  "arms": {
+   "aloha_vx300s": {
+    "class": "AlohaVX300s",
+    "links": "14/14",
+    "link_coverage": 1.0,
+    "joints": "13/13",
+    "joint_coverage": 1.0,
+    "connection_coverage": 1.0,
+    "axis_correctness": 1.0,
+    "limit_coverage": 1.0,
+    "disconnected_links": [],
+    "issues": [],
+    "complete": true
+   },
+   "aloha_wx250s": {
+    "class": "AlohaWX250s",
+    "links": "15/15",
+    "link_coverage": 1.0,
+    "joints": "14/14",
+    "joint_coverage": 1.0,
+    "connection_coverage": 1.0,
+    "axis_correctness": 1.0,
+    "limit_coverage": 1.0,
+    "disconnected_links": [],
+    "issues": [],
+    "complete": true
+   }
+  },
+  "assembly": {
+   "arm_instances": 2,
+   "mounts": 2,
+   "expected": 2
+  },
+  "totals": {
+   "links_represented": 29,
+   "joints_represented": 28,
+   "links_urdf": 29,
+   "joints_urdf": 28
+  }
+ },
+ "tools": {
+  "omc": "OpenModelica v1.27.1 (64-bit)",
+  "msl": {
+   "Modelica": "4.1.0"
+  }
+ },
+ "check": {
+  "ok": true,
+  "load": true,
+  "checks": {
+   "ALOHA2.Arms.AlohaVX300s": {
+    "ok": true,
+    "equations": 4365,
+    "variables": 4365,
+    "errors": []
+   },
+   "ALOHA2.Arms.AlohaWX250s": {
+    "ok": true,
+    "equations": 4533,
+    "variables": 4533,
+    "errors": []
+   },
+   "ALOHA2.Aloha2": {
+    "ok": true,
+    "equations": 8194,
+    "variables": 8194,
+    "errors": []
+   },
+   "ALOHA2.Experiments.LeaderArmCheck": {
+    "ok": true,
+    "equations": 4493,
+    "variables": 4493,
+    "errors": []
+   }
+  }
+ },
+ "simulation": {
+  "ok": true,
+  "action": "simulate",
+  "model": "ALOHA2.Experiments.LeaderArmCheck",
+  "messages": "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.\nLOG_STATS         | info    | ### STATISTICS ###\n|                 | |       | | timer\n|                 | |       | | |    0.0616111s          reading init.xml\n|                 | |       | | |    0.0072683s          reading info.xml\n|                 | |       | | |    0.0034355s [ 29.3%] pre-initialization\n|                 | |       | | |    0.0010626s [  9.0%] initialization\n|                 | |       | | |      9.1e-06s [  0.1%] steps\n|                 | |       | | |      6.1e-06s [  0.1%] solver (excl. callbacks)\n|                 | |       | | |    0.0025715s [ 21.9%] creating output-file\n|                 | |       | | |     1.19e-05s [  0.1%] event-handling\n|                 | |       | | |    0.0004635s [  3.9%] overhead\n|                 | |       | | |    0.0041829s [ 35.6%] simulation\n|                 | |       | | |    0.0117431s [100.0%] total\n|                 | |       | | events\n|                 | |       | | |     0 state events\n|                 | |       | | |     0 time events\n|                 | |       | | solver: euler\n|                 | |       | | |   300 steps taken\n|                 | |       | | |   300 calls of functionODE\n|                 | |       | | |     0 evaluations of jacobian\n|                 | |       | | |     0 error test failures\n|                 | |       | | |     0 convergence test failures\n|                 | |       | | | 0s time of jacobian evaluation\nLOG_SUCCESS       | info    | The simulation finished successfully.",
+  "errors": [],
+  "data": {
+   "resultFile": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/runs/20261016-074941-LeaderArmCheck/omc/ALOHA2.Experiments.LeaderArmCheck_res.mat",
+   "timeFrontend": 0.1864149,
+   "timeBackend": 2.0274897,
+   "timeSimCode": 0.2520045,
+   "timeCompile": 2.8603475,
+   "timeSimulation": 0.3827554,
+   "timeTotal": 5.8615421,
+   "assert_warnings": 0
+  },
+  "seconds": 5.948
+ },
+ "target": "leader",
+ "results": {
+  "ok": true,
+  "samples": 151,
+  "results_file": "runs/20261016-074941-LeaderArmCheck/results.json",
+  "moving_joints": [
+   "leader/waist",
+   "leader/shoulder",
+   "leader/elbow",
+   "leader/wrist_angle",
+   "leader/left_finger",
+   "leader/right_finger"
+  ],
+  "peak_effort": {
+   "leader/waist": 0.0314,
+   "leader/shoulder": 1.70719,
+   "leader/elbow": 2.57833,
+   "leader/forearm_roll": 0.01688,
+   "leader/wrist_angle": 0.48252,
+   "leader/wrist_rotate": 0.00032,
+   "leader/gripper": 0.0,
+   "leader/left_finger": 0.0074,
+   "leader/right_finger": 0.00802
+  },
+  "ee_path_length_m": {
+   "leader": 0.33968
+  },
+  "n_moving_joints": 6
+ },
+ "validation": {
+  "ok": true,
+  "forward_kinematics": {
+   "samples": 25,
+   "links_checked": 15,
+   "max_position_error_m": 1.1123893155135927e-16,
+   "max_rotation_error": 1.7772239894833365e-16,
+   "worst": [
+    "wrist_link",
+    4.76
+   ],
+   "tol_position_m": 1e-06,
+   "tol_rotation": 1e-06,
+   "pass": true
+  },
+  "trajectory_max_error": 0.0,
+  "mimic_max_error": 0.0,
+  "limit_violations": [],
+  "reference": "independent numpy URDF FK on data/urdf/aloha_wx250s.urdf"
+ },
+ "steps": [
+  {
+   "step": "configuration",
+   "ok": true,
+   "seconds": 0.01
+  },
+  {
+   "step": "urdf_validation",
+   "ok": true,
+   "seconds": 0.0
+  },
+  {
+   "step": "generate_modelica",
+   "ok": true,
+   "seconds": 0.14
+  },
+  {
+   "step": "structural_completeness",
+   "ok": true,
+   "seconds": 0.01
+  },
+  {
+   "step": "omc_check",
+   "ok": true,
+   "seconds": 1.29
+  },
+  {
+   "step": "simulate",
+   "ok": true,
+   "seconds": 5.95
+  },
+  {
+   "step": "extract_results",
+   "ok": true,
+   "seconds": 0.02
+  },
+  {
+   "step": "kinematic_validation",
+   "ok": true,
+   "seconds": 0.02
+  }
+ ],
+ "finished": "2026-10-16T07:49:51",
+ "success": true
+}

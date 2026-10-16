@@ -1,4 +1,4 @@
-within ALOHA.Blocks;
+within ALOHA2.Blocks;
 block WaypointTrajectory "Smooth multi-axis waypoint trajectory with analytic q, qd, qdd (cosine blend)"
   extends Modelica.Blocks.Icons.Block;
   parameter Integer n = 1 "Number of axes";

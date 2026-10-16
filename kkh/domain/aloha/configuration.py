@@ -1,9 +1,9 @@
-"""ALOHA domain knowledge: selected public configuration, sourced constants, configuration manifest.
+"""ALOHA 2 domain knowledge: selected public configuration, sourced constants, configuration manifest.
 
-Every constant here carries a source reference. Values are classified as
-  verified  - copied from a pinned public source
-  derived   - computed deterministically from verified values (rule documented)
-  assumption- chosen by this project, explicitly flagged
+Every constant carries a source reference and an evidence status:
+  verified   copied from a pinned public source
+  derived    computed deterministically from verified values (rule documented)
+  assumption chosen by this project, explicitly flagged
 """
 from __future__ import annotations
 
@@ -15,42 +15,43 @@ from kkh.engineering.urdf_model import load_urdf
 
 ROOT = Path(__file__).resolve().parents[3]
 URDF_DIR = ROOT / "data" / "urdf"
+ASSEMBLY_URDF = URDF_DIR / "aloha2_bimanual.urdf"
 
-VARIANT = {
-    "id": "aloha_stationary_trossen",
-    "name": "ALOHA Stationary (Trossen Robotics / Interbotix ROS 2 'aloha' package)",
-    "rationale": (
-        "Best-documented public ALOHA configuration with machine-readable kinematics and inertials: "
-        "official URDF/xacro + meshes for the ALOHA-specific arm variants (aloha_vx300s, aloha_wx250s), "
-        "official bringup with workcell transforms, and official per-arm spec pages. The Kyoto University "
-        "configuration could not be confirmed from public evidence. Original Stanford ALOHA "
-        "(tonyzhaozh/aloha) and ALOHA 2 MJCF (mujoco_menagerie) are different variants and are NOT mixed in."),
-    "sources": {
-        "descriptions": "Interbotix/interbotix_ros_manipulators@b66d5b905725 (humble) interbotix_xsarm_descriptions",
-        "bringup": "Interbotix/aloha@4fa6b2c4428f launch/aloha_bringup.launch.py",
-        "constants": "Interbotix/aloha@4fa6b2c4428f aloha/constants.py",
-        "spec_follower": "https://docs.trossenrobotics.com/interbotix_xsarms_docs/specifications/avx300s.html",
-        "spec_leader": "https://docs.trossenrobotics.com/interbotix_xsarms_docs/specifications/awx250s.html",
-    },
+SRC = {
+    "site": "https://aloha-2.github.io/",
+    "descriptions": "Interbotix/interbotix_ros_manipulators@b66d5b9 (humble) interbotix_xsarm_descriptions",
+    "mjcf": "google-deepmind/mujoco_menagerie@62ab00f aloha/aloha.xml",
+    "constants": "Interbotix/aloha@4fa6b2c aloha/constants.py",
+    "spec_follower": "https://docs.trossenrobotics.com/interbotix_xsarms_docs/specifications/avx300s.html",
+    "spec_leader": "https://docs.trossenrobotics.com/interbotix_xsarms_docs/specifications/awx250s.html",
 }
 
-# Arm order defines the order of the assembly input vector (8 driven joints per arm).
+VARIANT = {
+    "id": "aloha2",
+    "name": "ALOHA 2 (bimanual follower robot)",
+    "rationale": (
+        "aloha-2.github.io links (a) the ALOHA 2 hardware repo (CAD/STL only, no URDF), (b) the official MuJoCo "
+        "model (mujoco_menagerie/aloha, MJCF, two follower ViperX-300 arms) and (c) the Trossen Robotics ALOHA kits "
+        "as the commercial ALOHA 2 hardware. The only public ALOHA 2 URDF is the Trossen/Interbotix "
+        "aloha_vx300s / aloha_wx250s description; its arm kinematics were cross-verified against the official "
+        "MJCF (config/aloha2_crosscheck.json). Original ALOHA (tonyzhaozh/aloha v1) specifications are not used. "
+        "Kyoto University's exact hardware is unconfirmed."),
+    "sources": SRC,
+}
+
+# The ALOHA 2 robot assembly (as defined by the official ALOHA 2 simulation): two follower arms.
 ARMS = [
-    {"id": "follower_left", "modelica": "followerLeft", "model": "aloha_vx300s", "role": "follower", "side": "left",
-     "mount_xyz": [0.5, 0.25, 0.0]},
-    {"id": "follower_right", "modelica": "followerRight", "model": "aloha_vx300s", "role": "follower", "side": "right",
-     "mount_xyz": [0.5, -0.25, 0.0]},
-    {"id": "leader_left", "modelica": "leaderLeft", "model": "aloha_wx250s", "role": "leader", "side": "left",
-     "mount_xyz": [-0.5, 0.25, 0.0]},
-    {"id": "leader_right", "modelica": "leaderRight", "model": "aloha_wx250s", "role": "leader", "side": "right",
-     "mount_xyz": [-0.5, -0.25, 0.0]},
+    {"id": "follower_left", "modelica": "left", "model": "aloha_vx300s", "role": "follower", "side": "left",
+     "mount_xyz": [-0.469, -0.019, 0.02], "mount_rpy": [0.0, 0.0, 0.0]},
+    {"id": "follower_right", "modelica": "right", "model": "aloha_vx300s", "role": "follower", "side": "right",
+     "mount_xyz": [0.469, -0.019, 0.02], "mount_rpy": [0.0, 0.0, math.pi]},
 ]
-MOUNT_SOURCE = ("Interbotix/aloha launch/aloha_bringup.launch.py static_transform_publisher world->*/base_link "
-                "(identity rotation). Classified 'verified' as published; it is the ROS visualisation frame "
-                "layout, not a surveyed physical workcell measurement.")
+MOUNT_SOURCE = SRC["mjcf"] + " (left/base_link, right/base_link body poses)"
+# Leader (teleoperation) arm: modelled and validated standalone; no ALOHA 2 source gives its pose in the robot frame.
+LEADER = {"id": "leader", "modelica": "leader", "model": "aloha_wx250s", "role": "leader"}
 
 ARM_CLASS = {"aloha_vx300s": "AlohaVX300s", "aloha_wx250s": "AlohaWX250s"}
-ARM_PRODUCT = {"aloha_vx300s": "ALOHA ViperX-300 6DOF", "aloha_wx250s": "ALOHA WidowX-250 6DOF"}
+ARM_PRODUCT = {"aloha_vx300s": "ALOHA ViperX-300 6DOF (follower)", "aloha_wx250s": "ALOHA WidowX-250 6DOF (leader)"}
 
 # Official servo configuration (Trossen spec pages, retrieved 2026-10-16; snapshots in data/sources/)
 ACTUATORS = {
@@ -65,8 +66,6 @@ ACTUATORS = {
 }
 SERVO_IDS = {"waist": [1], "shoulder": [2, 3], "elbow": [4, 5], "forearm_roll": [6], "wrist_angle": [7],
              "wrist_rotate": [8], "gripper": [9]}
-
-# Documented spec-page joint limits (degrees; gripper in mm finger separation)
 SPEC_LIMITS = {
     "aloha_vx300s": {"waist": (-180, 180), "shoulder": (-101, 101), "elbow": (-101, 92), "wrist_angle": (-107, 130),
                      "forearm_roll": (-180, 180), "wrist_rotate": (-180, 180), "gripper_mm": (42, 116)},
@@ -75,115 +74,128 @@ SPEC_LIMITS = {
 }
 
 # Interbotix/aloha aloha/constants.py
-START_ARM_POSE = [0.0, -0.96, 1.16, 0.0, -0.3, 0.0]          # waist..wrist_rotate [rad]
-START_FINGER = 0.02239                                       # left_finger [m]; right_finger = -left
-GRIPPER_POSITION = {"leader": {"open": 0.0323, "close": 0.0185},
-                    "follower": {"open": 0.0579, "close": 0.0440}}
+START_ARM_POSE = [0.0, -0.96, 1.16, 0.0, -0.3, 0.0]
+START_FINGER = 0.02239
+GRIPPER_POSITION = {"leader": {"open": 0.0323, "close": 0.0185}, "follower": {"open": 0.0579, "close": 0.0440}}
 ACTUATED = ["waist", "shoulder", "elbow", "forearm_roll", "wrist_angle", "wrist_rotate", "gripper", "left_finger"]
+
+JOINT_FUNCTION = {
+    "waist": "Base yaw: rotates the whole arm about the vertical axis.",
+    "shoulder": "Shoulder pitch: lifts the upper arm (dual servo).",
+    "elbow": "Elbow pitch: folds the forearm relative to the upper arm (dual servo).",
+    "forearm_roll": "Forearm roll: rotates the wrist assembly about the forearm axis.",
+    "wrist_angle": "Wrist pitch: tilts the gripper.",
+    "wrist_rotate": "Wrist roll: rotates the gripper about its approach axis.",
+    "gripper": "Gripper servo shaft (prop). URDF does not couple it to finger motion.",
+    "left_finger": "Left finger translation (independently driven).",
+    "right_finger": "Right finger translation; URDF mimic of left_finger with multiplier -1.",
+}
 
 
 def arm_robot(model: str):
     return load_urdf(URDF_DIR / f"{model}.urdf", strip_prefix=f"{model}/")
 
 
-def start_vector(arm: dict) -> list[float]:
-    """Start pose of one arm in ACTUATED order. Gripper (prop) joint: 0 (assumption, see manifest)."""
+def start_vector() -> list[float]:
+    """Start pose of one arm in ACTUATED order. Gripper prop joint: 0 rad (assumption, see manifest)."""
     return START_ARM_POSE + [0.0, START_FINGER]
 
 
-def build_manifest() -> dict:
-    arms_out, totals = [], {"links": 1, "joints": 0, "driven": 0, "mimic": 0}
-    discrepancies = []
-    for arm in ARMS:
-        r = arm_robot(arm["model"])
-        rep = r.validate_structure()
-        inert = r.validate_inertials()
-        joints = []
-        for j in r.joints.values():
-            lim = j.limit
-            joints.append({
-                "name": j.name, "type": j.type, "parent": j.parent, "child": j.child,
-                "axis": j.axis.tolist() if j.movable else None,
-                "origin_xyz": j.origin.xyz.tolist(), "origin_rpy": j.origin.rpy.tolist(),
-                "limit": None if lim is None else {"lower": lim.lower, "upper": lim.upper,
-                                                    "effort": lim.effort, "velocity": lim.velocity},
-                "mimic": list(j.mimic) if j.mimic else None,
-                "actuators": ACTUATORS[arm["model"]].get(j.name),
-                "servo_ids": SERVO_IDS.get(j.name) if j.name in ACTUATORS[arm["model"]] else None,
-            })
-        arms_out.append({
-            **arm, "product": ARM_PRODUCT[arm["model"]], "urdf": f"data/urdf/{arm['model']}.urdf",
+def _arm_record(model: str) -> dict:
+    r = arm_robot(model)
+    rep = r.validate_structure()
+    joints = []
+    for j in r.joints.values():
+        lim = j.limit
+        joints.append({
+            "name": j.name, "type": j.type, "parent": j.parent, "child": j.child,
+            "axis": j.axis.tolist() if j.movable else None,
+            "origin_xyz": j.origin.xyz.tolist(), "origin_rpy": j.origin.rpy.tolist(),
+            "limit": None if lim is None else {"lower": lim.lower, "upper": lim.upper,
+                                                "effort": lim.effort, "velocity": lim.velocity},
+            "mimic": list(j.mimic) if j.mimic else None,
+            "actuators": ACTUATORS[model].get(j.name),
+            "servo_ids": SERVO_IDS.get(j.name) if j.name in ACTUATORS[model] else None,
+            "function": JOINT_FUNCTION.get(j.name),
+        })
+    return {"model": model, "product": ARM_PRODUCT[model], "urdf": f"data/urdf/{model}.urdf",
             "n_links": rep["n_links"], "n_joints": rep["n_joints"], "joint_types": rep["joint_types"],
             "driven_joints": [j.name for j in r.actuated_joints()],
-            "mimic_joints": [j.name for j in r.joints.values() if j.mimic],
-            "joints": joints,
+            "mimic_joints": [j.name for j in r.joints.values() if j.mimic], "joints": joints,
             "links": [{"name": x["link"], "inertial_status": x["status"], "mass": x.get("mass"),
-                       "mesh": next((v.mesh for v in r.links[x["link"]].visuals if v.mesh), None)} for x in inert],
-        })
-        totals["links"] += rep["n_links"]
-        totals["joints"] += rep["n_joints"] + 1  # + mount joint
-        totals["driven"] += rep["n_actuated"]
-        totals["mimic"] += len([j for j in r.joints.values() if j.mimic])
-        # Compare URDF limits against spec page
-        for jn, (lo, hi) in SPEC_LIMITS[arm["model"]].items():
+                       "mesh": next((v.mesh for v in r.links[x["link"]].visuals if v.mesh), None)}
+                      for x in r.validate_inertials()]}
+
+
+def discrepancies() -> list[dict]:
+    out = []
+    for model in ARM_CLASS:
+        r = arm_robot(model)
+        for jn, (lo, hi) in SPEC_LIMITS[model].items():
             if jn == "gripper_mm":
                 f = r.joints["left_finger"].limit
-                urdf_mm = (round(2000 * f.lower, 1), round(2000 * f.upper, 1))
-                if urdf_mm != (lo, hi):
-                    discrepancies.append({"arm": arm["id"], "item": "gripper opening (2 x left_finger)",
-                                          "urdf_mm": urdf_mm, "spec_mm": (lo, hi)})
+                u = (round(2000 * f.lower, 1), round(2000 * f.upper, 1))
+                if u != (lo, hi):
+                    out.append({"model": model, "item": "gripper opening (2 x left_finger)", "urdf": u, "spec": (lo, hi),
+                                "unit": "mm", "source": SRC["spec_follower" if model == "aloha_vx300s" else "spec_leader"]})
                 continue
             l = r.joints[jn].limit
             u = (round(math.degrees(l.lower)), round(math.degrees(l.upper)))
             if u != (lo, hi):
-                discrepancies.append({"arm": arm["id"], "item": f"{jn} limit", "urdf_deg": u, "spec_deg": (lo, hi)})
+                out.append({"model": model, "item": f"{jn} limit", "urdf": u, "spec": (lo, hi), "unit": "deg",
+                            "source": SRC["spec_follower" if model == "aloha_vx300s" else "spec_leader"]})
     fl = arm_robot("aloha_vx300s").joints["left_finger"].limit
     if GRIPPER_POSITION["follower"]["open"] > fl.upper:
-        discrepancies.append({"arm": "followers", "item": "FOLLOWER_GRIPPER_POSITION_OPEN (aloha/constants.py)",
-                              "value": GRIPPER_POSITION["follower"]["open"], "urdf_upper": fl.upper,
-                              "resolution": "trajectories clamp to the URDF limit"})
-    lw = arm_robot("aloha_wx250s").joints["left_finger"].limit
-    if GRIPPER_POSITION["leader"]["close"] < lw.lower:
-        discrepancies.append({"arm": "leaders", "item": "LEADER_GRIPPER_POSITION_CLOSE (aloha/constants.py)",
-                              "value": GRIPPER_POSITION["leader"]["close"], "urdf_lower": lw.lower,
-                              "resolution": "trajectories clamp to the URDF limit"})
-    discrepancies.append({"arm": "followers", "item": "spec page servo-ID table vs servo configuration table",
-                          "detail": "Joint-limit table lists Wrist Angle as ID 6 / Forearm Roll ID 7; servo table lists "
-                                    "6 forearm_roll / 7 wrist_angle. URDF joint order (forearm_roll before wrist_angle) "
-                                    "matches the servo table."})
+        out.append({"model": "aloha_vx300s", "item": "FOLLOWER_GRIPPER_POSITION_OPEN", "urdf": fl.upper,
+                    "spec": GRIPPER_POSITION["follower"]["open"], "unit": "m", "source": SRC["constants"],
+                    "resolution": "trajectories clamp to the URDF limit"})
+    out.append({"model": "aloha_vx300s", "item": "spec page servo-ID tables", "source": SRC["spec_follower"],
+                "detail": "Joint-limit table lists Wrist Angle ID 6 / Forearm Roll ID 7; servo table lists "
+                          "6 forearm_roll / 7 wrist_angle. URDF order matches the servo table."})
+    out.append({"model": "aloha_vx300s", "item": "gripper model URDF vs ALOHA 2 MJCF", "source": SRC["mjcf"],
+                "detail": "MJCF uses the updated ALOHA 2 gripper (finger axis 0 0 -1, range 0-0.041 m, no prop joint); "
+                          "URDF uses finger axis 0 1 0, range 0.021-0.057 m and a continuous prop joint."})
+    return out
+
+
+def build_manifest() -> dict:
+    follower = _arm_record("aloha_vx300s")
+    leader = _arm_record("aloha_wx250s")
+    n = len(ARMS)
+    totals = {"links": 1 + n * follower["n_links"], "joints": n * (follower["n_joints"] + 1),
+              "driven": n * len(follower["driven_joints"]), "mimic": n * len(follower["mimic_joints"])}
+    xc_path = ROOT / "config/aloha2_crosscheck.json"
+    xc = json.loads(xc_path.read_text()) if xc_path.exists() else None
     return {
         "variant": VARIANT,
         "complete_robot_definition": (
-            "The complete documented mechanical assembly = 4 arms (2 follower ALOHA ViperX-300 6DOF, 2 leader "
-            "ALOHA WidowX-250 6DOF) with every URDF link and joint (including grippers, finger mimic, leader "
-            "handle), mounted in the world frame with the bringup transforms. Excluded because no public "
-            "machine-readable geometry exists for this variant: table/frame, cameras, gravity compensators."),
-        "mount_source": MOUNT_SOURCE,
-        "totals": totals,
-        "arms": arms_out,
-        "start_pose": {"arm_joints": START_ARM_POSE, "left_finger": START_FINGER,
-                       "source": VARIANT["sources"]["constants"] + " START_ARM_POSE"},
+            "ALOHA 2 robot = two follower ALOHA ViperX-300 6DOF arms with every URDF link and joint (incl. gripper "
+            "prop, fingers and finger mimic) mounted at the official ALOHA 2 MJCF base poses. Leader WidowX-250 arms "
+            "are generated and validated as standalone models. Not modelled (no public machine-readable geometry "
+            "for the URDF format): aluminium frame, table, cameras, passive gravity compensation."),
+        "mount_source": MOUNT_SOURCE, "arms": ARMS, "leader": LEADER, "totals": totals,
+        "models": {"aloha_vx300s": follower, "aloha_wx250s": leader},
+        "start_pose": {"arm_joints": START_ARM_POSE, "left_finger": START_FINGER, "source": SRC["constants"]},
         "gripper_constants": GRIPPER_POSITION,
+        "crosscheck": xc and {"pass": xc["pass"], "verdict": xc["verdict"],
+                              "arms": xc["arms"], "engine": xc["engine"], "n_configs": xc["n_configs"]},
         "missing_information": [
-            "Gripper motor-to-finger linkage: URDF models the gripper prop rotation (continuous) and finger "
-            "translation (prismatic) as independent joints; the mechanical coupling is not in the URDF. "
-            "aloha/constants.py gives a calibrated linear map only between the ALOHA close/open points.",
-            "Gearbox ratios, motor constants, friction and efficiency of the Dynamixel servos (datasheet values not "
-            "ingested yet; URDF <dynamics friction=0.1 damping=0.1> are generic defaults, not identified values).",
+            "Gripper motor-to-finger linkage (URDF: independent prop and finger joints; MJCF: different gripper model).",
+            "Servo gear ratios, motor constants, friction and efficiency (URDF dynamics friction=0.1 damping=0.1 are "
+            "generic defaults; MJCF contains system-identified values for a different actuator formulation).",
             "Dual-servo (shoulder/elbow shadow) load sharing.",
-            "Workcell frame, table and camera mounts for this variant.",
-            "Placeholder inertials (mass 0.001 kg, I = 1e-4 kg m^2) on ee_arm_link, fingers_link, ee_gripper_link: "
-            "rendered as massless frames.",
+            "Leader-arm pose relative to the follower robot.",
+            "Placeholder inertials (0.001 kg) on ee_arm_link, fingers_link, ee_gripper_link: rendered massless.",
         ],
         "assumptions": [
-            "Gripper prop (continuous) joint held at 0 rad in baseline experiments (no documented coupling).",
-            "Followers and leaders use the same START_ARM_POSE (as in aloha/constants.py).",
+            "Gripper prop (continuous) joint held at 0 rad in experiments (no documented coupling in URDF).",
+            "Start pose for all arms = START_ARM_POSE of aloha/constants.py.",
         ],
-        "discrepancies": discrepancies,
+        "discrepancies": discrepancies(),
     }
 
 
 def write_manifest(path: Path | None = None) -> Path:
-    path = path or ROOT / "config" / "aloha_configuration.json"
+    path = path or ROOT / "config" / "aloha2_configuration.json"
     path.write_text(json.dumps(build_manifest(), indent=2))
     return path
