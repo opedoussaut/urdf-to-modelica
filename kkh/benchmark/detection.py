@@ -215,7 +215,13 @@ def det_sim(package: Path, work: Path) -> dict:
         rec["simulate_ok"] = sim.ok
         if sim.ok:
             arms = json.loads((ROOT / "generated/modelica/aloha2_mapping.json").read_text())["arms"]
-            v = P("RightArmReach", log=lambda *_: None, run_dir=work)._validate(MatResult(sim.data["resultFile"]), arms, sc)
+            try:
+                v = P("RightArmReach", log=lambda *_: None, run_dir=work)._validate(MatResult(sim.data["resultFile"]), arms, sc)
+            except KeyError as exc:
+                # The model no longer exposes a variable the source-to-model mapping expects: validation cannot be
+                # performed, which itself fails the candidate (traceability lost), but does not localise it.
+                rec.update(validation_ok=False, validation_error=f"mapped result variable missing: {exc}")
+                return rec
             fk = v["forward_kinematics"]
             rec.update(validation_ok=v["ok"], fk_max_error_m=fk["max_position_error_m"], fk_worst=fk["worst"],
                        mimic_max_error=v["mimic_max_error"], limit_violations=v["limit_violations"])
@@ -291,12 +297,15 @@ def det_llm(client, model, seed, reference_name, reference, class_file) -> dict:
 
 
 # ------------------------------------------------------------------------------------- experiment
-def run(model="qwen3:4b", seeds=(42, 43), with_sim=True, llm=True, only: list[str] | None = None) -> dict:
+def run(model="qwen3:4b", seeds=(42, 43), with_sim=True, llm=True, only: list[str] | None = None,
+        resume: Path | None = None) -> dict:
     from kkh.llm.ollama import Ollama
     from kkh.semantic.graphdb import GraphDB
-    run_id = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
+    previous = json.loads((resume / "report.json").read_text(encoding="utf-8")) if resume else None
+    run_id = previous["run_id"] if previous else (
+        dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6])
     out = ROOT / "runs/benchmark/detection" / run_id
-    out.mkdir(parents=True)
+    out.mkdir(parents=True, exist_ok=bool(previous))
     frozen_hash = hashlib.sha256((FROZEN / CLASS_REL).read_bytes()).hexdigest()
     db = GraphDB()
     client = Ollama() if llm else None
@@ -318,10 +327,19 @@ def run(model="qwen3:4b", seeds=(42, 43), with_sim=True, llm=True, only: list[st
         report["reference_sizes_chars"] = {"urdf": len(urdf_ref), "graph_evidence": len(graph_ref)}
         (out / "reference_urdf.xml").write_text(urdf_ref, encoding="utf-8")
         (out / "reference_graph.json").write_text(graph_ref, encoding="utf-8")
+        if previous:
+            if (previous["model"], previous["seeds"], previous["frozen_class_sha256"]) != (model, list(seeds), frozen_hash):
+                raise ValueError("Cannot resume: model, seeds or frozen model differ")
+            report["candidates"] = previous["candidates"]
+            report["started"] = previous["started"]
+            report["resumed"] = previous.get("resumed", []) + [dt.datetime.now(dt.timezone.utc).isoformat()]
+        done = {c["id"] for c in report["candidates"]}
         for mut in MUTATIONS:
-            if only and mut["id"] not in only:
+            if (only and mut["id"] not in only) or mut["id"] in done:
                 continue
             d = out / mut["id"]
+            if d.exists():
+                shutil.rmtree(d)  # partial candidate from an interrupted run
             pkg = d / "ALOHA2"
             shutil.copytree(FROZEN, pkg, ignore=shutil.ignore_patterns("*.stl"))
             f = pkg / CLASS_REL
@@ -421,6 +439,7 @@ if __name__ == "__main__":
     ap.add_argument("--no-sim", action="store_true")
     ap.add_argument("--no-llm", action="store_true")
     ap.add_argument("--only", default="")
+    ap.add_argument("--resume", default="", help="run directory to continue (same model/seeds/frozen model)")
     ap.add_argument("--rescore", default="", help="path to a report.json to re-score from stored findings")
     a = ap.parse_args()
     if a.rescore:
@@ -433,7 +452,7 @@ if __name__ == "__main__":
                   "control FP", v["control_false_findings"], "strict", v["strict_control_false_findings"])
         raise SystemExit(0)
     r = run(a.model, tuple(int(s) for s in a.seeds.split(",")), not a.no_sim, not a.no_llm,
-            [x for x in a.only.split(",") if x] or None)
+            [x for x in a.only.split(",") if x] or None, Path(a.resume) if a.resume else None)
     for k, v in r["summary"].items():
         print(k, {g: (v[g]["accepted_category"], v[g]["correctly_classified"], v[g]["trials"]) for g in ("design", "held_out")},
               "control FP", v["control_false_findings"], "s", v["mean_seconds"])
