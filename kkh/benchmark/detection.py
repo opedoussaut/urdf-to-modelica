@@ -297,9 +297,10 @@ def det_llm(client, model, seed, reference_name, reference, class_file) -> dict:
 
 
 # ------------------------------------------------------------------------------------- experiment
-def run(model="qwen3:4b", seeds=(42, 43), with_sim=True, llm=True, only: list[str] | None = None,
+def run(model=None, seeds=(42, 43), with_sim=True, llm=True, only: list[str] | None = None,
         resume: Path | None = None) -> dict:
-    from kkh.llm.ollama import Ollama
+    from kkh.llm.ollama import DEFAULT_MODEL, Ollama
+    model = model or DEFAULT_MODEL  # recorded in the report; historical reports keep their own model ID
     from kkh.semantic.graphdb import GraphDB
     previous = json.loads((resume / "report.json").read_text(encoding="utf-8")) if resume else None
     run_id = previous["run_id"] if previous else (
@@ -434,7 +435,7 @@ def summarize(report: dict) -> dict:
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="qwen3:4b")
+    ap.add_argument("--model", default=None)
     ap.add_argument("--seeds", default="42,43")
     ap.add_argument("--no-sim", action="store_true")
     ap.add_argument("--no-llm", action="store_true")

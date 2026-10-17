@@ -7,20 +7,38 @@ import {
   ShieldCheck,
   ChevronRight,
   PanelLeftClose,
+  Compass,
+  Activity,
+  Workflow,
+  GitBranch,
 } from "lucide-react";
 import { request, type Context, type Doc } from "./studio";
 import "./studio.css";
+import "./lab.css";
 const LeaderFollower = lazy(() => import("./LeaderFollower")),
   ModelicaEditor = lazy(() => import("./ModelicaEditor")),
   DualCopilot = lazy(() => import("./DualCopilot")),
-  Knowledge = lazy(() => import("./EngineeringKnowledge"));
+  Knowledge = lazy(() => import("./EngineeringKnowledge")),
+  Journey = lazy(() => import("./Journey")),
+  SimLab = lazy(() => import("./SimLab")),
+  ModelPipeline = lazy(() => import("./ModelPipeline")),
+  Reasoning = lazy(() => import("./Reasoning"));
 // Overview.tsx and ReasoningBenchmark.tsx are kept for internal use but are not part of the product navigation.
+// Indices are stable deep-link targets (open(i)); NAV_ORDER is the order shown in the rail.
 const tabs = [
-  ["Leader–Follower", Boxes, "Motion & dynamic response"],
-  ["Modelica Engineering Editor", Code2, "Source & native authoring"],
-  ["Dual AI Copilot", Bot, "Paired local intelligence"],
-  ["Engineering Knowledge Explorer", Network, "Relationships & provenance"],
+  ["Robot Workspace", Boxes, "Leader–follower motion & task"],
+  ["Modelica Engineering Editor", Code2, "Source, revisions & OMEdit"],
+  ["Dual AI Copilot", Bot, "Local Nemotron, with / without graph"],
+  ["Knowledge Explorer", Network, "Graph, provenance & trace"],
+  ["Demo Journey", Compass, "Seven-step engineering story"],
+  ["1D Simulation Lab", Activity, "Servo joint in OpenModelica"],
+  ["Robot Model Pipeline", Workflow, "URDF → Modelica, live"],
+  ["Engineering Reasoning", GitBranch, "Ontology chain & rule checks"],
 ] as const;
+const NAV_ORDER = [4, 7, 6, 5, 1, 0, 2, 3];
+// Deep links: ?ws=journey|reasoning|pipeline|lab|editor|robot|copilot|knowledge (plus workspace-specific parameters).
+const WS: Record<string, number> = { robot: 0, editor: 1, copilot: 2, knowledge: 3, journey: 4, lab: 5, pipeline: 6, reasoning: 7 };
+const initialWs = WS[new URLSearchParams(location.search).get("ws") || ""] ?? 4;
 
 // A stale lazy bundle after a local rebuild must not unmount other workspaces
 // (which may contain an unsaved recording or source edit).
@@ -39,8 +57,8 @@ class WorkspaceBoundary extends Component<{ children: ReactNode }, { failed: boo
   }
 }
 export default function App() {
-  const [active, setActive] = useState(0),
-    [visited, setVisited] = useState(new Set([0])),
+  const [active, setActive] = useState(initialWs),
+    [visited, setVisited] = useState(new Set([initialWs])),
     [collapsed, setCollapsed] = useState(false),
     [context, setState] = useState<Context>({
       selected: "elbow",
@@ -117,7 +135,7 @@ export default function App() {
         </div>
         <span className="wb-nav-label">WORKSPACES</span>
         <nav>
-          {tabs.map(([label, Icon, sub], index) => (
+          {NAV_ORDER.map((index) => [tabs[index], index] as const).map(([[label, Icon, sub], index]) => (
             <button
               key={label}
               className={active === index ? "active" : ""}
@@ -204,8 +222,16 @@ export default function App() {
                   <ModelicaEditor context={context} setContext={setContext} />
                 ) : i === 2 ? (
                   <DualCopilot context={context} />
-                ) : (
+                ) : i === 3 ? (
                   <Knowledge context={context} setContext={setContext} />
+                ) : i === 4 ? (
+                  <Journey context={context} setContext={setContext} open={choose} />
+                ) : i === 5 ? (
+                  <SimLab context={context} setContext={setContext} open={choose} />
+                ) : i === 6 ? (
+                  <ModelPipeline context={context} setContext={setContext} open={choose} />
+                ) : (
+                  <Reasoning context={context} setContext={setContext} open={choose} />
                 )}
                 </Suspense>
                 </WorkspaceBoundary>

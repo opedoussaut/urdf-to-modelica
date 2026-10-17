@@ -49,7 +49,23 @@
 * OpenModelica tracks it with assumed servo parameters; the simulated follower has no cube or contact, so task scores
   on the simulated follower apply the Level-1 visual rule to its end-effector path only.
 
+## 1D Simulation Lab (17 Oct 2026)
+* The plant is one joint with the outer joints fixed at the ALOHA start pose: equivalent inertia and the gravity law
+  A·sin(q+φ) are derived exactly from URDF inertials for that pose only. Other poses change both.
+* Not modelled: reflected motor rotor inertia (gear ratio / rotor data are not in the evidence graph), backlash,
+  compliance, payload, dual-servo load sharing. URDF damping 0.1 and friction 0.1 are generic defaults.
+* Servo kp, kd, actuator lag and feed-forward are assumed (revision-bound) values; comparisons are model
+  sensitivities on identical inputs, not hardware predictions. Runs cannot be cancelled once started (~8–12 s).
+
+## Robot Model Pipeline
+* Live conversion uses the project's own converter on allowlisted pinned URDFs. Single-arm candidates are for
+  inspection only (no meshes, not importable). External converters (e.g. DLR URDFModelica) were not evaluated.
+* An OpenModelica check proves structural consistency, not physical calibration.
+
 ## AI assistance
+* Primary copilot since 17 Oct 2026: `nemotron-3-nano:4b` (local, GPU). It answers in ~20 s per paired question but
+  makes factual errors and malformed proposals (caught by the structural checks). Citations are constrained to the
+  supplied sources. Historical measurements below were made with qwen3 models and were not re-run with Nemotron.
 * Local models make mistakes: qwen3:4b may repeat current values as "proposals" (rejected as no-op) or misread
   metrics; qwen3:8b gives better structured proposals but takes ~2–4 min per paired question on the RTX A1000.
 * Proposal checks are structural and policy checks (instance exists, numeric, changed, Modelica-declared bounds,

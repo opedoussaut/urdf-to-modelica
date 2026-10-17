@@ -17,7 +17,7 @@ export default function DualCopilot({ context }: { context: Context }) {
     [messages, setMessages] = useState<Doc[]>([]),
     [search, setSearch] = useState(""),
     [question, setQuestion] = useState(""),
-    [model, setModel] = useState("qwen3:4b"),
+    [model, setModel] = useState(""),
     [models, setModels] = useState<string[]>([]),
     [busy, setBusy] = useState(false),
     [picked, setPicked] = useState<Record<string, number[]>>({}),
@@ -31,7 +31,10 @@ export default function DualCopilot({ context }: { context: Context }) {
   }, [search]);
   useEffect(() => {
     api<any>("/api/health")
-      .then((h) => setModels(h.ollama.models || []))
+      .then((h) => {
+        setModels(h.ollama.models || []);
+        setModel((m) => m || h.ollama.default_model || "");
+      })
       .catch((e) => setError(message(e)));
   }, []);
   const open = async (item: Doc) => {

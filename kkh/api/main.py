@@ -17,7 +17,7 @@ from kkh.domain.aloha import configuration as C
 from kkh.domain.aloha.knowledge import build_graph, K
 from kkh.domain.aloha.scenarios import scenarios
 from kkh.engineering.urdf_model import rpy_to_matrix
-from kkh.llm.ollama import Ollama
+from kkh.llm.ollama import DEFAULT_MODEL, Ollama
 from kkh.semantic.graphdb import GraphDB
 
 ROOT = C.ROOT
@@ -60,7 +60,10 @@ def health():
         db.close()
     client = Ollama(timeout=3)
     try:
-        status["ollama"] = {"ok": True, "models": [m["name"] for m in client.models()]}
+        installed = [m["name"] for m in client.models()]
+        status["ollama"] = {"ok": True, "models": installed, "default_model": DEFAULT_MODEL,
+                            "default_available": DEFAULT_MODEL in installed,
+                            "note": "ready" if DEFAULT_MODEL in installed else f"default model missing: ollama pull {DEFAULT_MODEL}"}
     except Exception as exc:
         status["ollama"] = {"ok": False, "error": str(exc)}
     finally:
@@ -146,7 +149,7 @@ def job(job_id: str):
 
 class Question(BaseModel):
     question: str = Field(min_length=3, max_length=1500)
-    model: str = Field(default="qwen3:4b", max_length=80)
+    model: str = Field(default_factory=lambda: DEFAULT_MODEL, max_length=80)
 
 
 @app.post("/api/copilot")

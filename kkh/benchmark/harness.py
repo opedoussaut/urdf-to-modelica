@@ -108,7 +108,9 @@ def evaluate(task, value, directory: Path):
     return record
 
 
-def run(model="qwen3:4b", repeats=1, seed=42, max_attempts=2) -> dict:
+def run(model=None, repeats=1, seed=42, max_attempts=2) -> dict:
+    from kkh.llm.ollama import DEFAULT_MODEL
+    model = model or DEFAULT_MODEL  # recorded in the report; historical reports keep their own model ID
     if not 1 <= repeats <= 10:
         raise ValueError("repeats must be 1–10")
     if not 1 <= max_attempts <= 3:
@@ -196,7 +198,7 @@ def run(model="qwen3:4b", repeats=1, seed=42, max_attempts=2) -> dict:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default="qwen3:4b")
+    parser.add_argument("--model", default=None)
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument("--max-attempts", type=int, default=2)
     args = parser.parse_args()

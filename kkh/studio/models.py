@@ -83,13 +83,21 @@ class Models:
         self.store, self.root, self.baseline = store, Path(root), Path(baseline)
 
     @synchronized
-    def create(self, name="ALOHA editable model"):
+    def create(self, name="ALOHA editable model", source=None, reason=None):
+        """New editable workspace: a copy of the protected generated baseline, or of an explicitly imported freshly
+        generated candidate package (source). Neither the baseline nor the candidate run directory is modified."""
         identity = uuid.uuid4().hex
         directory = self.root / identity / "working/ALOHA2"
+        origin = Path(source) if source else self.baseline
+        if source and not (Path(source) / "package.mo").exists():
+            raise ValueError("The generated candidate has no ALOHA2 package")
         # Meshes remain in the frozen package; package resources are copied to preserve modelica:// references.
-        shutil.copytree(self.baseline, directory)
-        workspace = self.store.create("model", name, {"baseline_hashes": manifest(self.baseline), "accepted": None, "head": None}, identity)
-        return self.snapshot(workspace, "working", "Initial copy of protected generated baseline")
+        shutil.copytree(origin, directory)
+        data = {"baseline_hashes": manifest(self.baseline), "accepted": None, "head": None}
+        if source:
+            data["imported_from"] = str(origin)
+        workspace = self.store.create("model", name, data, identity)
+        return self.snapshot(workspace, "working", reason or "Initial copy of protected generated baseline")
 
     def directory(self, identity):
         self.store.get(identity, "model")

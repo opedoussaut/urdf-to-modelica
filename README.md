@@ -29,7 +29,19 @@ docker compose up -d --no-deps graphdb
 scripts\start.ps1
 ```
 
-Open [HT GEN7 PhysAI Studio](http://127.0.0.1:8000) or [GraphDB Workbench](http://localhost:7201). The installed local Ollama server must be running on port 11434. Default chat model: `qwen3:4b`; choose another installed local model in the UI. The application does not download models, call hosted inference, or use cloud fallback.
+Open [HT GEN7 PhysAI Studio](http://127.0.0.1:8000) or [GraphDB Workbench](http://localhost:7201). The installed local Ollama server must be running on port 11434. Primary local engineering copilot: **NVIDIA Nemotron 3 Nano 4B** (`nemotron-3-nano:4b`, override with `KKH_OLLAMA_MODEL`); any other installed local model can be chosen in the UI, and a missing model is reported explicitly (never substituted). The application does not download models, call hosted inference, or use cloud fallback. Historical benchmark reports keep the model IDs they were produced with (qwen3). See `docs/MODEL_STRATEGY_NVIDIA_FIRST.md`.
+
+### Workspaces
+
+| Workspace | What is real |
+|---|---|
+| **Demo Journey** | Seven-step engineering story with live facts and a system-readiness check (`docs/DEMO_2026-10-18.md`). |
+| **Engineering Reasoning** | Joint reasoning chain read from the URDF and GraphDB (asserted / inferred / verified / assumed / simulated), ontology rule check of seeded faulty models on isolated copies. |
+| **Robot Model Pipeline** | Live URDF → Modelica conversion with the project converter into `runs/studio/pipeline/<id>`, mapping, completeness, OpenModelica check, integrity (sources and frozen package re-hashed). |
+| **1D Simulation Lab** | Single-joint servo model (MSL Rotational) with URDF-derived inertia and gravity, assumed servo parameters from the model revision, real OpenModelica runs, baseline vs candidate comparison, proposal as unaccepted revision. |
+| Modelica Engineering Editor · Robot Workspace · Dual AI Copilot · Knowledge Explorer | Existing workspaces (revisions/OMEdit, leader–follower and cube task, paired copilot, graph and trace). |
+
+Deep links: `?ws=journey|reasoning|pipeline|lab|editor|robot|copilot|knowledge` (+ `step`, `node`, `case`, `run`).
 
 The UI provides recorded 3D playback with pinned vendor meshes, joint telemetry and source inspection, a GraphDB-backed physical relationship graph, reasoning witnesses, measured B/C benchmark results, the source discrepancy register, and an evidence-cited copilot. All playback data comes from actual OpenModelica runs. **Run verification** compiles and simulates the existing generated package without regenerating it.
 

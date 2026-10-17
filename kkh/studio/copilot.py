@@ -237,7 +237,12 @@ def pair(store: Store, conversation, question, model, context):
             messages=[{"role":"system","content":SYSTEM},*history,{"role":"user","content":base+extra+"\nQUESTION:\n"+question+"\n/no_think"}]
             client=Ollama(timeout=300)
             try:
-                response=client.chat(messages,model=model,seed=42,max_tokens=settings["max_tokens"],num_ctx=settings["num_ctx"],schema=SCHEMA)
+                # Citations are constrained to the supplied source paths at decoding time (structured output enum);
+                # the post-check below still rejects anything outside the supplied set.
+                supplied=sorted({entry["path"] for entry in json.loads(base)["sources"] if "path" in entry})
+                schema=json.loads(json.dumps(SCHEMA))
+                if supplied:schema["properties"]["source_paths"]["items"]={"type":"string","enum":supplied}
+                response=client.chat(messages,model=model,seed=42,max_tokens=settings["max_tokens"],num_ctx=settings["num_ctx"],schema=schema)
             finally:
                 client.close()
             content=response["content"].split("</think>")[-1].strip()
@@ -245,7 +250,8 @@ def pair(store: Store, conversation, question, model, context):
             if not isinstance(parsed.get("answer"),str) or not parsed["answer"].strip():raise ValueError("Model returned no final answer")
             allowed={entry["path"] for entry in json.loads(base)["sources"] if "path" in entry}
             cited=parsed.get("source_paths",[])
-            if any(path not in allowed for path in cited):raise ValueError("Model cited a source path that was not supplied. Retry with a focused question.")
+            unknown=[path for path in cited if path not in allowed]
+            if unknown:raise ValueError(f"Model cited source path(s) that were not supplied: {unknown[:4]} (supplied: {sorted(allowed)}). The answer was rejected; retry with a focused question.")
             proposal=parsed.get("proposed_change","").strip()
             if proposal.lower().strip(". ") in {"none","n/a","no change","no proposed change","not applicable"}:proposal=""
             parameter_changes=check_parameter_changes(parsed.get("parameter_changes",[]),json.loads(base)["sources"])

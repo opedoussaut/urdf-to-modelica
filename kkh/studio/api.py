@@ -208,7 +208,7 @@ def export(identity:str,format:str="json"):
 
 class Question(BaseModel):
     question:str=Field(min_length=3,max_length=1500)
-    model:str="qwen3:4b"
+    model:str=Field(default_factory=lambda:__import__("kkh.llm.ollama",fromlist=["DEFAULT_MODEL"]).DEFAULT_MODEL,max_length=80)
     context:dict=Field(default_factory=dict)
 
 
@@ -487,3 +487,7 @@ def semantic_backfill():
     """Record existing recordings, simulations, proposals and acceptances in the GraphDB engineering trace (idempotent)."""
     from kkh.semantic.trace import backfill
     return guard(lambda:backfill(store))
+
+
+# 1D Simulation Lab and Robot Model Pipeline (registered on this router)
+from . import lab_api  # noqa: E402,F401
