@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { request, waitJob, message } from "./studio";
+import KinematicSchematic, { schematicApplies } from "./KinematicSchematic";
 
 type Props={model:string;path:string;hash:string;selected?:string;dirty:boolean;onSelect:(name:string)=>void;onOpen:(type:string)=>void};
 const color=(v:any, fallback="#253e5a")=>Array.isArray(v)?`rgb(${v.join(',')})`:fallback;
@@ -35,7 +36,7 @@ function Graphic({g,name}:{g:any;name:string}) {
 function Graphics({layer,name}:{layer:any;name:string}) {return <>{(layer?.graphics||[]).map((g:any,i:number)=><Graphic key={i} g={g} name={name}/>)}</>}
 
 export default function ModelicaDiagram({model,path,hash,selected,dirty,onSelect,onOpen}:Props) {
-  const [data,setData]=useState<any>(),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+  const [data,setData]=useState<any>(),[error,setError]=useState(''),[busy,setBusy]=useState(false),[view,setView]=useState<'schematic'|'native'>('schematic');
   useEffect(()=>{
     let disposed=false;setData(undefined);setError('');
     if(dirty)return;
@@ -49,8 +50,20 @@ export default function ModelicaDiagram({model,path,hash,selected,dirty,onSelect
   const x=extent[0][0]-20,y=-extent[1][1]-20,w=extent[1][0]-extent[0][0]+40,h=extent[1][1]-extent[0][1]+40;
   const routed=data?.connections.filter((c:any)=>c.annotation?.Line)||[];
   return <div className="wb-native-diagram">
-    <div className="wb-diagram-caption"><strong>Modelica annotation preview</strong><span>READ ONLY · OMEDIT REFERENCE</span></div>
-    {dirty?<p className="wb-notice">Save this revision to preview its compiler-evaluated annotations. Your unsaved source is retained.</p>:busy?<p className="wb-notice">OpenModelica is reading component icons, placements and connections…</p>:error?<p className="wb-error" role="alert">{error}</p>:data&&<>
+    {(() => {
+      const applies=!!data&&schematicApplies(data.components,data.connections);
+      return <div className="wb-diagram-caption">
+        <strong>{applies&&view==='schematic'?'Kinematic schematic':'Modelica annotation preview'}</strong>
+        {applies&&<span className="wb-diagram-toggle" role="group" aria-label="Diagram view">
+          <button aria-pressed={view==='schematic'} className={view==='schematic'?'on':''} onClick={()=>setView('schematic')}>Kinematic schematic</button>
+          <button aria-pressed={view==='native'} className={view==='native'?'on':''} onClick={()=>setView('native')}>Native annotations</button>
+        </span>}
+        <span>READ ONLY · FROM OPENMODELICA</span>
+      </div>;
+    })()}
+    {!dirty&&!busy&&!error&&data&&view==='schematic'&&schematicApplies(data.components,data.connections)?
+      <KinematicSchematic components={data.components} connections={data.connections} selected={selected} onSelect={onSelect} onOpen={onOpen}/>
+    :dirty?<p className="wb-notice">Save this revision to preview its compiler-evaluated annotations. Your unsaved source is retained.</p>:busy?<p className="wb-notice">OpenModelica is reading component icons, placements and connections…</p>:error?<p className="wb-error" role="alert">{error}</p>:data&&<>
       <svg viewBox={`${x} ${y} ${w} ${h}`} role="img" aria-label={`OpenModelica diagram ${data.class_name}`}>
         <g transform="scale(1 -1)">
           <Graphics layer={data.diagram} name={data.class_name}/>

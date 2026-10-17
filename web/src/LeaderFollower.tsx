@@ -140,7 +140,7 @@ export default function LeaderFollower({
       .catch((e) => setError(message(e)));
   }, [layoutName]);
   useEffect(() => {
-    if (context.trajectory)
+    if (context.trajectory && config)
       request<Doc>("/record/" + context.trajectory)
         .then((d) => {
           setDraft(d.data);
@@ -167,7 +167,7 @@ export default function LeaderFollower({
           setPlaying(false);
         })
         .catch((e) => setError(message(e)));
-  }, [context.trajectory]);
+  }, [context.trajectory, !!config]);
   // Task metrics on the OpenModelica follower response of the selected run (same declared Level-1 rule).
   useEffect(() => {
     setSimTask(undefined);
@@ -231,7 +231,7 @@ export default function LeaderFollower({
         if (p.mapping.warnings.length) setNotice(p.mapping.warnings.join("; "));
       } while (posePending.current);
     } catch (e) {
-      setError(message(e));
+      setError("Robot pose update failed (last valid pose kept): " + message(e));
     } finally {
       poseBusy.current = false;
     }
@@ -317,7 +317,8 @@ export default function LeaderFollower({
   function showRow(data: any, row: number[]) {
     const followerSpace = data?.reference_space === "follower_joints";
     followerRow.current = followerSpace ? [...row] : null;
-    const leader = followerSpace ? [...(config?.home ?? row)] : row;
+    if (followerSpace && !config) return; // the leader home pose is required to park the leader
+    const leader = followerSpace ? [...config.home] : row;
     goal.current = [...leader];
     goalEE.current = null;
     current.current = leader;

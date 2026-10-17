@@ -78,7 +78,7 @@ export default function ModelicaEditor({ context, setContext }: Props) {
     [text, setText] = useState(""),
     [filter, setFilter] = useState(""),
     [selected, setSelected] = useState<any>(),
-    [tab, setTab] = useState("source"),
+    [tab, setTab] = useState(() => new URLSearchParams(location.search).get("view") || "source"),
     [diff, setDiff] = useState(false),
     [changes, setChanges] = useState<any>(),
     [revisions, setRevisions] = useState<Doc[]>([]),
