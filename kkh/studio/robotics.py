@@ -89,15 +89,27 @@ def inverse_kinematics(values, target):
     return {"success": True, "q": output.tolist(), "error_m": error, "message": "Bounded IK step; continue dragging to converge."}
 
 
+REFERENCE_SPACES = {"leader_joints": "aloha_wx250s", "follower_joints": "aloha_vx300s"}
+
+
+def reference_model(data) -> str:
+    """URDF whose joint limits apply to the recording's q: leader commands (default) or a follower-joint reference."""
+    space = data.get("reference_space", "leader_joints")
+    if space not in REFERENCE_SPACES:
+        raise ValueError(f"Unknown reference space {space!r}")
+    return REFERENCE_SPACES[space]
+
+
 def trajectory(data):
     if data.get("configuration_id") != CONFIG_ID or data.get("joint_ids") != JOINTS:
         raise ValueError("Trajectory robot identity or joint layout does not match this configuration")
+    model = reference_model(data)
     t, q = np.asarray(data["time"], dtype=float), np.asarray(data["q"], dtype=float)
     if (t.ndim != 1 or len(t) < 3 or len(t) > 30000 or q.shape != (len(t), 8)
             or not np.all(np.isfinite(t)) or np.any(np.diff(t) <= 0) or t[0] < 0 or t[-1] - t[0] > 600):
         raise ValueError("Use 3–30000 strictly ordered finite samples, at most 600 seconds")
     for row in q:
-        vector(row)
+        vector(row, model)
     t = t - t[0]
     qd = np.gradient(q, t, axis=0, edge_order=2)
     qdd = np.gradient(qd, t, axis=0, edge_order=2)
@@ -114,5 +126,5 @@ def smooth(data, window=9):
     t = np.linspace(data["time"][0], data["time"][-1], len(data["time"]))
     q = np.array([np.interp(t, data["time"], np.asarray(data["q"])[:, i]) for i in range(8)]).T
     q = savgol_filter(q, window, min(2, window-1), axis=0)
-    q = np.array([vector(row, clamp=True) for row in q])
+    q = np.array([vector(row, reference_model(data), clamp=True) for row in q])
     return trajectory({**data, "time": t.tolist(), "q": q.tolist(), "processing": f"Uniform resampling + Savitzky–Golay window={window}, degree=2; source-limit clipping", "derived": True})

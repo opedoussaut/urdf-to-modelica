@@ -1,4 +1,4 @@
-"""Read-only, explicitly labeled Modelica surrogate replay for the Engineering Studio.
+"""Read-only, explicitly labeled Modelica surrogate replay for HT GEN7 PhysAI Studio.
 
 This is *not* a physics backend for live ALOHA interaction. Results originate in an
 OpenModelica CSV, and remain separate from the Level-1 visual task evaluator.

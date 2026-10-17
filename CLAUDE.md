@@ -1,4 +1,6 @@
-# CLAUDE.md — ALOHA Engineering Studio (K&KH Physical AI PoC)
+# CLAUDE.md — HT GEN7 PhysAI Studio (Engineering-Grounded Physical AI)
+
+Branding: **HT GEN7 PhysAI Studio** (official name) · **PhysAI** = short form of Physical AI · **Physical AI** = full term · **GEN7** = initiative · tagline **Engineering-Grounded Physical AI**. Technical identifiers (`kkh` package, `KKH_*` variables, `kkh-aloha-engineering` repository, ontology URIs, Modelica package names, API paths, repository name) keep their historic names.
 
 Durable instructions for agents working in this repository.
 

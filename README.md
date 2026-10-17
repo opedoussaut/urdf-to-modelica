@@ -1,4 +1,18 @@
-# ALOHA Engineering Studio
+# HT GEN7 PhysAI Studio
+
+**Engineering-Grounded Physical AI**
+
+| Name | Use |
+|---|---|
+| **HT GEN7 PhysAI Studio** | Official project and application name |
+| **PhysAI** | Short form of Physical AI |
+| **Physical AI** | Full technical term |
+| **GEN7** | Initiative identity |
+| **Engineering-Grounded Physical AI** | Positioning tagline |
+
+Technical identifiers keep their historic names so that code, data and history stay valid: the Python package `kkh`,
+`KKH_*` environment variables, the GraphDB repository `kkh-aloha-engineering`, ontology URIs (`https://w3id.org/kkh/…`),
+Modelica packages (`ALOHA2`), API paths (`/api/workbench/…`) and the Git repository name `ai-kkh-physicalai`.
 
 Local engineering demonstrator built on the preserved `feat/aloha-baseline` branch: pinned public ALOHA 2 assets → evidence graph → executable Modelica twin → ontology-grounded Ollama copilot.
 
@@ -15,7 +29,7 @@ docker compose up -d --no-deps graphdb
 scripts\start.ps1
 ```
 
-Open [Engineering Studio](http://127.0.0.1:8000) or [GraphDB Workbench](http://localhost:7201). The installed local Ollama server must be running on port 11434. Default chat model: `qwen3:4b`; choose another installed local model in the UI. The application does not download models, call hosted inference, or use cloud fallback.
+Open [HT GEN7 PhysAI Studio](http://127.0.0.1:8000) or [GraphDB Workbench](http://localhost:7201). The installed local Ollama server must be running on port 11434. Default chat model: `qwen3:4b`; choose another installed local model in the UI. The application does not download models, call hosted inference, or use cloud fallback.
 
 The UI provides recorded 3D playback with pinned vendor meshes, joint telemetry and source inspection, a GraphDB-backed physical relationship graph, reasoning witnesses, measured B/C benchmark results, the source discrepancy register, and an evidence-cited copilot. All playback data comes from actual OpenModelica runs. **Run verification** compiles and simulates the existing generated package without regenerating it.
 

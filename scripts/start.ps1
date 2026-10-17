@@ -1,5 +1,5 @@
 <#
-Starts the K&KH Physical AI Engineering Studio reliably (local only).
+Starts HT GEN7 PhysAI Studio (Engineering-Grounded Physical AI) reliably (local only).
 
   1. Project GraphDB container `kkh-aloha-graphdb` (compose.yaml, 127.0.0.1:7201) - only this container is touched.
   2. Checks the local Ollama server (127.0.0.1:11434); the copilot is unavailable without it, the rest still works.
@@ -91,5 +91,5 @@ Write-Host ("[status] GraphDB: {0} | Ollama: {1} | OpenModelica installed: {2}" 
     $(if ($health.graphdb.ok) { 'ready' } else { 'unavailable' }),
     $(if ($health.ollama.ok) { "$($health.ollama.models.Count) local models" } else { 'unavailable' }),
     $health.openmodelica.installed)
-Write-Host 'Studio ready: http://127.0.0.1:8000'
+Write-Host 'HT GEN7 PhysAI Studio ready: http://127.0.0.1:8000'
 if (-not $NoBrowser) { Start-Process 'http://127.0.0.1:8000' }

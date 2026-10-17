@@ -1333,3 +1333,8 @@
 .wb-gates li { font-size: 11px; }
 .wb-gates li.open { color: #5fd3a8; }
 .wb-gates li.closed { color: #f0bc5e; }
+
+/* ---- Step 5: follower attempt ---- */
+.wb-attempt-action { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 12px 12px;
+  padding: 10px 12px; border: 1px solid #2f5a7d; border-radius: 8px; background: #0f1d2b; font-size: 12.5px; }
+.wb-attempt-action span { color: #c9d7e6; flex: 1 1 320px; }

@@ -21,7 +21,7 @@ from kkh.llm.ollama import Ollama
 from kkh.semantic.graphdb import GraphDB
 
 ROOT = C.ROOT
-app = FastAPI(title="ALOHA Engineering Studio", version="0.2.0")
+app = FastAPI(title="HT GEN7 PhysAI Studio", version="0.2.0")
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "[::1]", "testserver"])
 pool = ThreadPoolExecutor(max_workers=1)
 jobs: dict[str, dict] = {}

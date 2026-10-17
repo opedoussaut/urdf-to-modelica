@@ -1,4 +1,4 @@
-# HT K&KH Physical AI — Step 3: ALOHA geometry alignment
+# HT GEN7 PhysAI Studio — Step 3: ALOHA geometry alignment
 
 **Scope:** source audit, not a change to live simulation. Modelica remains the primary engineering simulation tool; MuJoCo Menagerie is read-only reference evidence.
 

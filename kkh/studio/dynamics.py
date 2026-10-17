@@ -87,7 +87,10 @@ def generate(directory, data, axes=6, source_package=BASELINE):
     if axes not in (1, 6):
         raise ValueError("Use the single shoulder-axis milestone or six-axis follower")
     data = trajectory(data)
-    q = np.array([mapping(row)["q"] for row in data["q"]])
+    if data.get("reference_space", "leader_joints") == "follower_joints":
+        q = np.array(data["q"], dtype=float)  # already a follower reference (e.g. a retargeted attempt)
+    else:
+        q = np.array([mapping(row)["q"] for row in data["q"]])
     t = np.array(data["time"])
     # Smooth cubic table differentiates the same recorded positions for every compared revision.
     table = np.column_stack([t, q])

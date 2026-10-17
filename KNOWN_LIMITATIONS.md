@@ -43,6 +43,12 @@
 * On the shared table the follower attempt is a joint-space replay of the leader demonstration (no retargeting), so it
   does not reach the cube; its task result is shown as such.
 
+## Follower attempt (Step 5, `docs/STEP5_FOLLOWER_ATTEMPT.md`)
+* A retargeted attempt is a derived kinematic reference (world-frame IK on the experimental layout): no collision
+  checking, no contact model, rotation about the vertical unconstrained, no hardware registration.
+* OpenModelica tracks it with assumed servo parameters; the simulated follower has no cube or contact, so task scores
+  on the simulated follower apply the Level-1 visual rule to its end-effector path only.
+
 ## AI assistance
 * Local models make mistakes: qwen3:4b may repeat current values as "proposals" (rejected as no-op) or misread
   metrics; qwen3:8b gives better structured proposals but takes ~2–4 min per paired question on the RTX A1000.

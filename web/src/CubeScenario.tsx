@@ -207,7 +207,9 @@ export function TaskResultCard({ result, compare }: { result: any; compare?: any
   const simulated = result.evaluated_on?.kind === "simulated";
   const role = result.evaluated_on?.role;
   const attempt = !simulated && role === "follower" && !!result.frame;
-  const title = simulated
+  const title = result.evaluated_on?.title
+    ? result.evaluated_on.title
+    : simulated
     ? "Task on the OpenModelica follower"
     : role === "leader"
       ? "Leader demonstration (visual task)"
@@ -225,7 +227,15 @@ export function TaskResultCard({ result, compare }: { result: any; compare?: any
       <strong>
         {title} ·{" "}
         {m.task_completed ? "completed" : "not completed"}{" "}
-        <span className={"wb-evidence " + (simulated ? "simulated" : "observed")}>{simulated ? "simulated" : "observed commands"}</span>{" "}
+        {(() => {
+          const derived = !simulated && result.evaluated_on?.reference_space === "follower_joints";
+          const kind = simulated ? "simulated" : derived ? "derived" : "observed";
+          return (
+            <span className={"wb-evidence " + kind}>
+              {simulated ? "simulated" : derived ? "derived (retargeted)" : "observed commands"}
+            </span>
+          );
+        })()}{" "}
         <span className="wb-evidence assumed">Level-1 rule</span>
       </strong>
       <ul className="wb-checklist">

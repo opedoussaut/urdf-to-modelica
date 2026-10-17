@@ -403,6 +403,36 @@ def follower_ik(body:Pose):
     return guard(lambda:solve(body.q,body.target))
 
 
+@router.post("/trajectory/{identity}/retarget")
+def retarget_attempt(identity:str):
+    """Step 5: retarget a shared-table leader demonstration to a follower attempt (new derived recording).
+
+    World-frame IK on the experimental display layout; the attempt is a kinematic follower reference that the
+    OpenModelica follower can then track. No collision or contact model; no hardware motion."""
+    source=guard(lambda:store.get(identity,"trajectory"))
+    data=source["data"]
+    if data.get("reference_space","leader_joints")!="leader_joints":raise HTTPException(422,"Only leader demonstrations can be retargeted")
+    info=data.get("scenario")
+    if not info:raise HTTPException(422,"Recording is not linked to a task scenario")
+    from kkh import scenarios as S
+    sc=guard(lambda:S.load(info["id"]))
+    layout=(sc.get("frame") or {}).get("layout")
+    if not layout:raise HTTPException(422,"Retargeting needs a scenario expressed in a shared display layout (not the legacy follower frame)")
+    def run():
+        from kkh.domain.aloha.retarget import retarget
+        out=retarget(data,layout)
+        attempt={**out["data"],"derived":{**out["data"]["derived"],"source":identity,"source_name":source["name"],
+                                           "source_sample_sha256":data.get("sample_sha256")}}
+        attempt["traceability"]={**(data.get("traceability") or {}),"derived_from":identity,
+                                 "evidence":{"observed":"none (computed)","assumed":"experimental display layout; Level-1 visual rule",
+                                             "simulated":"none until an OpenModelica run"}}
+        record=store.create("trajectory",source["name"][:80]+" · follower attempt (retargeted)",robotics.trajectory(attempt))
+        from kkh.semantic.trace import record_derivation
+        record_derivation(record,identity)  # best effort; never blocks
+        return {"record":record,"report":out["report"],"task":S.evaluate_recording(record["data"])}
+    return job("Retarget follower attempt",run)
+
+
 @router.get("/trajectory/{identity}/task")
 def task_result(identity:str,run:str|None=None,result:str|None=None,manipulator:str|None=None):
     """Level-1 visual task evaluation of a saved recording (deterministic backend computation).

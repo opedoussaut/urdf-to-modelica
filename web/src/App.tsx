@@ -106,13 +106,13 @@ export default function App() {
     <div className={"wb-app " + (collapsed ? "compact" : "")}>
       <aside className="wb-sidebar">
         <a className="wb-brand" href="/">
-          HT K<span>&</span>KH <small>PHYSICAL AI</small>
+          HT <span>GEN7</span> <small>PHYSAI STUDIO</small>
         </a>
         <div className="wb-project">
           <span className="wb-project-icon">A2</span>
           <div>
             <strong>ALOHA 2</strong>
-            <small>Engineering Studio</small>
+            <small>Engineering-Grounded Physical AI</small>
           </div>
         </div>
         <span className="wb-nav-label">WORKSPACES</span>
@@ -151,12 +151,12 @@ export default function App() {
       <main className="wb-main">
         <header className="wb-topbar">
           <span>
-            Engineering Studio <ChevronRight size={13} />{" "}
+            HT GEN7 PhysAI Studio <ChevronRight size={13} />{" "}
             <strong>{tabs[active][0]}</strong>
           </span>
           <div>
             <span className="wb-live" /> LOCAL SESSION{" "}
-            <span className="wb-avatar">K</span>
+            <span className="wb-avatar">G7</span>
           </div>
         </header>
         <div className="wb-context">
@@ -212,7 +212,7 @@ export default function App() {
               </div>
             ))}
         <footer className="wb-footer">
-          HT K&KH Physical AI Engineering Studio{" "}
+          HT GEN7 PhysAI Studio · Engineering-Grounded Physical AI{" "}
           <span>Source facts · explicit assumptions · measured simulation</span>
         </footer>
       </main>

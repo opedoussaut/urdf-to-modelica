@@ -59,15 +59,29 @@ def signals(q_rows, scenario: dict | None = None, role: str | None = None) -> tu
     return _to_scenario_frame(np.array(ee), role, scenario), np.array(op)
 
 
+def follower_opening(q_follower) -> float:
+    lim = R.robot_for(FOLLOWER).joints["left_finger"].limit
+    return float((q_follower[7] - lim.lower) / (lim.upper - lim.lower))
+
+
+def follower_signals(q_follower_rows, scenario: dict | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """(ee[n,3], opening[n]) for a FOLLOWER-joint recording (e.g. a retargeted attempt), in the scenario frame."""
+    robot = R.robot_for(FOLLOWER)
+    ee = np.array([robot.forward_kinematics(dict(zip(R.JOINTS, R.vector(row, FOLLOWER))))["ee_gripper_link"][:3, 3]
+                   for row in q_follower_rows])
+    return _to_scenario_frame(ee, "follower", scenario), np.array([follower_opening(r) for r in q_follower_rows])
+
+
 def simulated_signals(q_follower_rows, time, recorded_time, recorded_q,
-                      scenario: dict | None = None) -> tuple[np.ndarray, np.ndarray]:
+                      scenario: dict | None = None, reference_space: str = "leader_joints") -> tuple[np.ndarray, np.ndarray]:
     """(ee[n,3], opening[n]) for a SIMULATED follower response (follower joint rows from OpenModelica).
 
     The gripper is not torque-driven in the follower model, so its opening is the recorded leader command
     interpolated at the simulation time points."""
     robot = R.robot_for(FOLLOWER)
     ee = np.array([robot.forward_kinematics(dict(zip(R.JOINTS, row)))["ee_gripper_link"][:3, 3] for row in q_follower_rows])
-    commanded = np.array([opening(row) for row in recorded_q])
+    commanded = np.array([follower_opening(row) if reference_space == "follower_joints" else opening(row)
+                          for row in recorded_q])
     return _to_scenario_frame(ee, "follower", scenario), np.interp(np.asarray(time, float), np.asarray(recorded_time, float), commanded)
 
 

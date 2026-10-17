@@ -1,4 +1,6 @@
-# Architecture — K&KH Physical AI Engineering Studio (ALOHA 2)
+# Architecture — HT GEN7 PhysAI Studio (ALOHA 2)
+
+*Engineering-Grounded Physical AI*
 
 Local-first: browser UI → FastAPI on 127.0.0.1:8000 → local services. No hosted inference, no cloud fallback.
 

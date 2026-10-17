@@ -75,6 +75,7 @@ export default function LeaderFollower({
     [taskResult, setTaskResult] = useState<any>(),
     [simTask, setSimTask] = useState<any>(),
     [attemptTask, setAttemptTask] = useState<any>(),
+    [retargeting, setRetargeting] = useState(""),
     [ikWorking, setIkWorking] = useState(false),
     [dragInfo, setDragInfo] = useState(""),
     // "live": operator commands drive a kinematic follower and the live cube rule;
@@ -93,7 +94,9 @@ export default function LeaderFollower({
     ikBusy = useRef(false),
     pendingTarget = useRef<number[] | null>(null),
     // Manipulator end effector in the SCENARIO frame (display world for layout scenarios, follower base for legacy).
-    taskEE = useRef<number[] | null>(null);
+    taskEE = useRef<number[] | null>(null),
+    // Follower joint row shown during replay of a follower-joint recording (retargeted attempt); leader parked.
+    followerRow = useRef<number[] | null>(null);
   const [layoutName, setLayoutName] = useState(() => {
     try {
       const saved = localStorage.getItem("kkh.layout");
@@ -142,8 +145,7 @@ export default function LeaderFollower({
         .then((d) => {
           setDraft(d.data);
           setName(d.name);
-          setQ(d.data.q[0]);
-          goal.current = [...d.data.q[0]];
+          showRow(d.data, d.data.q[0]);
           setTaskResult(undefined);
           setAttemptTask(undefined);
           setSource("replay");
@@ -152,7 +154,11 @@ export default function LeaderFollower({
               .then(setTaskResult)
               .catch((e) => setError(message(e)));
             // Shared-table scenarios: the leader demonstrates; the follower attempt is the joint-mapped replay.
-            if (d.data.traceability?.layout?.name && d.data.traceability.layout.name !== "legacy_side_by_side")
+            if (
+              d.data.reference_space !== "follower_joints" &&
+              d.data.traceability?.layout?.name &&
+              d.data.traceability.layout.name !== "legacy_side_by_side"
+            )
               request("/trajectory/" + d.id + "/task?manipulator=follower")
                 .then(setAttemptTask)
                 .catch((e) => setError(message(e)));
@@ -180,8 +186,9 @@ export default function LeaderFollower({
   }, [context.run]);
   // Pose updates: one request in flight, latest state wins (continuous motion never starves the 3D view or the
   // live cube rule, and no stale result overwrites a newer one).
+  const [poseTick, setPoseTick] = useState(0);
   const latest = useRef<any>({});
-  latest.current = { q, simulation, controller, time, source, scenario, recording, lay };
+  latest.current = { q, simulation, controller, time, source, scenario, recording, lay, followerRow: followerRow.current };
   const poseBusy = useRef(false),
     posePending = useRef(false);
   const updatePose = async () => {
@@ -195,6 +202,7 @@ export default function LeaderFollower({
         posePending.current = false;
         const s = latest.current;
         const p = await request("/pose", "POST", { q: s.q });
+        if (s.followerRow && s.source === "replay") p.follower = await request("/follower-pose", "POST", { q: s.followerRow });
         // Cartesian leader control must use the leader base frame, not the follower frame.
         kinematicEE.current = p.leader?.ee_gripper_link?.slice(0, 3) ?? null;
         const ee = s.scenario ? scenarioEE(s.scenario, s.lay, p) : null;
@@ -230,7 +238,7 @@ export default function LeaderFollower({
   };
   useEffect(() => {
     if (q.length) updatePose();
-  }, [q, simulation, controller, source, source === "replay" ? time : 0, scenario]);
+  }, [q, simulation, controller, source, source === "replay" ? time : 0, scenario, poseTick]);
   // Rate-limited command path: every operator input sets a goal; the leader moves toward it at bounded joint speed
   // (no step commands reach the recorded reference or the follower).
   useEffect(() => {
@@ -305,6 +313,17 @@ export default function LeaderFollower({
     }, 25);
     return () => clearInterval(timer);
   }, [playing, draft, simulation, controller]);
+  /** Show one recorded row: leader commands drive the leader; a follower reference parks the leader at home. */
+  function showRow(data: any, row: number[]) {
+    const followerSpace = data?.reference_space === "follower_joints";
+    followerRow.current = followerSpace ? [...row] : null;
+    const leader = followerSpace ? [...(config?.home ?? row)] : row;
+    goal.current = [...leader];
+    goalEE.current = null;
+    current.current = leader;
+    setQ(leader);
+    if (followerSpace) setPoseTick((n) => n + 1);
+  }
   function seek(t: number) {
     setTime(t);
     if (!draft) return;
@@ -313,10 +332,7 @@ export default function LeaderFollower({
     const a = Math.max(0, i - 1),
       alpha = (t - draft.time[a]) / (draft.time[i] - draft.time[a] || 1);
     const next = draft.q[a].map((v: number, j: number) => v + (draft.q[i][j] - v) * alpha);
-    goal.current = [...next];
-    goalEE.current = null;
-    current.current = next;
-    setQ(next);
+    showRow(draft, next);
   }
   const joints = config?.leader.joints || [];
   const limits = (index: number) => {
@@ -330,6 +346,7 @@ export default function LeaderFollower({
   };
   const goLive = () => {
     setPlaying(false);
+    followerRow.current = null;
     if (source !== "live") {
       setSource("live");
       goal.current = [...current.current];
@@ -551,6 +568,26 @@ export default function LeaderFollower({
       setBusy("");
     }
   };
+  const createAttempt = async () => {
+    if (!context.trajectory) return;
+    setRetargeting("Retargeting the demonstration to the follower (world-frame IK)…");
+    setError("");
+    try {
+      const out: any = await waitJob(await request("/trajectory/" + context.trajectory + "/retarget", "POST"));
+      await refresh();
+      setSimulation(undefined);
+      setContext({ trajectory: out.record.id, run: undefined });
+      const r = out.report;
+      setNotice(
+        `Follower attempt created: ${(r.within_tolerance_fraction * 100).toFixed(1)} % of samples within ${r.tolerance.position_m * 1000} mm / ${r.tolerance.approach_tilt_deg}°, ` +
+          `max position error ${(r.position_error_m.max * 1000).toFixed(1)} mm. Kinematic reference only: no collision or contact model. Simulate it to see the OpenModelica follower.`,
+      );
+    } catch (e) {
+      setError(message(e));
+    } finally {
+      setRetargeting("");
+    }
+  };
   const save = async () => {
     try {
       const record = await request<Doc>("/documents/trajectory", "POST", {
@@ -609,7 +646,7 @@ export default function LeaderFollower({
     : playing
       ? `▶ REPLAY · ${simulation && source === "replay" ? "follower = OpenModelica result" : "kinematic"} · ${time.toFixed(2)} s`
       : source === "replay" && draft
-        ? `SAVED RECORDING · ${simulation ? "OpenModelica follower selected" : "kinematic replay"} · press Play`
+        ? `${draft.reference_space === "follower_joints" ? "FOLLOWER ATTEMPT · leader parked" : "SAVED RECORDING"} · ${simulation ? "OpenModelica follower selected" : "kinematic replay"} · press Play`
         : mode === "joint"
           ? `MOVE LEADER ARM${ikWorking ? " · solving IK…" : dragInfo ? " · " + dragInfo : ""}`
           : mode === "ee"
@@ -833,6 +870,30 @@ export default function LeaderFollower({
           <FrameIndicator lay={lay} scenario={scenario} layoutName={layoutName} setLayoutName={setLayoutName} disabled={recording} />
           <TaskResultCard result={taskResult} />
           <TaskResultCard result={attemptTask} compare={taskResult} />
+          {taskResult?.frame && draft && draft.reference_space !== "follower_joints" && context.trajectory && (
+            <div className="wb-attempt-action">
+              <button className="wb-primary" disabled={!!retargeting || recording} onClick={createAttempt}>
+                Create follower attempt (retarget)
+              </button>
+              <span>
+                Maps the demonstrated gripper path through the display world and solves follower IK (position + approach
+                tilt). Creates a new derived recording; the demonstration stays unchanged.
+              </span>
+              {retargeting && <span className="wb-muted">{retargeting}</span>}
+            </div>
+          )}
+          {draft?.derived?.kind === "retargeted_follower_attempt" && (
+            <div className="wb-attempt-action">
+              <strong>Follower attempt (retargeted, kinematic)</strong>
+              <span>
+                Leader parked at home; the blue follower replays the retargeted reference. Within tolerance:{" "}
+                {(draft.derived.report.within_tolerance_fraction * 100).toFixed(1)} % · max position error{" "}
+                {(draft.derived.report.position_error_m.max * 1000).toFixed(1)} mm · max tilt error{" "}
+                {draft.derived.report.approach_tilt_error_deg.max.toFixed(1)}°. Collision and contact unchecked. Use
+                “Simulate six axes” below to run it on the OpenModelica follower.
+              </span>
+            </div>
+          )}
           <TaskResultCard result={simTask} compare={taskResult} />
         </section>
         <aside className="wb-card wb-inspector">
@@ -920,16 +981,18 @@ export default function LeaderFollower({
                     setName(item.name);
                     setTime(0);
                     setSource("replay");
-                    goal.current = [...item.data.q[0]];
-                    current.current = item.data.q[0];
-                    setQ(item.data.q[0]);
+                    showRow(item.data, item.data.q[0]);
                   }}
                 >
                   <strong>{item.name}</strong>
                   <small>
                     {item.data.time.at(-1).toFixed(2)} s ·{" "}
                     {item.data.time.length} samples ·{" "}
-                    {item.data.derived ? "smoothed copy" : "original"}
+                    {item.data.reference_space === "follower_joints"
+                      ? "follower attempt (retargeted)"
+                      : item.data.derived
+                        ? "smoothed copy"
+                        : "original"}
                   </small>
                 </button>
                 <a

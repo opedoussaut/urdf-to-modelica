@@ -61,11 +61,24 @@ def evaluate_recording(trajectory: dict, simulation: dict | None = None, result:
             raise ValueError(f"Select a simulation result explicitly; available: {sorted(results)}")
         name = result if result is not None else next(iter(results))
         res = results[name]
-        ee, opening = bind.simulated_signals(res["q_actual"], res["time"], trajectory["time"], trajectory["q"], sc)
+        ee, opening = bind.simulated_signals(res["q_actual"], res["time"], trajectory["time"], trajectory["q"], sc,
+                                             trajectory.get("reference_space", "leader_joints"))
         out = evaluate(sc, res["time"], ee, opening)
         rev = next((r.get("revision") for r in simulation.get("runs", []) if r.get("name") == name), None)
         out["evaluated_on"] = {"kind": "simulated", "result": name, "revision": rev,
                                "label": "OpenModelica follower response (torque-driven, assumed servo parameters)"}
+    elif trajectory.get("reference_space") == "follower_joints":
+        if manipulator not in (None, "follower"):
+            raise ValueError("A follower-joint recording can only be evaluated for the follower")
+        role = "follower"
+        ee, opening = bind.follower_signals(trajectory["q"], sc)
+        out = evaluate(sc, trajectory["time"], ee, opening)
+        kind = (trajectory.get("derived") or {}).get("kind", "follower reference")
+        out["evaluated_on"] = {"kind": "commanded", "role": role, "reference_space": "follower_joints",
+                               "title": "Follower attempt (retargeted, kinematic)" if kind == "retargeted_follower_attempt"
+                               else "Follower reference (kinematic)",
+                               "label": "follower joint reference (" + kind.replace("_", " ") + "), follower FK in the "
+                                        "scenario frame; no collision or contact model"}
     else:
         role = manipulator or sc.get("manipulator", {}).get("role", "follower")
         ee, opening = bind.signals(trajectory["q"], sc, role)
