@@ -177,6 +177,22 @@ def test_recovery_does_not_resurrect_deleted_audit_history(tmp_path,monkeypatch)
     assert store.messages(conversation['id'])[0]['data']['content']=='Real old question'
 
 
+def test_omedit_launch_loads_only_root_package(tmp_path,monkeypatch):
+    import kkh.studio.models as module
+    baseline=tmp_path/'baseline';(baseline/'Arms').mkdir(parents=True)
+    (baseline/'package.mo').write_text('within; package ALOHA2 end ALOHA2;')
+    (baseline/'Arms/Example.mo').write_text('within ALOHA2.Arms; model Example end Example;')
+    installation=tmp_path/'omhome';(installation/'bin').mkdir(parents=True)
+    (installation/'bin/OMEdit.exe').touch()
+    monkeypatch.setattr(module,'DEFAULT_OMHOME',str(installation))
+    calls=[];monkeypatch.setattr(module.subprocess,'Popen',lambda args,**kw:calls.append((args,kw)))
+    models=Models(Store(tmp_path/'state.sqlite'),tmp_path/'models',baseline);w=models.create()
+    result=models.open_native(w['id'],'Arms/Example.mo')
+    assert calls[0][0]==[str(installation/'bin/OMEdit.exe'),str(models.directory(w['id'])/'package.mo')]
+    assert result['selected_class']=='ALOHA2.Arms.Example'
+    assert result['baseline_protected'] and 'Arms/Example.mo' in result['opened'].replace('\\','/')
+
+
 def test_copilot_focus_follows_explicit_question():
     from kkh.studio.copilot import resolve_focus
     ui = {"robot": "aloha_wx250s", "selected": "shoulder"}

@@ -1,0 +1,171 @@
+{
+  "status": "EXPERIMENTAL_DISPLAY_LAYOUT_POSITION_IK_ONLY",
+  "layout": "experimental_shared_table",
+  "layout_file": "config/workspace/aloha2_display_layouts.json",
+  "world_frame": "STUDIO_DISPLAY_WORLD",
+  "bases": {
+    "leader": {
+      "model": "aloha_wx250s",
+      "xyz": [
+        -0.469,
+        0.0,
+        0.0
+      ],
+      "yaw": 0.0
+    },
+    "follower": {
+      "model": "aloha_vx300s",
+      "xyz": [
+        0.469,
+        0.0,
+        0.0
+      ],
+      "yaw": 3.141592653589793
+    }
+  },
+  "evidence": "Mounting convention of the ALOHA reference model (MuJoCo Menagerie aloha/aloha.xml, BSD-3-Clause, values only, no assets copied): left/base_link pos (-0.469, -0.019, 0.02), right/base_link pos (0.469, -0.019, 0.02) quat (0 0 0 1) = yaw pi. Here leader takes the left mount and follower the right mount. Deviations: the common Y offset -0.019 m and the 0.02 m mounting-plate height are not applied (base_link origin on the table top, z = 0). The reference mounts two vx300s; this studio mounts a wx250s leader, so leader reach is smaller. Not a hardware measurement.",
+  "scenario": {
+    "id": "aloha2-cube-transfer-shared",
+    "version": "0.1.0-experimental"
+  },
+  "table_top_z_m": 0.0,
+  "cube_centre_on_table": true,
+  "task_points": {
+    "cube_A": {
+      "world_m": [
+        0.0,
+        -0.06,
+        0.02
+      ],
+      "leader": {
+        "local_m": [
+          0.469,
+          -0.06,
+          0.02
+        ],
+        "position_ik": {
+          "reachable": true,
+          "position_error_m": 0.0,
+          "gripper_down_error_deg": null,
+          "waist_rad": -0.1387,
+          "tolerance_m": 0.005,
+          "checked": "position only",
+          "collision_checked": false,
+          "grasp_orientation_checked": false
+        },
+        "gripper_down_ik": {
+          "reachable": true,
+          "position_error_m": 0.0,
+          "gripper_down_error_deg": 0.06,
+          "waist_rad": -0.1273,
+          "tolerance_m": 0.005,
+          "checked": "position + gripper pointing down",
+          "collision_checked": false,
+          "grasp_orientation_checked": false
+        }
+      },
+      "follower": {
+        "local_m": [
+          0.469,
+          0.06,
+          0.02
+        ],
+        "position_ik": {
+          "reachable": true,
+          "position_error_m": 0.0,
+          "gripper_down_error_deg": null,
+          "waist_rad": 0.3354,
+          "tolerance_m": 0.005,
+          "checked": "position only",
+          "collision_checked": false,
+          "grasp_orientation_checked": false
+        },
+        "gripper_down_ik": {
+          "reachable": true,
+          "position_error_m": 0.0,
+          "gripper_down_error_deg": 0.02,
+          "waist_rad": 0.1273,
+          "tolerance_m": 0.005,
+          "checked": "position + gripper pointing down",
+          "collision_checked": false,
+          "grasp_orientation_checked": false
+        }
+      }
+    },
+    "target_B": {
+      "world_m": [
+        0.0,
+        0.06,
+        0.0
+      ],
+      "leader": {
+        "local_m": [
+          0.469,
+          0.06,
+          0.0
+        ],
+        "position_ik": {
+          "reachable": true,
+          "position_error_m": 0.0,
+          "gripper_down_error_deg": null,
+          "waist_rad": 0.1202,
+          "tolerance_m": 0.005,
+          "checked": "position only",
+          "collision_checked": false,
+          "grasp_orientation_checked": false
+        },
+        "gripper_down_ik": {
+          "reachable": true,
+          "position_error_m": 0.0,
+          "gripper_down_error_deg": 0.06,
+          "waist_rad": 0.1272,
+          "tolerance_m": 0.005,
+          "checked": "position + gripper pointing down",
+          "collision_checked": false,
+          "grasp_orientation_checked": false
+        }
+      },
+      "follower": {
+        "local_m": [
+          0.469,
+          -0.06,
+          0.0
+        ],
+        "position_ik": {
+          "reachable": true,
+          "position_error_m": 0.0,
+          "gripper_down_error_deg": null,
+          "waist_rad": -0.0408,
+          "tolerance_m": 0.005,
+          "checked": "position only",
+          "collision_checked": false,
+          "grasp_orientation_checked": false
+        },
+        "gripper_down_ik": {
+          "reachable": true,
+          "position_error_m": 0.0,
+          "gripper_down_error_deg": 0.02,
+          "waist_rad": -0.1272,
+          "tolerance_m": 0.005,
+          "checked": "position + gripper pointing down",
+          "collision_checked": false,
+          "grasp_orientation_checked": false
+        }
+      }
+    }
+  },
+  "engineering_gates": {
+    "display_layout_applied": true,
+    "position_ik_both_arms": true,
+    "gripper_down_ik_both_arms": true,
+    "grasp_orientation_about_vertical": false,
+    "robot_table_collision": false,
+    "leader_follower_collision": false,
+    "physical_contact_3d": false,
+    "hardware_registration": false,
+    "enable_ab_shortcuts": false,
+    "grasp_automation": false,
+    "hardware_motion": false
+  },
+  "statement": "Experimental layout \u2014 position IK only; orientation/collision/physical contact unverified. Display transforms are not hardware calibration."
+}

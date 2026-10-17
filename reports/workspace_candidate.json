@@ -1,0 +1,97 @@
+{
+  "status": "POSITION_IK_CANDIDATE_FOUND_REVIEW_REQUIRED",
+  "reference_frame": "THREE_JS_DISPLAY_WORLD; X-only base offsets; uncalibrated",
+  "source_provenance": "GEN7 URDF FK/IK, NOT hardware or MJCF registration",
+  "display_base_offsets_x_m": {
+    "follower": 0.45,
+    "leader": -0.5
+  },
+  "candidates_evaluated": 12,
+  "candidates_feasible_position_only": 6,
+  "best_candidate": {
+    "position_ik_feasible": true,
+    "worst_position_error_m": 0.0,
+    "task_points": {
+      "cube_A": {
+        "world_m": [
+          -0.08,
+          -0.08,
+          0.02
+        ],
+        "arms": {
+          "leader": {
+            "local_m": [
+              0.42,
+              -0.08,
+              0.02
+            ],
+            "position_ik": {
+              "reachable_position_only": true,
+              "best_position_error_m": 0.0,
+              "tolerance_m": 0.005,
+              "orientation_and_collision_checked": false
+            }
+          },
+          "follower": {
+            "local_m": [
+              -0.53,
+              -0.08,
+              0.02
+            ],
+            "position_ik": {
+              "reachable_position_only": true,
+              "best_position_error_m": 0.0,
+              "tolerance_m": 0.005,
+              "orientation_and_collision_checked": false
+            }
+          }
+        }
+      },
+      "target_B": {
+        "world_m": [
+          -0.08,
+          0.039999999999999994,
+          0.02
+        ],
+        "arms": {
+          "leader": {
+            "local_m": [
+              0.42,
+              0.039999999999999994,
+              0.02
+            ],
+            "position_ik": {
+              "reachable_position_only": true,
+              "best_position_error_m": 0.0,
+              "tolerance_m": 0.005,
+              "orientation_and_collision_checked": false
+            }
+          },
+          "follower": {
+            "local_m": [
+              -0.53,
+              0.039999999999999994,
+              0.02
+            ],
+            "position_ik": {
+              "reachable_position_only": true,
+              "best_position_error_m": 0.0,
+              "tolerance_m": 0.005,
+              "orientation_and_collision_checked": false
+            }
+          }
+        }
+      }
+    }
+  },
+  "engineering_gates": {
+    "position_only_ik": true,
+    "orientation_ik": false,
+    "robot_table_collision": false,
+    "leader_follower_collision": false,
+    "gripper_contact_model": false,
+    "hardware_registration": false,
+    "safe_to_apply_to_live_scene": false
+  },
+  "next_action": "Review results and define a confirmed scene frame before updating renderer, scenario JSON or robot commands."
+}

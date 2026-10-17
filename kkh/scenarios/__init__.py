@@ -42,6 +42,46 @@ def binding(scenario: dict):
     return importlib.import_module(scenario["binding"])
 
 
+def evaluate_recording(trajectory: dict, simulation: dict | None = None, result: str | None = None,
+                       manipulator: str | None = None) -> dict:
+    """Task evaluation of a stored recording (`trajectory` data with a `scenario` link).
+
+    Without `simulation`: the recorded leader commands through the robot binding's kinematic follower.
+    With `simulation` (data of a simulation of this recording): the simulated follower response `result`."""
+    info = trajectory["scenario"]
+    sc = load(info["id"])
+    bind = binding(sc)
+    if simulation:
+        results = simulation["results"]
+        if not results:
+            raise ValueError("Simulation has no results to evaluate")
+        if result is not None and result not in results:
+            raise ValueError(f"Requested simulation result {result!r} does not exist; available: {sorted(results)}")
+        if result is None and len(results) != 1:
+            raise ValueError(f"Select a simulation result explicitly; available: {sorted(results)}")
+        name = result if result is not None else next(iter(results))
+        res = results[name]
+        ee, opening = bind.simulated_signals(res["q_actual"], res["time"], trajectory["time"], trajectory["q"], sc)
+        out = evaluate(sc, res["time"], ee, opening)
+        rev = next((r.get("revision") for r in simulation.get("runs", []) if r.get("name") == name), None)
+        out["evaluated_on"] = {"kind": "simulated", "result": name, "revision": rev,
+                               "label": "OpenModelica follower response (torque-driven, assumed servo parameters)"}
+    else:
+        role = manipulator or sc.get("manipulator", {}).get("role", "follower")
+        ee, opening = bind.signals(trajectory["q"], sc, role)
+        out = evaluate(sc, trajectory["time"], ee, opening)
+        out["evaluated_on"] = {
+            "kind": "commanded", "role": role,
+            "label": "leader demonstration (leader end effector, display world)" if role == "leader"
+            else "recorded leader commands through the kinematic follower"
+            + (" (joint-mapped attempt, no retargeting)" if sc.get("frame", {}).get("layout") else "")}
+    if sc.get("frame", {}).get("layout"):
+        out["frame"] = sc["frame"]
+    out["scenario_version_recorded"] = info.get("version")
+    out["scenario_changed_since_recording"] = info.get("sha256") not in (None, sc["sha256"])
+    return out
+
+
 def evaluate(scenario: dict, time, ee, opening) -> dict:
     """Apply the Level-1 visual grasp rule to (time[n], ee[n,3], opening[n]) and score the task.
 
@@ -50,10 +90,25 @@ def evaluate(scenario: dict, time, ee, opening) -> dict:
     cube_spec, target = scenario["objects"][0], scenario["targets"][0]
     half = cube_spec["size_m"][2] / 2
     time, ee, opening = np.asarray(time, float), np.asarray(ee, float), np.asarray(opening, float)
+    if time.ndim != 1 or len(time) == 0 or not np.all(np.isfinite(time)) or np.any(np.diff(time) <= 0):
+        raise ValueError("Task timestamps must be a nonempty, strictly increasing finite sequence")
+    if ee.shape != (len(time), 3) or opening.shape != (len(time),):
+        raise ValueError("End-effector positions and gripper openings must match task timestamps")
+    if not np.all(np.isfinite(ee)) or not np.all(np.isfinite(opening)):
+        raise ValueError("Task signals must contain only finite values")
     cube = np.array(cube_spec["start_m"], float)
     attached, offset, closed = False, np.zeros(3), opening[0] <= rule["gripper_closed_below"]
     events, path = [], []
+    penetrations = 0
     for k in range(len(time)):
+        # Conservative diagnostic for the *end-effector reference point* inside the cube.
+        # This is not finger-mesh collision detection or a contact dynamics solver.
+        inside_cube = bool(np.all(np.abs(ee[k] - cube) < np.asarray(cube_spec["size_m"]) / 2 - 1e-5)) if not attached else False
+        if inside_cube:
+            penetrations += 1
+            if k == 0 or not previous_inside:
+                events.append({"t": float(time[k]), "event": "invalid_penetration"})
+        previous_inside = inside_cube
         was_closed = closed
         if opening[k] <= rule["gripper_closed_below"]:
             closed = True
@@ -61,7 +116,7 @@ def evaluate(scenario: dict, time, ee, opening) -> dict:
             closed = False
         if closed and not was_closed:
             distance = float(np.linalg.norm(ee[k] - cube))
-            if distance <= rule["capture_radius_m"]:
+            if distance <= rule["capture_radius_m"] and not inside_cube:
                 attached, offset = True, cube - ee[k]
                 events.append({"t": float(time[k]), "event": "grasp", "distance_m": distance})
             else:
@@ -92,13 +147,15 @@ def evaluate(scenario: dict, time, ee, opening) -> dict:
             "cube_final_m": cube.round(4).tolist(),
             "distance_to_target_centre_m": round(float(np.linalg.norm(cube[:2] - centre)), 4),
             "missed_grasps": kinds.count("close_missed"),
-            "task_completed": inside and "grasp" in kinds and "release" in kinds,
+            "invalid_penetration_samples": penetrations,
+            "task_completed": inside and "grasp" in kinds and "release" in kinds and penetrations == 0,
         },
         "events": events,
         "cube_path": path,
         "limitations": [
             "Level 1 visual demonstration logic: kinematic attachment, not physical grasping.",
             "No collision, contact, friction, grasp stability or payload; the cube does not affect the follower model.",
+            "End-effector point penetration is flagged and invalidates task success; robot-link/finger mesh collisions are not simulated.",
             "Attachment uses fingertip position only (orientation ignored); release drops the cube vertically.",
         ],
     }

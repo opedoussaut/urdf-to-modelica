@@ -1,0 +1,91 @@
+{
+  "load": {
+    "ok": true,
+    "action": "load",
+    "model": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/runs/studio/gen7-engineering-check/ALOHA2/package.mo",
+    "messages": "",
+    "errors": [],
+    "data": {},
+    "seconds": 0.081
+  },
+  "checks": {
+    "JointController": {
+      "ok": true,
+      "action": "check",
+      "model": "ALOHA2.Engineering.JointController",
+      "messages": "Check of ALOHA2.Engineering.JointController completed successfully.\nClass ALOHA2.Engineering.JointController has 6 equation(s) and 6 variable(s).\n1 of these are trivial equation(s).",
+      "errors": [],
+      "data": {
+        "equations": 6,
+        "variables": 6
+      },
+      "seconds": 0.009
+    },
+    "TorqueActuator": {
+      "ok": true,
+      "action": "check",
+      "model": "ALOHA2.Engineering.TorqueActuator",
+      "messages": "Check of ALOHA2.Engineering.TorqueActuator completed successfully.\nClass ALOHA2.Engineering.TorqueActuator has 2 equation(s) and 2 variable(s).\n1 of these are trivial equation(s).",
+      "errors": [],
+      "data": {
+        "equations": 2,
+        "variables": 2
+      },
+      "seconds": 0.007
+    },
+    "ServoJoint": {
+      "ok": true,
+      "action": "check",
+      "model": "ALOHA2.Engineering.ServoJoint",
+      "messages": "Check of ALOHA2.Engineering.ServoJoint completed successfully.\nClass ALOHA2.Engineering.ServoJoint has 872 equation(s) and 881 variable(s).\n607 of these are trivial equation(s).",
+      "errors": [],
+      "data": {
+        "equations": 872,
+        "variables": 881
+      },
+      "seconds": 0.028
+    },
+    "FollowerMechanics": {
+      "ok": true,
+      "action": "check",
+      "model": "ALOHA2.Engineering.FollowerMechanics",
+      "messages": "Check of ALOHA2.Engineering.FollowerMechanics completed successfully.\nClass ALOHA2.Engineering.FollowerMechanics has 4421 equation(s) and 4421 variable(s).\n3359 of these are trivial equation(s).",
+      "errors": [],
+      "data": {
+        "equations": 4421,
+        "variables": 4421
+      },
+      "seconds": 0.235
+    },
+    "System": {
+      "ok": true,
+      "action": "check",
+      "model": "ALOHA2.Engineering.System",
+      "messages": "Check of ALOHA2.Engineering.System completed successfully.\nClass ALOHA2.Engineering.System has 6955 equation(s) and 6955 variable(s).\n5330 of these are trivial equation(s).",
+      "errors": [],
+      "data": {
+        "equations": 6955,
+        "variables": 6955
+      },
+      "seconds": 0.606
+    }
+  },
+  "simulation": {
+    "ok": true,
+    "action": "simulate",
+    "model": "ALOHA2.Engineering.System",
+    "messages": "LOG_STDOUT        | info    | Using sparse solver for linear system 0,\n|                 | |       | because density of 0.010 remains under threshold of 0.200.\nLOG_STDOUT        | info    | Using sparse solver for linear system 1,\n|                 | |       | because density of 0.017 remains under threshold of 0.200.\nLOG_STDOUT        | info    | The maximum density for using sparse solvers can be specified\n|                 | |       | using the runtime flag '<-lssMaxDensity=value>'.\nLOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.\nLOG_STATS         | info    | ### STATISTICS ###\n|                 | |       | | timer\n|                 | |       | | |     0.114562s          reading init.xml\n|                 | |       | | |    0.0141525s          reading info.xml\n|                 | |       | | |    0.0096239s [  3.2%] pre-initialization\n|                 | |       | | |    0.0042952s [  1.4%] initialization\n|                 | |       | | |    0.0026753s [  0.9%] steps\n|                 | |       | | |     0.003142s [  1.1%] solver (excl. callbacks)\n|                 | |       | | |    0.0202534s [  6.8%] creating output-file\n|                 | |       | | |        5e-05s [  0.0%] event-handling\n|                 | |       | | |    0.0013715s [  0.5%] overhead\n|                 | |       | | |     0.255485s [ 86.1%] simulation\n|                 | |       | | |     0.296896s [100.0%] total\n|                 | |       | | events\n|                 | |       | | |     0 state events\n|                 | |       | | |     0 time events\n|                 | |       | | solver: dassl\n|                 | |       | | |   761 steps taken\n|                 | |       | | |  1039 calls of functionODE\n|                 | |       | | |    49 evaluations of jacobian\n|                 | |       | | |    23 error test failures\n|                 | |       | | |     0 convergence test failures\n|                 | |       | | | 0.0948671s time of jacobian evaluation\nLOG_SUCCESS       | info    | The simulation finished successfully.",
+    "errors": [],
+    "data": {
+      "resultFile": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/runs/studio/gen7-engineering-check/omc/ALOHA2.Engineering.System_res.mat",
+      "timeFrontend": 0.5828021,
+      "timeBackend": 5.390798,
+      "timeSimCode": 0.6210168,
+      "timeCompile": 4.261306,
+      "timeSimulation": 0.9637965,
+      "timeTotal": 12.2911697,
+      "assert_warnings": 0
+    },
+    "seconds": 12.341
+  }
+}

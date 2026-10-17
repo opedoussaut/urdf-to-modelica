@@ -73,3 +73,44 @@ Follow `DEMO_WALKTHROUGH.md` for the full scenario and expected observations. Qu
 * Copilot proposals: try `kp = 900` (rejected, bounds [1, 500]), `j_shoulder.tau_max` (rejected, URDF fact),
   same-as-current values (rejected, no change).
 * `pytest -q` → 56 passed.
+
+## Resumed verification and repairs (16 October 2026)
+
+Preserved the newer Claude commits and all existing uncommitted/untracked work before editing. Checkpoint:
+`E:/users/opt2.ai/NOVA/ai-kkh-preserved/codex-resume-verification-20261016-215127` (534 files, 59.9 MB, Git bundle,
+working-tree patch, untracked sources, consistent SQLite backup, model copies and project-repository RDF export).
+Ignored dependencies, simulation binaries and the live GraphDB volume remain in place; older full backups are intact.
+
+Verified the current code, not only the earlier milestone reports:
+
+* `.venv\Scripts\python -m pytest -q --basetemp=runs/pytest-resume-complete` → **64 passed**, one existing
+  Starlette/httpx deprecation warning. Includes the new native-launch regression.
+* `npm --prefix web run build` → TypeScript and production build passed. Monaco's large lazy chunk remains a known
+  first-load cost; it does not block the build.
+* All frozen `.mo` hashes still match `reports/engineering_baseline.json`; branch remains `feat/aloha-baseline`.
+  Project GraphDB **11.3.3** on 7201, installed local Ollama models and OpenModelica are healthy.
+* Restored **Drag leader end effector** alongside Move leader arm, Look around and the existing follower Cartesian
+  controls. Click the mode, then drag the glowing teal marker in the camera plane. The existing leader IK applies
+  bounded joint goals through the shared motion rate limiter. Unreachable targets keep the previous goal. Browser
+  drag returned “Bounded IK step; continue dragging to converge.” This controls leader position, not follower
+  Cartesian position or orientation; the cube workflow continues to use the follower IK buttons.
+* Native OMEdit testing found and fixed an actual launch error: loading `package.mo` and a nested arm `.mo` as two
+  top-level files produced a `within` grammar error. The backend now passes only the root package and returns the
+  qualified selected-class name for navigation in Libraries.
+* Native round trip: isolated model **Codex native round-trip verification** (`34080d51`), opened
+  `ALOHA2.Arms.AlohaVX300s` in the native diagram, changed its animation parameter `true → false` using the
+  Parameters dialog, and saved in OMEdit. Diff detection found exactly that source-file change. Explicit import
+  created revision `114987d3`; OMC checked **8,178 equations / 8,178 variables** and successfully compiled/simulated
+  `ALOHA2.Experiments.RightArmReach` for 3 seconds. The verification model remains **unaccepted**. The user's accepted
+  model was not edited. Details: `runs/studio/native-verification.json`; screenshot:
+  `docs/img/omedit-native-roundtrip.png`.
+* A failed lazy workspace load now displays a recovery panel inside that workspace. Other mounted workspaces stay
+  available, so a local frontend rebuild cannot blank the entire studio and discard their unsaved state. Save ongoing
+  work before choosing Reload studio.
+* Moved the stage status beneath the permanent leader/follower labels and verified the result in the browser.
+  Screenshot: `docs/img/resume-motion-verification.png`. Final hashes, service status and native-validation evidence
+  are recorded in `reports/resume_verification.json`.
+
+The guided cube-transfer implementation, semantic trace, revision-bound servo parameters, recorded simulations,
+reviewed AI-proposal workflow and all previous experiment/regression tools have been retained. See
+`DEMO_WALKTHROUGH.md` and `KNOWN_LIMITATIONS.md` for their measured results and engineering boundaries.

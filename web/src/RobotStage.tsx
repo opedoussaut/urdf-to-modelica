@@ -3,14 +3,28 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { STLLoader } from "three/addons/loaders/STLLoader.js";
 import { api } from "./types";
+import { layout as loadLayout, poseToWorld, toLocal, world, type Layout, type LocalPoint } from "./workspaceFrames";
 type Props = {
-  poses: any;
+  poses: any; // link poses in each robot's own URDF base frame (from /api/workbench/pose)
+  layout?: Layout; // display placement of both bases (experimental display transform, not calibration)
   mode: string;
   camera: string;
   selected: string;
   onSelect: (s: string) => void;
   onJoint: (delta: number) => void;
-  onTarget: (t: number[]) => void;
+  onTarget: (t: LocalPoint<"leader">) => void;
+  scene?: SceneState;
+  status?: string;
+  help?: string;
+};
+/** Task objects in STUDIO_DISPLAY_WORLD (metres). Convert scenario-frame points with workspaceFrames first. */
+export type SceneState = {
+  cube: number[]; // centre
+  cubeSize: number;
+  cubeColor: string;
+  attached: boolean;
+  target: { center: number[]; size: number[]; color: string };
+  marker: number[]; // start position A (on the table)
 };
 export default function RobotStage(props: Props) {
   const host = useRef<HTMLDivElement>(null),
@@ -49,6 +63,53 @@ export default function RobotStage(props: Props) {
     grid.rotation.x = Math.PI / 2;
     grid.position.z = -0.005;
     scene.add(grid);
+    // Task scene in the display world (one table, one cube, one target). Visual objects only: no physics (Level 1).
+    const table = new THREE.Mesh(new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshStandardMaterial({ color: "#1b2a3a", transparent: true, opacity: 0.55 }));
+    const tableEdge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
+      new THREE.LineBasicMaterial({ color: "#3b5068" }));
+    const label = (text: string, color: string) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 64;
+      const g = canvas.getContext("2d")!;
+      g.fillStyle = color;
+      g.font = "bold 48px Inter, sans-serif";
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.fillText(text, 32, 34);
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), depthTest: false }));
+      sprite.scale.setScalar(0.05);
+      sprite.renderOrder = 11;
+      return sprite;
+    };
+    const labelA = label("A", "#fbbf24"),
+      labelB = label("B", "#4ade80");
+    const targetPad = new THREE.Mesh(new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshBasicMaterial({ color: "#22C55E", transparent: true, opacity: 0.35 }));
+    const targetEdge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
+      new THREE.LineBasicMaterial({ color: "#4ade80" }));
+    const markerRing = new THREE.Mesh(new THREE.RingGeometry(0.03, 0.036, 40),
+      new THREE.MeshBasicMaterial({ color: "#F59E0B", side: THREE.DoubleSide }));
+    const cubeMaterial = new THREE.MeshStandardMaterial({ color: "#F59E0B", roughness: 0.45, emissive: "#000000" });
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), cubeMaterial);
+    // These are visual task indicators, not contact or collision geometry.
+    // Keep the 4 cm cube at its physical scale; make it legible with a ground halo.
+    const cubeHalo = new THREE.Mesh(
+      new THREE.RingGeometry(0.03, 0.038, 48),
+      new THREE.MeshBasicMaterial({ color: "#fbbf24", side: THREE.DoubleSide, depthTest: false }),
+    );
+    cubeHalo.renderOrder = 10;
+    const cubeEdges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1)),
+      new THREE.LineBasicMaterial({ color: "#fff0b3" }),
+    );
+    cube.add(cubeEdges);
+    const sceneGroup = new THREE.Group();
+    sceneGroup.add(targetPad, targetEdge, markerRing, cubeHalo, cube, labelA, labelB);
+    scene.add(table, tableEdge);
+    sceneGroup.visible = false;
+    scene.add(sceneGroup);
+    const highlight = new THREE.MeshStandardMaterial({ color: "#5eead4", emissive: "#0d9488", emissiveIntensity: 0.9 });
     const objects = new Map<string, THREE.Group>(),
       materials = [
         new THREE.MeshStandardMaterial({
@@ -85,7 +146,8 @@ export default function RobotStage(props: Props) {
       frame = 0,
       count = 0,
       lastPose: any = null,
-      lastCamera = "";
+      lastCamera = "",
+      lastLayout = "";
     const loader = new STLLoader();
     api<any[]>("/api/geometry")
       .then((items) =>
@@ -170,6 +232,7 @@ export default function RobotStage(props: Props) {
       cast(e);
       const p = latest.current;
       if (p.mode === "ee") {
+        if (!sphere.visible || !ray.intersectObject(sphere).length) return;
         const normal = camera.getWorldDirection(new THREE.Vector3());
         plane.setFromNormalAndCoplanarPoint(normal, sphere.position);
         dragging = true;
@@ -196,8 +259,9 @@ export default function RobotStage(props: Props) {
         previousX = e.clientX;
       } else if (p.mode === "ee") {
         cast(e);
+        // The drag plane lives in the display world; the leader IK takes leader-base coordinates.
         if (ray.ray.intersectPlane(plane, intersection))
-          p.onTarget([intersection.x + 0.5, intersection.y, intersection.z]);
+          p.onTarget(toLocal(p.layout || loadLayout(), "leader", world([intersection.x, intersection.y, intersection.z])));
       }
     };
     const up = () => {
@@ -213,33 +277,67 @@ export default function RobotStage(props: Props) {
         return;
       }
       const p = latest.current;
+      const lay = p.layout || loadLayout();
       controls.enabled = p.mode === "orbit";
-      if (p.camera !== lastCamera) {
+      if (p.camera !== lastCamera || lay.name !== lastLayout) {
+        // Camera and table follow the layout: centre between the two bases, table from the layout file.
+        const cx = (lay.bases.leader.xyz[0] + lay.bases.follower.xyz[0]) / 2;
         const positions: Record<string, number[]> = {
-          perspective: [1.15, -1.8, 1.15],
-          front: [0.15, -2.8, 0.35],
-          top: [0.15, -0.001, 2.8],
-          side: [2.8, 0, 0.35],
+          perspective: [cx + 0.9, -1.8, 1.15],
+          front: [cx, -2.8, 0.35],
+          top: [cx, -0.001, 2.8],
+          side: [cx + 2.8, 0, 0.35],
         };
         camera.position.fromArray(positions[p.camera] || positions.perspective);
+        controls.target.set(cx, 0, 0.2);
+        table.scale.set(lay.table.size_xy[0], lay.table.size_xy[1], 1);
+        table.position.set(lay.table.center_xy[0], lay.table.center_xy[1], lay.table.top_z - 0.002);
+        tableEdge.scale.copy(table.scale);
+        tableEdge.position.copy(table.position);
+        points[0].length = points[1].length = 0;
         lastCamera = p.camera;
+        lastLayout = lay.name;
         controls.update();
       }
       for (const [name, group] of objects) {
-        const leader = name.startsWith("leader/"),
-          pose =
-            p.poses?.[leader ? "leader" : "follower"]?.[name.split("/")[1]];
+        const role = name.startsWith("leader/") ? "leader" : "follower",
+          pose = p.poses?.[role]?.[name.split("/")[1]];
         group.visible = !!pose;
         if (pose) {
-          group.position.fromArray(pose);
-          group.position.x += leader ? -0.5 : 0.45;
-          group.quaternion.fromArray(pose, 3);
+          const w = poseToWorld(lay, role, pose);
+          group.position.fromArray(w);
+          group.quaternion.fromArray(w, 3);
         }
       }
       const ee = p.poses?.leader?.ee_gripper_link;
       if (ee) {
-        sphere.position.set(ee[0] - 0.5, ee[1], ee[2]);
+        sphere.position.fromArray(poseToWorld(lay, "leader", ee));
         sphere.visible = p.mode === "ee";
+      }
+      const sc = p.scene;
+      sceneGroup.visible = !!sc;
+      if (sc) {
+        const top = lay.table.top_z;
+        targetPad.scale.set(sc.target.size[0], sc.target.size[1], 1);
+        targetEdge.scale.copy(targetPad.scale);
+        targetPad.position.set(sc.target.center[0], sc.target.center[1], top + 0.004);
+        targetEdge.position.copy(targetPad.position);
+        markerRing.position.set(sc.marker[0], sc.marker[1], top + 0.006);
+        labelA.position.set(sc.marker[0], sc.marker[1] - 0.065, top + 0.03);
+        labelB.position.set(sc.target.center[0], sc.target.center[1] + sc.target.size[1] / 2 + 0.03, top + 0.03);
+        cubeHalo.position.set(sc.cube[0], sc.cube[1], top + 0.008);
+        cube.scale.setScalar(sc.cubeSize);
+        cube.position.set(sc.cube[0], sc.cube[1], sc.cube[2]);
+        cubeMaterial.emissive.set(sc.attached ? "#7c4a03" : "#5b3600");
+      }
+      for (const [name, group] of objects) {
+        const isSelected = name === p.selected && name.startsWith("leader/") && p.mode !== "orbit";
+        group.traverse((o) => {
+          if (o instanceof THREE.Mesh) {
+            o.userData.base ??= o.material;
+            o.material = isSelected ? highlight : o.userData.base;
+          }
+        });
       }
       const selected = [...objects.entries()].find(([n]) => n === p.selected);
       axis.visible = !!selected;
@@ -248,12 +346,11 @@ export default function RobotStage(props: Props) {
         axis.quaternion.copy(selected[1].quaternion);
       }
       if (p.poses && p.poses !== lastPose) {
-        ["leader", "follower"].forEach((role, i) => {
+        (["leader", "follower"] as const).forEach((role, i) => {
           const ee = p.poses[role]?.ee_gripper_link;
           if (ee) {
-            points[i].push(
-              new THREE.Vector3(ee[0] + (i ? 0.45 : -0.5), ee[1], ee[2]),
-            );
+            const w = poseToWorld(lay, role, ee);
+            points[i].push(new THREE.Vector3(w[0], w[1], w[2]));
             if (points[i].length > 600) points[i].shift();
             trails[i].geometry.dispose();
             trails[i].geometry = new THREE.BufferGeometry().setFromPoints(
@@ -301,12 +398,18 @@ export default function RobotStage(props: Props) {
         FOLLOWER · SIMULATION <small>ViperX-300</small>
       </div>
       <div className="wb-stage-help">
-        {props.mode === "orbit"
-          ? "Drag to orbit · right-drag to pan · scroll to zoom"
-          : props.mode === "joint"
-            ? "Drag a leader link horizontally to turn its joint"
-            : "Drag in the viewport to move the glowing end effector"}{" "}
+        {props.help ||
+          (props.mode === "orbit"
+            ? "Drag to orbit · right-drag to pan · scroll to zoom"
+            : props.mode === "joint"
+              ? "Drag a leader link horizontally to turn its joint"
+              : "Drag in the viewport to move the glowing end effector")}{" "}
         · {loaded} source meshes
+      </div>
+      <div className="wb-stage-status" role="status" aria-label="Stage state">
+        {props.scene
+          ? props.status || "TASK SCENE · amber cube = A · green square = B · visual objects only (no contact physics)"
+          : "TASK SCENE NOT LOADED · cube and target unavailable (check the scenario API and the Studio error log)"}
       </div>
       {error && <div className="wb-error">{error}</div>}
     </div>

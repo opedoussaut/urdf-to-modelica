@@ -1,0 +1,80 @@
+import { useEffect, useState } from "react";
+import { request, waitJob, message } from "./studio";
+
+type Props={model:string;path:string;hash:string;selected?:string;dirty:boolean;onSelect:(name:string)=>void;onOpen:(type:string)=>void};
+const color=(v:any, fallback="#253e5a")=>Array.isArray(v)?`rgb(${v.join(',')})`:fallback;
+const enumeration=(v:any)=>v?.name?.split('.').at(-1) || v;
+const point=(v:any)=>Array.isArray(v)&&v.length===2&&v.every(Number.isFinite);
+
+/** Render evaluated OMC primitives, never arbitrary SVG/HTML from Modelica source. */
+function Graphic({g,name}:{g:any;name:string}) {
+  const e=g.elements||[];
+  if(e[0]===false)return null;
+  const line=g.name==='Line';
+  const origin=point(e[1])?e[1]:[0,0],rotation=typeof e[2]==='number'?e[2]:0;
+  const stroke=color(e[3]),fill=enumeration(e[6])==='None'?'none':color(e[4],'none');
+  const common={stroke,strokeWidth:typeof e[line?5:7]==='number'?Math.max(.35,e[line?5:7]):.5,fill};
+  const extent=e[g.name==='Rectangle'?9:8];
+  const rect=Array.isArray(extent)&&extent.length===2&&extent.every(point)?{
+    x:Math.min(extent[0][0],extent[1][0]),y:Math.min(extent[0][1],extent[1][1]),
+    width:Math.abs(extent[1][0]-extent[0][0]),height:Math.abs(extent[1][1]-extent[0][1])}:null;
+  let shape=null;
+  if(g.name==='Rectangle'&&rect)shape=<rect {...rect} {...common} rx={Number(e[10])||0}/>;
+  if(g.name==='Ellipse'&&rect)shape=<ellipse cx={rect.x+rect.width/2} cy={rect.y+rect.height/2} rx={rect.width/2} ry={rect.height/2} {...common}/>;
+  const points=e[line?6:8];
+  if((line||g.name==='Polygon')&&Array.isArray(points)&&points.every(point)) {
+    const p=points.map((p:number[])=>p.join(',')).join(' ');
+    shape=line?<polyline points={p} fill="none" stroke={stroke} strokeWidth={common.strokeWidth} strokeDasharray={enumeration(e[4])==='Dash'?'3 2':undefined}/>:<polygon points={p} {...common}/>;
+  }
+  if(g.name==='Text'&&rect) {
+    const label=typeof e[9]==='string'?e[9].replaceAll('%name',name):'';
+    shape=<text transform={`translate(${rect.x+rect.width/2} ${rect.y+rect.height/2}) scale(1 -1)`} textAnchor="middle" dominantBaseline="middle" fill={color(e[11],stroke)} fontSize={Number(e[10])||Math.min(14,Math.max(7,rect.height*.55))} fontFamily="Arial, sans-serif">{label}</text>;
+  }
+  return <g transform={`translate(${origin.join(' ')}) rotate(${rotation})`}>{shape}</g>;
+}
+function Graphics({layer,name}:{layer:any;name:string}) {return <>{(layer?.graphics||[]).map((g:any,i:number)=><Graphic key={i} g={g} name={name}/>)}</>}
+
+export default function ModelicaDiagram({model,path,hash,selected,dirty,onSelect,onOpen}:Props) {
+  const [data,setData]=useState<any>(),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+  useEffect(()=>{
+    let disposed=false;setData(undefined);setError('');
+    if(dirty)return;
+    setBusy(true);
+    request(`/model/${model}/diagram?path=${encodeURIComponent(path)}`,'POST')
+      .then(waitJob).then(d=>{if(!disposed)setData(d)})
+      .catch(e=>{if(!disposed)setError(message(e))}).finally(()=>{if(!disposed)setBusy(false)});
+    return ()=>{disposed=true};
+  },[model,path,hash,dirty]);
+  const extent=data?.diagram.coordinateSystem?.extent||[[-100,-100],[100,100]];
+  const x=extent[0][0]-20,y=-extent[1][1]-20,w=extent[1][0]-extent[0][0]+40,h=extent[1][1]-extent[0][1]+40;
+  const routed=data?.connections.filter((c:any)=>c.annotation?.Line)||[];
+  return <div className="wb-native-diagram">
+    <div className="wb-diagram-caption"><strong>Modelica annotation preview</strong><span>READ ONLY · OMEDIT REFERENCE</span></div>
+    {dirty?<p className="wb-notice">Save this revision to preview its compiler-evaluated annotations. Your unsaved source is retained.</p>:busy?<p className="wb-notice">OpenModelica is reading component icons, placements and connections…</p>:error?<p className="wb-error" role="alert">{error}</p>:data&&<>
+      <svg viewBox={`${x} ${y} ${w} ${h}`} role="img" aria-label={`OpenModelica diagram ${data.class_name}`}>
+        <g transform="scale(1 -1)">
+          <Graphics layer={data.diagram} name={data.class_name}/>
+          {routed.map((c:any,i:number)=>{
+            const line=c.annotation.Line;
+            return <g key={i}><title>{c.from} ↔ {c.to}</title>{line.$kind?<Graphic g={line} name=""/>:Array.isArray(line.points)&&line.points.every(point)?<polyline points={line.points.map((p:number[])=>p.join(',')).join(' ')} fill="none" stroke={color(line.color)} strokeWidth={line.thickness||.5}/>:null}</g>;
+          })}
+          {data.components.map((c:any)=>{
+            const t=c.placement.transformation;if(!t)return null;
+            const ext=t.extent||[[-10,-10],[10,10]],origin=t.origin||[0,0];
+            const cs=c.icon.coordinateSystem?.extent||[[-100,-100],[100,100]];
+            const sx=(ext[1][0]-ext[0][0])/(cs[1][0]-cs[0][0]),sy=(ext[1][1]-ext[0][1])/(cs[1][1]-cs[0][1]);
+            return <g key={c.name} role="button" tabIndex={0} aria-label={`Inspect ${c.name}`} className="wb-diagram-component"
+              onClick={()=>onSelect(c.name)} onDoubleClick={()=>onOpen(c.type)} onKeyDown={e=>{if(e.key==='Enter')onSelect(c.name)}}
+              transform={`translate(${origin.join(' ')}) rotate(${t.rotation||0}) translate(${(ext[0][0]+ext[1][0])/2} ${(ext[0][1]+ext[1][1])/2}) scale(${sx} ${sy}) translate(${-(cs[0][0]+cs[1][0])/2} ${-(cs[0][1]+cs[1][1])/2})`}>
+              <title>{c.name} · {c.type} · double-click to open class</title>
+              <rect x={cs[0][0]} y={cs[0][1]} width={cs[1][0]-cs[0][0]} height={cs[1][1]-cs[0][1]} fill="transparent" stroke={selected===c.name?'#0d9488':'transparent'} strokeWidth={6}/>
+              <Graphics layer={c.icon} name={c.name}/>
+            </g>;
+          })}
+        </g>
+      </svg>
+      <p className="wb-footnote">{data.method} · revision {data.revision.slice(0,8)} · {routed.length}/{data.connections.length} connections have native routes. Click to inspect; double-click to open a component class.</p>
+      <details><summary>Connection inventory and preview limitations</summary><ul>{data.connections.map((c:any,i:number)=><li key={i}><code>{c.from} ↔ {c.to}</code>{!c.annotation?.Line?' · no native Line annotation':''}</li>)}</ul>{data.limitations.map((l:string)=><p key={l}>{l}</p>)}</details>
+    </>}
+  </div>;
+}

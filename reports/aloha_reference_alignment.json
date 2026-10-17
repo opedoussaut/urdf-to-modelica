@@ -1,0 +1,198 @@
+{
+  "status": "sources_compared_registration_pending",
+  "source_urdf": "E:\\users\\opt2.ai\\NOVA\\ai-kkh-physicalai\\data\\urdf\\aloha_vx300s.urdf",
+  "menagerie_mjcf": "E:\\users\\opt2.ai\\NOVA\\ai-kkh-physicalai\\third_party\\mujoco_menagerie\\aloha\\aloha.xml",
+  "urdf_finger_joints": {
+    "left_finger": {
+      "type": "prismatic",
+      "range_m": [
+        0.021,
+        0.057
+      ],
+      "axis_local": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "mimic": null
+    },
+    "right_finger": {
+      "type": "prismatic",
+      "range_m": [
+        -0.057,
+        -0.021
+      ],
+      "axis_local": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "mimic": {
+        "joint": "left_finger",
+        "multiplier": "-1",
+        "offset": "0"
+      }
+    }
+  },
+  "source_policy": "URDF remains GEN7 kinematic source of truth; MJCF is comparative evidence only.",
+  "engineering_gates": {
+    "reference_frame_registration": "NOT_VERIFIED",
+    "finger_coordinate_conversion": "NOT_VERIFIED",
+    "gripper_contact_geometry": "NOT_VERIFIED",
+    "physically_validated_grasp": "NOT_VERIFIED"
+  },
+  "known_reference_difference": "GEN7 URDF left 0.021..0.057 m; Menagerie MJCF left 0..0.041 m; distinct origins and conventions. Do not directly substitute.",
+  "menagerie": {
+    "actuator": {
+      "command_range_m": [
+        0.002,
+        0.037
+      ],
+      "kp": 2000.0,
+      "kv": 124.0
+    },
+    "fingers": {
+      "left_finger": {
+        "physical_range_m": [
+          0.0,
+          0.041
+        ],
+        "axis_local": [
+          0.0,
+          0.0,
+          -1.0
+        ]
+      },
+      "right_finger": {
+        "physical_range_m": [
+          0.0,
+          0.041
+        ],
+        "axis_local": [
+          0.0,
+          0.0,
+          -1.0
+        ]
+      }
+    },
+    "contact_markers": {
+      "left/left": [
+        {
+          "name": "left/left_g0",
+          "pos_local_m": [
+            0.013,
+            -0.0892,
+            0.0268
+          ]
+        },
+        {
+          "name": "left/left_g1",
+          "pos_local_m": [
+            0.0222,
+            -0.0892,
+            0.0268
+          ]
+        },
+        {
+          "name": "left/left_g2",
+          "pos_local_m": [
+            0.0182,
+            -0.0845,
+            0.0266
+          ]
+        }
+      ],
+      "left/right": [
+        {
+          "name": "left/right_g0",
+          "pos_local_m": [
+            0.013,
+            0.0892,
+            0.0268
+          ]
+        },
+        {
+          "name": "left/right_g1",
+          "pos_local_m": [
+            0.0222,
+            0.0892,
+            0.0268
+          ]
+        },
+        {
+          "name": "left/right_g2",
+          "pos_local_m": [
+            0.0182,
+            0.0845,
+            0.0266
+          ]
+        }
+      ],
+      "right/left": [
+        {
+          "name": "right/left_g0",
+          "pos_local_m": [
+            0.013,
+            -0.0892,
+            0.0268
+          ]
+        },
+        {
+          "name": "right/left_g1",
+          "pos_local_m": [
+            0.0222,
+            -0.0892,
+            0.0268
+          ]
+        },
+        {
+          "name": "right/left_g2",
+          "pos_local_m": [
+            0.0182,
+            -0.0845,
+            0.0266
+          ]
+        }
+      ],
+      "right/right": [
+        {
+          "name": "right/right_g0",
+          "pos_local_m": [
+            0.013,
+            0.0892,
+            0.0268
+          ]
+        },
+        {
+          "name": "right/right_g1",
+          "pos_local_m": [
+            0.0222,
+            0.0892,
+            0.0268
+          ]
+        },
+        {
+          "name": "right/right_g2",
+          "pos_local_m": [
+            0.0182,
+            0.0845,
+            0.0266
+          ]
+        }
+      ]
+    }
+  },
+  "scene_table_collision": {
+    "name": "table",
+    "pos": "0 0 -0.1009",
+    "size": "0.61 0.37 0.1",
+    "type": "box",
+    "class": "collision"
+  },
+  "findings": [
+    "Finger joint axis conventions differ and must be transformed through complete kinematic chains.",
+    "MJCF finger actuator gains use MJCF position-servo conventions; they are not validated Modelica controller gains.",
+    "ALOHA Menagerie includes two side-by-side follower arms; a facing leader/follower scene needs independently verified base transforms.",
+    "Collision sites/meshes are useful geometric references but do not establish a valid Modelica grasp."
+  ]
+}

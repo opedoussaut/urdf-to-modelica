@@ -1,0 +1,44 @@
+{
+  "id": "aloha2-display-layouts",
+  "version": "0.1.0",
+  "units": "metres, radians",
+  "world_frame": {
+    "name": "STUDIO_DISPLAY_WORLD",
+    "axes": "right-handed, +Z up; table top at z = 0",
+    "meaning": "Frame of the 3D studio scene. It is a display convention, NOT a measured hardware cell frame."
+  },
+  "calibration": {
+    "hardware_registration": false,
+    "note": "No base pose in this file was measured on hardware. Every transform here is an experimental display transform."
+  },
+  "default_layout": "experimental_shared_table",
+  "layouts": {
+    "legacy_side_by_side": {
+      "label": "Legacy side-by-side (follower-frame task scene)",
+      "status": "LEGACY_DISPLAY",
+      "bases": {
+        "leader": { "model": "aloha_wx250s", "xyz": [-0.5, 0.0, 0.0], "yaw": 0.0 },
+        "follower": { "model": "aloha_vx300s", "xyz": [0.45, 0.0, 0.0], "yaw": 0.0 }
+      },
+      "evidence": "Historic RobotStage.tsx constants (FOLLOWER_OFFSET 0.45, LEADER_OFFSET -0.5). X translations only; base rotations unknown. Step 4 audit: cube A unreachable for the leader (reports/workspace_registration.json).",
+      "table": { "center_xy": [0.75, -0.01], "size_xy": [0.62, 0.62], "top_z": 0.0 },
+      "scenario": "aloha2-cube-transfer"
+    },
+    "experimental_shared_table": {
+      "label": "Experimental shared table (arms facing each other)",
+      "status": "EXPERIMENTAL_DISPLAY",
+      "bases": {
+        "leader": { "model": "aloha_wx250s", "xyz": [-0.469, 0.0, 0.0], "yaw": 0.0 },
+        "follower": { "model": "aloha_vx300s", "xyz": [0.469, 0.0, 0.0], "yaw": 3.141592653589793 }
+      },
+      "evidence": "Mounting convention of the ALOHA reference model (MuJoCo Menagerie aloha/aloha.xml, BSD-3-Clause, values only, no assets copied): left/base_link pos (-0.469, -0.019, 0.02), right/base_link pos (0.469, -0.019, 0.02) quat (0 0 0 1) = yaw pi. Here leader takes the left mount and follower the right mount. Deviations: the common Y offset -0.019 m and the 0.02 m mounting-plate height are not applied (base_link origin on the table top, z = 0). The reference mounts two vx300s; this studio mounts a wx250s leader, so leader reach is smaller. Not a hardware measurement.",
+      "table": {
+        "center_xy": [0.0, 0.0],
+        "size_xy": [1.22, 0.74],
+        "top_z": 0.0,
+        "source": "Menagerie aloha/scene.xml table collision box half-sizes 0.61 x 0.37 m, top at z = -0.0009 (taken as 0)."
+      },
+      "scenario": "aloha2-cube-transfer-shared"
+    }
+  }
+}

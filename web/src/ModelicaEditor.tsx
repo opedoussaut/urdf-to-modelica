@@ -9,6 +9,8 @@ import "monaco-editor/editor/contrib/hover/browser/hoverContribution";
 import "monaco-editor/editor/contrib/contextmenu/browser/contextmenu";
 import EditorWorker from "monaco-editor/editor/editor.worker?worker";
 import cytoscape from "cytoscape";
+import ModelicaDiagram from "./ModelicaDiagram";
+import SemanticTrace from "./SemanticTrace";
 import {
   ExternalLink,
   Save,
@@ -86,6 +88,7 @@ export default function ModelicaEditor({ context, setContext }: Props) {
     [busy, setBusy] = useState(""),
     [className, setClassName] = useState("ALOHA2.Experiments.RightArmReach"),
     [stopTime, setStopTime] = useState(9);
+  const [modelItems,setModelItems]=useState<Doc[]>([]);
   const host = useRef<HTMLDivElement>(null),
     editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null),
     diffEditor = useRef<monaco.editor.IStandaloneDiffEditor | null>(null),
@@ -106,6 +109,7 @@ export default function ModelicaEditor({ context, setContext }: Props) {
     setRevisions(r.filter((v) => v.data.workspace === id));
     setContext({ model: id, model_revision: w.data.head, file: path });
     setChanges(undefined);
+    request<Doc[]>("/documents/model").then(setModelItems).catch(()=>{});
   };
   useEffect(() => {
     let disposed = false;
@@ -230,7 +234,7 @@ export default function ModelicaEditor({ context, setContext }: Props) {
     }
   };
   useEffect(() => {
-    if (tab !== "diagram" || !graphHost.current || !source) return;
+    if (tab !== "structure" || !graphHost.current || !source) return;
     const components = source.components.filter(
       (c: any) =>
         !c.prefix.includes("parameter") && !c.prefix.includes("constant"),
@@ -337,8 +341,15 @@ export default function ModelicaEditor({ context, setContext }: Props) {
       );
       if (type === "open")
         setNotice(
-          "Editable working package opened in native OMEdit. Save there, then Refresh Changes here.",
+          `Editable working package opened in native OMEdit. ${result.selection_hint || "Select the class in Libraries."} Save there, then Refresh Changes here.`,
         );
+      else if(type === "engineering_variant") {
+        await load(result.id,"Engineering/System.mo");
+        setTab("diagram");
+        setClassName("ALOHA2.Engineering.System");
+        setStopTime(3.5);
+        setNotice("Created an unaccepted engineering variant. Previous model, accepted revision and frozen baseline are preserved.");
+      }
       else if (type === "check" || type === "simulate") {
         const checked = await waitJob(result);
         setDiagnostics(checked);
@@ -501,6 +512,11 @@ export default function ModelicaEditor({ context, setContext }: Props) {
       </div>
       <div className="wb-toolbar wb-card">
         <span className="wb-badge">BASELINE PROTECTED</span>
+        <select aria-label="Engineering model workspace" value={workspace?.id||""} onChange={e=>{
+          if(dirty){setError("Save or revert unsaved source before selecting another model.");return;}
+          load(e.target.value,context.file).catch(err=>setError(message(err)));
+        }}><option value="" disabled>Select model…</option>{modelItems.map(m=><option key={m.id} value={m.id}>{m.name} · {m.id.slice(0,8)}</option>)}</select>
+        <button disabled={!workspace||!!busy||dirty} onClick={()=>action("engineering_variant")}>Create engineering variant</button>
         <span className="wb-mono">
           Working {workspace?.data.head?.slice(0, 8) || "loading"}{" "}
           {dirty ? "· UNSAVED" : ""}
@@ -593,13 +609,13 @@ export default function ModelicaEditor({ context, setContext }: Props) {
         <section className="wb-card wb-editor-main">
           <div className="wb-toolbar">
             <div className="wb-segment">
-              {["source", "diagram"].map((t) => (
+              {["source", "diagram", "structure"].map((t) => (
                 <button
                   aria-pressed={tab === t}
                   key={t}
                   onClick={() => setTab(t)}
                 >
-                  {t === "source" ? "Modelica source" : "Physical diagram"}
+                  {t === "source" ? "Modelica source" : t === "diagram" ? "Modelica diagram" : "Structural graph"}
                 </button>
               ))}
             </div>
@@ -651,6 +667,12 @@ export default function ModelicaEditor({ context, setContext }: Props) {
           </div>
           {tab === "source" ? (
             <div className="wb-monaco" ref={host} />
+          ) : tab === "diagram" && workspace && source ? (
+            <ModelicaDiagram model={workspace.id} path={context.file} hash={source.hash} selected={selected?.name} dirty={dirty}
+              onSelect={name=>selection.current(name)} onOpen={type=>{
+                const path=type?.replace(/^ALOHA2\./,"").replaceAll(".","/")+".mo";
+                if(files.some(f=>f.path===path))load(workspace.id,path).catch(e=>setError(message(e)));
+              }}/>
           ) : (
             <>
               <div className="wb-diagram" ref={graphHost} />
@@ -860,6 +882,7 @@ export default function ModelicaEditor({ context, setContext }: Props) {
           )}
         </aside>
       </div>
+      <details className="wb-card wb-pad"><summary>Selected component · ontology evidence and parameter provenance</summary><SemanticTrace context={context}/></details>
       {changes && (
         <section className="wb-card wb-pad">
           <h2>Native editor changes · {changes.changes.length} files</h2>

@@ -184,7 +184,7 @@ def dynamics(identity:str,body:Control,axes:int=6):
                              "model_revision":runs[-1]["revision"],"reference_revision":runs[0]["revision"]})
         from kkh.semantic.trace import record_simulation
         revs={r["revision"]:store.get(r["revision"],"revision") for r in runs if r.get("revision")}
-        trace=record_simulation(record,revs)
+        trace=record_simulation(record,revs,old["data"])
         return store.update(record["id"],record["version"],{**record["data"],"trace":trace})
     return job("Follower revision comparison",run)
 
@@ -251,6 +251,11 @@ def changes(identity:str):
     return guard(lambda:models.changes(identity))
 
 
+@router.post("/model/{identity}/diagram")
+def model_diagram(identity:str,path:str="Engineering/System.mo"):
+    return job("OpenModelica diagram export",lambda:models.diagram(identity,path))
+
+
 class Action(BaseModel):
     action:str
     path:str="package.mo"
@@ -264,6 +269,8 @@ class Action(BaseModel):
 def action(identity:str,body:Action):
     if body.action=="open":return guard(lambda:models.open_native(identity,body.path))
     if body.action=="ensure_control":return {"revision":guard(lambda:models.ensure_control(identity))}
+    if body.action=="ensure_engineering":return guard(lambda:models.ensure_engineering(identity))
+    if body.action=="engineering_variant":return guard(lambda:models.engineering_variant(identity))
     if body.action in {"import","reject"}:return guard(lambda:models.roundtrip(identity,body.action,body.hashes))
     if body.action=="accept":
         accepted=guard(lambda:models.accept(identity,body.revision))
@@ -363,6 +370,18 @@ def entity(robot:str="aloha_vx300s",joint:str|None=None,file:str|None=None,compo
     return record
 
 
+# Read-only Modelica-derived evidence; never treated as live ALOHA contact physics.
+@router.get("/physics/grasp-surrogate")
+def grasp_surrogate_replay():
+    from kkh.engineering.physics_replay import replay
+    try:
+        return replay()
+    except FileNotFoundError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except (ValueError, OSError) as exc:
+        raise HTTPException(409, f"Invalid Modelica physics evidence: {exc}") from exc
+
+
 # ---------------------------------------------------------------------------------------------- task scenarios
 @router.get("/scenarios")
 def scenarios_list():
@@ -385,20 +404,34 @@ def follower_ik(body:Pose):
 
 
 @router.get("/trajectory/{identity}/task")
-def task_result(identity:str):
-    """Level-1 visual task evaluation of a saved recording (deterministic backend computation)."""
+def task_result(identity:str,run:str|None=None,result:str|None=None,manipulator:str|None=None):
+    """Level-1 visual task evaluation of a saved recording (deterministic backend computation).
+
+    Without `run`: on the recorded leader commands through the kinematic follower. With `run` (a simulation of this
+    recording) and optionally `result` (reference/candidate): on the OpenModelica follower response, i.e. would the
+    simulated follower still accomplish the task under the same declared rule."""
     from kkh import scenarios as S
     record=guard(lambda:store.get(identity,"trajectory"))
     info=record["data"].get("scenario")
     if not info:raise HTTPException(404,"This recording is not linked to a task scenario")
+    if manipulator not in (None,"leader","follower"):raise HTTPException(422,"manipulator must be leader or follower")
+    simulation=guard(lambda:store.get(run,"simulation")) if run else None
+    if simulation and simulation["data"].get("trajectory")!=identity:
+        raise HTTPException(422,"This simulation was not run on this recording")
     def compute():
-        sc=S.load(info["id"])
-        ee,opening=S.binding(sc).signals(record["data"]["q"])
-        result=S.evaluate(sc,record["data"]["time"],ee,opening)
-        result["scenario_version_recorded"]=info.get("version")
-        result["scenario_changed_since_recording"]=info.get("sha256") not in (None,sc["sha256"])
-        return result
+        out=S.evaluate_recording(record["data"],simulation["data"] if simulation else None,result,manipulator)
+        if simulation:out["evaluated_on"]["run"]=run
+        return out
     return guard(compute)
+
+
+@router.get("/workspace/layouts")
+def workspace_layouts():
+    """Display layouts (experimental base transforms, never hardware calibration) with their engineering gates."""
+    from kkh.engineering import workspace_frames as W
+    data=W.load_layouts()
+    return {**data,"gates":W.gates(False)|{"display_layout_applied":True},
+            "statement":"Experimental layout — position IK only; orientation/collision/physical contact unverified."}
 
 
 # ---------------------------------------------------------------------------------------------- semantic engineering

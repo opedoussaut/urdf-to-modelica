@@ -1,0 +1,76 @@
+{
+  "status": "BLOCKED_UNREACHABLE_TASK_POINT",
+  "frame_policy": "Display X translations only; unknown leader/follower base rotations, no physical calibration",
+  "display_base_offsets_x_m": {
+    "follower": 0.45,
+    "leader": -0.5
+  },
+  "task_points": {
+    "cube_A": {
+      "follower_local_m": [
+        0.3,
+        0.12,
+        0.02
+      ],
+      "leader_local_display_only_m": [
+        1.25,
+        0.12,
+        0.02
+      ],
+      "display_world_m": [
+        0.75,
+        0.12,
+        0.02
+      ],
+      "leader_ik": {
+        "reachable_position_only": false,
+        "best_position_error_m": 0.595537,
+        "tolerance_m": 0.005,
+        "orientation_and_collision_checked": false
+      },
+      "follower_ik": {
+        "reachable_position_only": true,
+        "best_position_error_m": 0.0,
+        "tolerance_m": 0.005,
+        "orientation_and_collision_checked": false
+      }
+    },
+    "target_B": {
+      "follower_local_m": [
+        0.3,
+        -0.14,
+        0.0
+      ],
+      "leader_local_display_only_m": [
+        1.25,
+        -0.14,
+        0.0
+      ],
+      "display_world_m": [
+        0.75,
+        -0.14,
+        0.0
+      ],
+      "leader_ik": {
+        "reachable_position_only": false,
+        "best_position_error_m": 0.599196,
+        "tolerance_m": 0.005,
+        "orientation_and_collision_checked": false
+      },
+      "follower_ik": {
+        "reachable_position_only": true,
+        "best_position_error_m": 0.0,
+        "tolerance_m": 0.005,
+        "orientation_and_collision_checked": false
+      }
+    }
+  },
+  "engineering_gates": {
+    "display_position_reachability": false,
+    "hardware_base_registration": false,
+    "gripper_pose_orientation": false,
+    "cube_contact_3d": false,
+    "enable_ab_shortcuts": false
+  },
+  "safe_next_action": "Define and verify actual scene base transforms before task motion. Never command above-A/B using follower coordinates directly."
+}

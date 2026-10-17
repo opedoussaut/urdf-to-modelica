@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import {
   Bot,
   Boxes,
@@ -21,6 +21,23 @@ const tabs = [
   ["Dual AI Copilot", Bot, "Paired local intelligence"],
   ["Engineering Knowledge Explorer", Network, "Relationships & provenance"],
 ] as const;
+
+// A stale lazy bundle after a local rebuild must not unmount other workspaces
+// (which may contain an unsaved recording or source edit).
+class WorkspaceBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    if (this.state.failed) return (
+      <section className="wb-workspace" role="alert">
+        <h2>This workspace could not load</h2>
+        <p className="wb-notice">A local application rebuild may have replaced its files. Other workspaces remain available. Save any ongoing recording or source edits before reloading; saved records stay in local storage.</p>
+        <button onClick={() => window.location.reload()}>Reload studio</button>
+      </section>
+    );
+    return this.props.children;
+  }
+}
 export default function App() {
   const [active, setActive] = useState(0),
     [visited, setVisited] = useState(new Set([0])),
@@ -89,7 +106,7 @@ export default function App() {
     <div className={"wb-app " + (collapsed ? "compact" : "")}>
       <aside className="wb-sidebar">
         <a className="wb-brand" href="/">
-          K<span>&</span>KH <small>PHYSICAL AI</small>
+          HT K<span>&</span>KH <small>PHYSICAL AI</small>
         </a>
         <div className="wb-project">
           <span className="wb-project-icon">A2</span>
@@ -176,16 +193,13 @@ export default function App() {
             trajectory {context.trajectory?.slice(0, 8) || "none selected"}
           </button>
         </div>
-        <Suspense
-          fallback={
-            <div className="wb-loading">Loading engineering workspace…</div>
-          }
-        >
           {ready &&
             [...visited].map((i) => (
               <div key={i} hidden={active !== i}>
+                <WorkspaceBoundary>
+                <Suspense fallback={<div className="wb-loading">Loading engineering workspace…</div>}>
                 {i === 0 ? (
-                  <LeaderFollower context={context} setContext={setContext} />
+                  <LeaderFollower context={context} setContext={setContext} open={choose} />
                 ) : i === 1 ? (
                   <ModelicaEditor context={context} setContext={setContext} />
                 ) : i === 2 ? (
@@ -193,11 +207,12 @@ export default function App() {
                 ) : (
                   <Knowledge context={context} setContext={setContext} />
                 )}
+                </Suspense>
+                </WorkspaceBoundary>
               </div>
             ))}
-        </Suspense>
         <footer className="wb-footer">
-          K&KH Physical AI Engineering Studio{" "}
+          HT K&KH Physical AI Engineering Studio{" "}
           <span>Source facts · explicit assumptions · measured simulation</span>
         </footer>
       </main>

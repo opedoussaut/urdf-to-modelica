@@ -20,15 +20,55 @@ def opening(q_leader) -> float:
     return float((q_leader[7] - lim.lower) / (lim.upper - lim.lower))
 
 
-def signals(q_rows) -> tuple[np.ndarray, np.ndarray]:
-    """(ee[n,3] in follower base frame, opening[n]) for recorded leader joint rows."""
-    robot = R.robot_for(FOLLOWER)
+def _to_scenario_frame(ee: np.ndarray, role: str, scenario: dict | None) -> np.ndarray:
+    """Base-frame end-effector points -> the scenario's frame.
+
+    Legacy scenarios are expressed in the follower base frame (only role "follower" is meaningful there). Scenarios
+    with a `frame.layout` are expressed in the studio display world of that layout (experimental display transform)."""
+    layout_name = (scenario or {}).get("frame", {}).get("layout")
+    if not layout_name:
+        if role != "follower":
+            raise ValueError("Legacy scenario is in the follower base frame; a leader point cannot be used there")
+        return ee
+    from kkh.engineering import workspace_frames as W
+    lay = W.layout(layout_name)
+    T = W.base_matrix(lay, role)
+    return ee @ T[:3, :3].T + T[:3, 3]
+
+
+def signals(q_rows, scenario: dict | None = None, role: str | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """(ee[n,3], opening[n]) for recorded leader joint rows, in the scenario frame.
+
+    role "follower" (legacy default): follower executing the joint-mapped leader rows. role "leader": the leader's own
+    end effector (demonstration on a shared-table layout)."""
+    role = role or (scenario or {}).get("manipulator", {}).get("role", "follower")
     ee, op = [], []
-    for row in q_rows:
-        fq = R.mapping(row)["q"]
-        ee.append(robot.forward_kinematics(dict(zip(R.JOINTS, fq)))["ee_gripper_link"][:3, 3])
-        op.append(opening(row))
-    return np.array(ee), np.array(op)
+    if role == "leader":
+        robot = R.robot_for(LEADER)
+        for row in q_rows:
+            ee.append(robot.forward_kinematics(dict(zip(R.JOINTS, R.vector(row))))["ee_gripper_link"][:3, 3])
+            op.append(opening(row))
+    elif role == "follower":
+        robot = R.robot_for(FOLLOWER)
+        for row in q_rows:
+            fq = R.mapping(row)["q"]
+            ee.append(robot.forward_kinematics(dict(zip(R.JOINTS, fq)))["ee_gripper_link"][:3, 3])
+            op.append(opening(row))
+    else:
+        raise ValueError(f"Unknown manipulator role {role!r}")
+    return _to_scenario_frame(np.array(ee), role, scenario), np.array(op)
+
+
+def simulated_signals(q_follower_rows, time, recorded_time, recorded_q,
+                      scenario: dict | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """(ee[n,3], opening[n]) for a SIMULATED follower response (follower joint rows from OpenModelica).
+
+    The gripper is not torque-driven in the follower model, so its opening is the recorded leader command
+    interpolated at the simulation time points."""
+    robot = R.robot_for(FOLLOWER)
+    ee = np.array([robot.forward_kinematics(dict(zip(R.JOINTS, row)))["ee_gripper_link"][:3, 3] for row in q_follower_rows])
+    commanded = np.array([opening(row) for row in recorded_q])
+    return _to_scenario_frame(ee, "follower", scenario), np.interp(np.asarray(time, float), np.asarray(recorded_time, float), commanded)
 
 
 def follower_ik(q_leader, target, gripper_down: bool = True) -> dict:

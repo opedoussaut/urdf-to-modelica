@@ -52,8 +52,8 @@
   z-index: 5;
 }
 .wb-brand {
-  font-size: 30px;
-  letter-spacing: -2px;
+  font-size: 24px;
+  letter-spacing: -1.4px;
   font-weight: 800;
   padding: 0 12px;
 }
@@ -1290,3 +1290,46 @@
 .wb-evidence.derived { color: #a5b4fc; }
 .wb-trace-list { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
 .wb-trace-list small { color: var(--muted); }
+
+/* ---- Cube scenario, guided recording, arm controls ---- */
+.wb-stage-help { font-size: 11.5px; color: #c9d7e6; background: rgba(14, 21, 30, .78); padding: 7px 10px;
+  border-radius: 6px; border: 1px solid #2b3b4f; right: auto; max-width: min(640px, calc(100% - 36px)); }
+.wb-stage-status { position: absolute; top: 76px; left: 50%; transform: translateX(-50%); padding: 5px 12px;
+  border-radius: 999px; background: rgba(13, 30, 46, .9); border: 1px solid #2f5a7d; color: #cfe4ff;
+  font-size: 11px; font-weight: 600; letter-spacing: .04em; pointer-events: none; white-space: nowrap;
+  max-width: calc(100% - 36px); overflow: hidden; text-overflow: ellipsis; }
+.wb-arm-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.wb-arm-controls button { font-size: 11.5px; padding: 7px 9px; }
+.wb-gripper, .wb-jog { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 3px 6px;
+  border: 1px solid var(--border); border-radius: 7px; }
+.wb-gripper > span, .wb-jog > span { font-size: 10.5px; color: var(--muted); margin-right: 3px; }
+.wb-guided-start { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 10px 12px; border-bottom: 1px solid var(--border); background: #13202e; font-size: 12.5px; }
+.wb-guided { border-bottom: 1px solid var(--border); background: #111d2a; padding: 10px 12px; }
+.wb-steps { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 0 0 8px; padding: 0; }
+.wb-steps button { font-size: 11px; padding: 5px 8px; }
+.wb-steps li.active button { background: #1f4c7a; border-color: #4f8fd1; color: #fff; }
+.wb-steps li.done button { color: #5fd3a8; }
+.wb-guided-body p { margin: 4px 0 8px; font-size: 13px; line-height: 1.45; color: #d6e2ef; }
+.wb-guided-nav { margin-top: 8px; }
+.wb-checklist { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 3px; font-size: 12.5px; }
+.wb-checklist li { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.wb-checklist li.done { color: #5fd3a8; }
+.wb-checklist li.missing { color: #f0bc5e; }
+.wb-task-result { margin: 0 12px 12px; padding: 10px 12px; border: 1px solid #3b4f66; border-radius: 8px;
+  background: #121e2b; font-size: 12.5px; }
+.wb-task-result small { color: var(--muted); display: block; line-height: 1.4; }
+@media (max-width: 700px) { .wb-stage-status { max-width: calc(100% - 24px); top: 66px; } }
+
+/* ---- Workspace frames indicator (Step 4C) ---- */
+.wb-frame-indicator { margin: 0 12px 12px; padding: 10px 12px; border: 1px dashed #b7791f; border-radius: 8px;
+  background: #1a1710; font-size: 12px; }
+.wb-frame-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 6px; }
+.wb-frame-head strong { color: #f6c35b; }
+.wb-frame-indicator .wb-table td, .wb-frame-indicator .wb-table th { font-size: 11.5px; padding: 4px 6px;
+  font-variant-numeric: tabular-nums; }
+.wb-gates { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 0; margin: 6px 0 0; }
+.wb-gates li { font-size: 11px; }
+.wb-gates li.open { color: #5fd3a8; }
+.wb-gates li.closed { color: #f0bc5e; }

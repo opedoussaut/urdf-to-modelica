@@ -189,8 +189,63 @@ class Models:
         if not exe.exists():
             raise ValueError("OMEdit is unavailable in the configured OpenModelica installation")
         file = safe_file(self.directory(identity), name)
-        subprocess.Popen([str(exe), str(self.directory(identity) / "package.mo"), str(file)] if name != "package.mo" else [str(exe), str(file)], cwd=file.parent)
-        return {"opened": str(file), "baseline_protected": True}
+        package=self.directory(identity)/"package.mo"
+        # OMEdit treats every CLI .mo argument as a top-level file. A nested file
+        # with `within ALOHA2.Arms;` therefore fails even when package.mo precedes it.
+        # Load the package once; its declared child classes are available in Libraries.
+        subprocess.Popen([str(exe), str(package)], cwd=package.parent)
+        parts=Path(name).parts
+        class_parts=parts[:-1] if parts[-1]=="package.mo" else (*parts[:-1],Path(name).stem)
+        selected_class=".".join(("ALOHA2",*class_parts))
+        return {"opened": str(file), "opened_package":str(package),"selected_class":selected_class,
+                "selection_hint":"Open "+selected_class+" in OMEdit's Libraries browser.","baseline_protected": True}
+
+    @synchronized
+    def ensure_engineering(self, identity):
+        if self.changes(identity)["changes"]:
+            raise ValueError("Import or reject external changes before adding engineering classes")
+        from .engineering import install
+        if install(self.directory(identity)):
+            return self.snapshot(self.store.get(identity,"model"),"working","Added GEN7 engineering architecture (source mechanics, assumed servo)")
+        return self.store.get(identity,"model")
+
+    @synchronized
+    def engineering_variant(self, identity):
+        if self.changes(identity)["changes"]:
+            raise ValueError("Import or reject external changes before forking an engineering variant")
+        parent=self.store.get(identity,"model")
+        new_id=uuid.uuid4().hex
+        directory=self.root/new_id/"working/ALOHA2"
+        shutil.copytree(self.directory(identity),directory)
+        from .engineering import install
+        install(directory)
+        variant=self.store.create("model","GEN7 engineering variant",{
+            "baseline_hashes":parent["data"]["baseline_hashes"],"accepted":None,"head":None,
+            "origin_model":identity,"origin_revision":parent["data"]["head"]},new_id)
+        return self.snapshot(variant,"working","Forked engineering architecture; source model and acceptance preserved")
+
+    def diagram(self, identity, name):
+        if self.changes(identity)["changes"]:
+            raise ValueError("Import or reject external changes before exporting a revision diagram")
+        workspace=self.store.get(identity,"model")
+        revision=self.store.get(workspace["data"]["head"],"revision")
+        directory=self.revision_dir(revision)
+        file=safe_file(directory,name)
+        parts=Path(name).parts
+        class_parts=parts[:-1] if parts[-1]=="package.mo" else (*parts[:-1],Path(name).stem)
+        class_name=".".join(("ALOHA2",*class_parts))
+        cache=directory.parent/"diagrams"/(name.replace('/','_')+'.json')
+        if cache.exists():return __import__('json').loads(cache.read_text())
+        from kkh.engineering.diagram import export
+        omc=OMCService(directory.parent/"diagram-omc")
+        try:
+            loaded=omc.load_package(directory/"package.mo")
+            if not loaded.ok:raise ValueError(loaded.messages)
+            result={**export(omc,class_name),"revision":revision["id"],"source_hash":digest(file),"path":name}
+            cache.parent.mkdir(parents=True,exist_ok=True)
+            cache.write_text(__import__('json').dumps(result))
+            return result
+        finally:omc.close()
 
     def validate(self, identity, class_name, simulate=False, stop_time=9):
         if not re.fullmatch(r"ALOHA2(?:\.[A-Za-z_]\w*)*", class_name):
