@@ -71,7 +71,8 @@ def _library_context(robot) -> tuple[str, list[dict]]:
     return text, [{k: h[k] for k in ("class", "query", "score", "file")} for h in hits]
 
 
-def convert(urdf: Path, out_dir: Path, rag: bool, score_fn, model: str | None = None, log=print) -> dict:
+def convert(urdf: Path, out_dir: Path, rag: bool, score_fn, model: str | None = None, log=print,
+            phase=lambda name, attempt, attempts: None) -> dict:
     """Generate, then check with OpenModelica (via score_fn) and repair at most SETTINGS['repair_attempts'] times."""
     t0 = time.time()
     model = model or DEFAULT_MODEL
@@ -95,6 +96,7 @@ def convert(urdf: Path, out_dir: Path, rag: bool, score_fn, model: str | None = 
         for attempt in range(1 + SETTINGS["repair_attempts"]):
             a = {"attempt": attempt + 1}
             t = time.time()
+            phase("writing", attempt + 1, 1 + SETTINGS["repair_attempts"])
             try:
                 resp = client.chat(messages, model=model, seed=SETTINGS["seed"], max_tokens=SETTINGS["max_tokens"],
                                    num_ctx=SETTINGS["num_ctx"], allow_truncated=True)
@@ -113,6 +115,7 @@ def convert(urdf: Path, out_dir: Path, rag: bool, score_fn, model: str | None = 
                      code_chars=len(code), truncated=resp.get("truncated", False))
             log(f"  {out['mode']} attempt {attempt + 1}: {len(code)} chars{' (cut off)' if a['truncated'] else ''}, scoring")
             # a cut-off file is still scored as written: it is the method's real output
+            phase("checking", attempt + 1, 1 + SETTINGS["repair_attempts"])
             s = score_fn(f if target else None, target, d)
             a["score"] = s
             out["attempts"].append(a)

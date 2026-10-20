@@ -58,6 +58,12 @@ def run(body: Run):
     return _job("Conversion comparison", work)
 
 
+@router.get("/active")
+def active():
+    """Live progress of the comparison being run (or the last one), per method."""
+    return runner.active() or {"running": False}
+
+
 @router.get("/runs")
 def runs():
     return runner.list_runs()

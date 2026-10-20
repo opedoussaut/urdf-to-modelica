@@ -146,3 +146,14 @@
 .sx-findings li { margin: 4px 0; line-height: 1.5; }
 .sx-findings li em { color: var(--muted); font-style: normal; font-size: 12.5px; }
 .sx-findings li code { display: block; font-size: 11.5px; color: var(--ink-2); white-space: pre-wrap; margin-top: 2px; }
+.sx-live { margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; background: #fbfcfe; }
+.sx-live-row { display: grid; grid-template-columns: 200px 1fr 64px; gap: 4px 14px; align-items: center; }
+.sx-live-row b { font-size: 13.5px; }
+.sx-live-row small { grid-column: 2 / 4; color: var(--muted); font-size: 12px; }
+.sx-live-time { font-variant-numeric: tabular-nums; font-weight: 650; text-align: right; }
+.sx-bar { height: 10px; border-radius: 999px; background: #e7ecf4; overflow: hidden; }
+.sx-bar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.9s linear; }
+.sx-live-row.running .sx-bar i { background: linear-gradient(90deg, #1d4ed8, #4f7cf0); }
+.sx-live-row.done .sx-bar i { background: var(--green); }
+.sx-live-row.failed .sx-bar i { background: var(--red); }
+.sx-live-row.waiting { opacity: 0.6; }

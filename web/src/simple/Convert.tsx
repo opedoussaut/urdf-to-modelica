@@ -40,11 +40,31 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
     convert<RunSummary[]>("/runs").then(setRuns).catch(() => {});
   };
   useEffect(load, []);
+  // live progress: polled while a comparison runs (also one started before this page was opened)
+  const [live, setLive] = useState<Live>();
+  const [polledAt, setPolledAt] = useState(Date.now());
   useEffect(() => {
-    if (!busy) return;
+    let stop = false;
+    const tick = () =>
+      convert<Live>("/active")
+        .then((s) => {
+          if (stop) return;
+          setLive(s);
+          setPolledAt(Date.now());
+        })
+        .catch(() => {});
+    tick();
+    const t = setInterval(() => (busy || live?.running) && tick(), 1000);
+    return () => {
+      stop = true;
+      clearInterval(t);
+    };
+  }, [busy, live?.running]);
+  useEffect(() => {
+    if (!busy && !live?.running) return;
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
-  }, [busy]);
+  }, [busy, live?.running]);
 
   const upload = async (f?: File) => {
     if (!f) return;
@@ -164,6 +184,7 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
             <>Run the comparison on {chosen ? chosen.label : "…"}</>
           )}
         </button>
+        {(busy || live?.running) && live && <LiveProgress live={live} polledAt={polledAt} now={now} />}
         {busy && <p className="sx-note">The converter takes seconds; each AI method can take several minutes on this laptop (it writes the whole file, then OpenModelica checks it). You can leave this page open.</p>}
         {error && <p className="lab-error">{error}</p>}
       </section>
@@ -185,6 +206,63 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+type LiveMode = { status: "waiting" | "running" | "done" | "failed"; started?: number; finished?: number; phase?: string | null; phase_started?: number; attempt?: number; attempts?: number; passed?: number };
+type Live = { id?: string; source?: string; running: boolean; started?: number; now?: number; modes?: Record<string, LiveMode> };
+
+// Typical durations on this laptop (seconds), used only to move the bar inside a phase; phases and times are exact.
+const TYPICAL = { converting: 3, checking: 25, writing_first: 220, writing_repair: 90 };
+const PHASE: Record<string, string> = { converting: "Converter translating the file", checking: "OpenModelica checking the model", writing: "AI writing the file" };
+
+function fmt(sec: number) {
+  const s = Math.max(0, Math.round(sec));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function LiveProgress({ live, polledAt, now }: { live: Live; polledAt: number; now: number }) {
+  const serverNow = (live.now || 0) + (now - polledAt) / 1000;
+  return (
+    <div className="sx-live" aria-live="polite">
+      {MODE_ORDER.filter((m) => live.modes?.[m]).map((m) => {
+        const s = live.modes![m];
+        const elapsed = s.started ? (s.finished || serverNow) - s.started : 0;
+        const inPhase = s.phase_started ? serverNow - s.phase_started : 0;
+        let pct = 0;
+        if (s.status === "done" || s.status === "failed") pct = 100;
+        else if (s.status === "running") {
+          const frac = (e: number, typ: number) => Math.min(e / typ, 0.95);
+          if (m === "urdfmodelica") pct = s.phase === "converting" ? 10 * frac(inPhase, TYPICAL.converting) : 10 + 90 * frac(inPhase, TYPICAL.checking);
+          else {
+            const k = s.attempt || 1,
+              n = s.attempts || 3;
+            const typ = k === 1 ? TYPICAL.writing_first : TYPICAL.writing_repair;
+            const w = s.phase === "checking" ? 0.85 + 0.15 * frac(inPhase, TYPICAL.checking) : 0.85 * frac(inPhase, typ);
+            pct = (100 * (k - 1 + w)) / n;
+          }
+        }
+        return (
+          <div key={m} className={"sx-live-row " + s.status}>
+            <b>{LABEL[m]}</b>
+            <div className="sx-bar" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
+              <i style={{ width: pct + "%" }} />
+            </div>
+            <span className="sx-live-time">{s.status === "waiting" ? "waiting" : fmt(elapsed)}</span>
+            <small>
+              {s.status === "waiting" && "Starts when the previous method finishes"}
+              {s.status === "running" &&
+                (PHASE[s.phase || ""] || s.phase) +
+                  (m !== "urdfmodelica" && s.attempt ? ` · attempt ${s.attempt} of ${s.attempts} (stops early once the model runs)` : "") +
+                  ` · ${fmt(inPhase)} in this step`}
+              {s.status === "done" && `Finished · ${s.passed}/7 checks`}
+              {s.status === "failed" && "Finished · no usable file"}
+            </small>
+          </div>
+        );
+      })}
+      <small className="sx-muted">Times are exact. Inside a step the bar is an estimate: the local AI does not report how far it has written.</small>
     </div>
   );
 }

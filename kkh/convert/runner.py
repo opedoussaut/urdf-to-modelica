@@ -72,6 +72,51 @@ def verdict(name: str, s: dict, result: dict | None = None) -> str:
             f"(largest gap {kin['max_position_error_mm']} mm, at {kin['worst_link'][0] if kin.get('worst_link') else '-'}).")
 
 
+ACTIVE = sources.RUNS / "active.json"
+
+
+class Progress:
+    """Live status of the running comparison (polled by the page): per mode its state, current phase and the exact
+    time it started. Phases are real events; the page's bar within a phase is an estimate from typical durations."""
+
+    def __init__(self, identity: str, source_label: str, modes: list[str]):
+        self.state = {"id": identity, "source": source_label, "started": time.time(), "running": True,
+                      "modes": {m: {"status": "waiting"} for m in modes}}
+        self.write()
+
+    def write(self):
+        ACTIVE.parent.mkdir(parents=True, exist_ok=True)
+        tmp = ACTIVE.with_suffix(".tmp")
+        tmp.write_text(json.dumps({**self.state, "now": time.time()}), encoding="utf-8")
+        tmp.replace(ACTIVE)
+
+    def phase(self, mode: str, phase: str, attempt: int | None = None, attempts: int | None = None):
+        m = self.state["modes"][mode]
+        if m["status"] == "waiting":
+            m.update(status="running", started=time.time())
+        m.update(phase=phase, phase_started=time.time(), attempt=attempt, attempts=attempts)
+        self.write()
+
+    def done(self, mode: str, r: dict):
+        m = self.state["modes"][mode]
+        m.update(status="done" if r["score"].get("produced") else "failed", finished=time.time(),
+                 passed=r["score"].get("passed"), phase=None)
+        self.write()
+
+    def close(self):
+        self.state["running"] = False
+        self.state["finished"] = time.time()
+        self.write()
+
+
+def active() -> dict | None:
+    if not ACTIVE.exists():
+        return None
+    state = json.loads(ACTIVE.read_text(encoding="utf-8"))
+    state["now"] = time.time()
+    return state
+
+
 def run_comparison(source: str, modes: list[str] | None = None, log=print) -> dict:
     modes = modes or ["urdfmodelica", "llm", "llm_rag"]
     for m in modes:
@@ -84,27 +129,35 @@ def run_comparison(source: str, modes: list[str] | None = None, log=print) -> di
     report = {"id": identity, "source": {**meta, "sha256": sources.sha256(urdf), **sources.summary(urdf)},
               "started": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "modes": {},
               "criteria": CRITERIA, "scoring": score.__doc__}
-    for m in modes:
-        log(f"[{m}] starting")
-        d = root / m
-        d.mkdir()
-        t = time.time()
-        try:
-            if m == "urdfmodelica":
-                r = urdfmodelica.convert(urdf, d)
-                r["score"] = score.score(urdf, r.get("package_file"), r.get("model"), d)
-            else:
-                r = llm.convert(urdf, d, rag=(m == "llm_rag"),
-                                score_fn=lambda f, model, w: score.score(urdf, f, model, w), log=log)
-                r.setdefault("score", score.finish({"produced": False}))
-        except Exception as exc:  # report the failure; never invent a result
-            r = {"mode": m, "error": f"{type(exc).__name__}: {exc}"[:1500], "score": score.finish({"produced": False})}
-        r["wall_seconds"] = round(time.time() - t, 1)
-        r["label"], r["plain"] = MODES[m]["label"], MODES[m]["plain"]
-        r["verdict"] = verdict(m, r["score"], r)
-        report["modes"][m] = r
-        log(f"[{m}] {r['verdict']}")
-        (root / "report.json").write_text(json.dumps(report, indent=1, default=_jsonable), encoding="utf-8")
+    progress = Progress(identity, meta.get("label", source), modes)
+    try:
+        for m in modes:
+            log(f"[{m}] starting")
+            d = root / m
+            d.mkdir()
+            t = time.time()
+            try:
+                if m == "urdfmodelica":
+                    progress.phase(m, "converting")
+                    r = urdfmodelica.convert(urdf, d)
+                    progress.phase(m, "checking")
+                    r["score"] = score.score(urdf, r.get("package_file"), r.get("model"), d)
+                else:
+                    r = llm.convert(urdf, d, rag=(m == "llm_rag"),
+                                    score_fn=lambda f, model, w: score.score(urdf, f, model, w), log=log,
+                                    phase=lambda ph, a, n, m=m: progress.phase(m, ph, a, n))
+                    r.setdefault("score", score.finish({"produced": False}))
+            except Exception as exc:  # report the failure; never invent a result
+                r = {"mode": m, "error": f"{type(exc).__name__}: {exc}"[:1500], "score": score.finish({"produced": False})}
+            r["wall_seconds"] = round(time.time() - t, 1)
+            r["label"], r["plain"] = MODES[m]["label"], MODES[m]["plain"]
+            r["verdict"] = verdict(m, r["score"], r)
+            report["modes"][m] = r
+            progress.done(m, r)
+            log(f"[{m}] {r['verdict']}")
+            (root / "report.json").write_text(json.dumps(report, indent=1, default=_jsonable), encoding="utf-8")
+    finally:
+        progress.close()
     ranking = sorted(report["modes"], key=lambda m: report["modes"][m]["score"]["rank_key"], reverse=True)
     report["ranking"] = ranking
     keys = {m: report["modes"][m]["score"]["rank_key"] for m in ranking}
