@@ -2,15 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Bot, BookOpen, Check, CircleSlash, Clock, FileCode2, FileSearch, Trophy, Upload, Wrench, X } from "lucide-react";
 import { useAudience } from "../audience";
 import { message, waitJob, type Doc } from "../studio";
-import { convert, MODE_ORDER, type ModeId, type Report, type RunSummary } from "./api";
+import { baseOf, convert, keyLabel, MODE_ORDER, orderKeys, type LocalModel, type ModeId, type Report, type RunSummary } from "./api";
 import type { Target } from "./SimpleApp";
 
 type Source = { id: string; label: string; kind: string; links: number; joints: number; movable: number; mass_kg: number; bytes: number; graph?: boolean; provenance: string; sha256: string };
 
 const MODE_ICON: Record<ModeId, typeof Bot> = { llm: Bot, llm_rag: BookOpen, urdfmodelica: Wrench };
 const MODE_NEEDS: Record<ModeId, string> = {
-  llm: "Local AI (Nemotron, 4 billion parameters) · a few minutes",
-  llm_rag: "Local AI + keyword search in the Modelica Standard Library · a few minutes",
+  llm: "Local AI model(s) chosen below · a few minutes per model",
+  llm_rag: "Same local model(s) + keyword search in the Modelica Standard Library · a few minutes per model",
   urdfmodelica: "DLR URDFModelica converter (open source) · about 20 seconds",
 };
 const CRITERION_HELP: Record<string, string> = {
@@ -33,10 +33,18 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
     [now, setNow] = useState(Date.now()),
     [error, setError] = useState(""),
     [report, setReport] = useState<Report>(),
-    [runs, setRuns] = useState<RunSummary[]>([]);
+    [runs, setRuns] = useState<RunSummary[]>([]),
+    [installed, setInstalled] = useState<LocalModel[]>([]),
+    [models, setModels] = useState<string[]>([]);
   const file = useRef<HTMLInputElement>(null);
   const load = () => {
-    convert("/sources").then((r) => setSources(r.sources)).catch((e) => setError(message(e)));
+    convert("/sources")
+      .then((r) => {
+        setSources(r.sources);
+        setInstalled(r.models || []);
+        setModels((cur) => (cur.length ? cur.filter((m) => r.models.some((x: LocalModel) => x.name === m)) : r.models.filter((x: LocalModel) => x.default).map((x: LocalModel) => x.name)));
+      })
+      .catch((e) => setError(message(e)));
     convert<RunSummary[]>("/runs").then(setRuns).catch(() => {});
   };
   useEffect(load, []);
@@ -85,7 +93,7 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
     setReport(undefined);
     setStarted(Date.now());
     try {
-      const job = await convert<Doc>("/run", "POST", { source, modes });
+      const job = await convert<Doc>("/run", "POST", { source, modes, models });
       setReport(await waitJob(job));
       load();
     } catch (e) {
@@ -171,11 +179,35 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
             );
           })}
         </div>
+        {modes.some((m) => m !== "urdfmodelica") && (
+          <div className="sx-models">
+            <b>AI models</b>
+            <small>Each AI method runs once with every model you tick. All run locally through Ollama.</small>
+            <div>
+              {installed.map((m) => {
+                const on = models.includes(m.name);
+                return (
+                  <label key={m.name} className={"sx-model" + (on ? " on" : "")}>
+                    <input type="checkbox" checked={on} disabled={busy} onChange={() => setModels(on ? models.filter((x) => x !== m.name) : [...models, m.name])} />
+                    <span>
+                      <b>{m.name}</b>
+                      <small>
+                        {m.parameters ? m.parameters + " parameters · " : ""}
+                        {m.size_gb} GB{m.default ? " · studio default" : ""}
+                      </small>
+                    </span>
+                  </label>
+                );
+              })}
+              {installed.length === 0 && <span className="sx-muted">No local model found: is Ollama running?</span>}
+            </div>
+          </div>
+        )}
         <p className="sx-note">
           Fair comparison: both AI methods get the same robot file, the same model and settings, and the same two chances to repair their file using
           OpenModelica's error messages. They never see the expected answer.
         </p>
-        <button className="lab-primary sx-run" disabled={busy || !modes.length || !chosen} onClick={run}>
+        <button className="lab-primary sx-run" disabled={busy || !modes.length || !chosen || (modes.some((m) => m !== "urdfmodelica") && !models.length)} onClick={run}>
           {busy ? (
             <>
               <Clock size={16} /> Running… {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, "0")}
@@ -199,7 +231,7 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
               <button key={r.id} onClick={() => openRun(r.id)} className={report?.id === r.id ? "on" : ""}>
                 <b>{r.source}</b>
                 <small>
-                  {new Date(r.started).toLocaleString()} · {r.finished ? "best: " + (r.ranking?.[0] ? LABEL[r.ranking[0]] : "-") : "unfinished"}
+                  {new Date(r.started).toLocaleString()} · {r.finished ? "best: " + (r.ranking?.[0] ? keyLabel(r.ranking[0]) : "-") : "unfinished"}
                 </small>
               </button>
             ))}
@@ -226,7 +258,7 @@ function LiveProgress({ live, polledAt, now }: { live: Live; polledAt: number; n
   const serverNow = (live.now || 0) + (now - polledAt) / 1000;
   return (
     <div className="sx-live" aria-live="polite">
-      {MODE_ORDER.filter((m) => live.modes?.[m]).map((m) => {
+      {orderKeys(Object.keys(live.modes || {})).map((m) => {
         const s = live.modes![m];
         const elapsed = s.started ? (s.finished || serverNow) - s.started : 0;
         const inPhase = s.phase_started ? serverNow - s.phase_started : 0;
@@ -234,7 +266,7 @@ function LiveProgress({ live, polledAt, now }: { live: Live; polledAt: number; n
         if (s.status === "done" || s.status === "failed") pct = 100;
         else if (s.status === "running") {
           const frac = (e: number, typ: number) => Math.min(e / typ, 0.95);
-          if (m === "urdfmodelica") pct = s.phase === "converting" ? 10 * frac(inPhase, TYPICAL.converting) : 10 + 90 * frac(inPhase, TYPICAL.checking);
+          if (baseOf(m) === "urdfmodelica") pct = s.phase === "converting" ? 10 * frac(inPhase, TYPICAL.converting) : 10 + 90 * frac(inPhase, TYPICAL.checking);
           else {
             const k = s.attempt || 1,
               n = s.attempts || 3;
@@ -245,7 +277,7 @@ function LiveProgress({ live, polledAt, now }: { live: Live; polledAt: number; n
         }
         return (
           <div key={m} className={"sx-live-row " + s.status}>
-            <b>{LABEL[m]}</b>
+            <b>{keyLabel(m)}</b>
             <div className="sx-bar" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
               <i style={{ width: pct + "%" }} />
             </div>
@@ -254,7 +286,7 @@ function LiveProgress({ live, polledAt, now }: { live: Live; polledAt: number; n
               {s.status === "waiting" && "Starts when the previous method finishes"}
               {s.status === "running" &&
                 (PHASE[s.phase || ""] || s.phase) +
-                  (m !== "urdfmodelica" && s.attempt ? ` · attempt ${s.attempt} of ${s.attempts} (stops early once the model runs)` : "") +
+                  (baseOf(m) !== "urdfmodelica" && s.attempt ? ` · attempt ${s.attempt} of ${s.attempts} (stops early once the model runs)` : "") +
                   ` · ${fmt(inPhase)} in this step`}
               {s.status === "done" && `Finished · ${s.passed}/7 checks`}
               {s.status === "failed" && "Finished · no usable file"}
@@ -267,7 +299,6 @@ function LiveProgress({ live, polledAt, now }: { live: Live; polledAt: number; n
   );
 }
 
-const LABEL: Record<ModeId, string> = { llm: "AI only", llm_rag: "AI + library search", urdfmodelica: "URDFModelica" };
 
 function Mark({ ok, na }: { ok: boolean; na?: boolean }) {
   if (na) return <CircleSlash size={16} className="sx-na" aria-label="not reached" />;
@@ -275,9 +306,10 @@ function Mark({ ok, na }: { ok: boolean; na?: boolean }) {
 }
 
 function Results({ report, expert, openUnderstand }: { report: Report; expert: boolean; openUnderstand: (t: Target) => void }) {
-  const order = MODE_ORDER.filter((m) => report.modes[m]);
+  const order = orderKeys(Object.keys(report.modes));
+  const LABEL = Object.fromEntries(order.map((m) => [m, keyLabel(m, report.modes[m])]));
   const best = report.ranking?.[0];
-  const tiedWith = (m: ModeId) => (report.ties || []).filter((t) => t.includes(m)).map((t) => (t[0] === m ? t[1] : t[0]));
+  const tiedWith = (m: string) => (report.ties || []).filter((t) => t.includes(m)).map((t) => (t[0] === m ? t[1] : t[0]));
   const bestTie = best ? tiedWith(best) : [];
   const bestRes = best ? report.modes[best] : undefined;
   const ids = Object.keys(report.criteria);
@@ -320,7 +352,7 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
                   <small>{CRITERION_HELP[id]}</small>
                 </td>
                 {order.map((m) => {
-                  const s = report.modes[m]!.score;
+                  const s = report.modes[m].score;
                   const c = s.criteria.find((x) => x.id === id);
                   const reached = s.criteria.slice(0, row).every((x, i) => i > 3 || x.ok) || row <= 0;
                   return (
@@ -338,7 +370,7 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
                 <small>Time on this computer, AI calls, automatic repair rounds.</small>
               </td>
               {order.map((m) => {
-                const r = report.modes[m]!;
+                const r = report.modes[m];
                 return (
                   <td key={m}>
                     <small>
@@ -353,7 +385,7 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
       </div>
       <div className="sx-cards">
         {order.map((m) => {
-          const r = report.modes[m]!;
+          const r = report.modes[m];
           return (
             <div key={m} className={"sx-card" + (m === best ? " best" : "")}>
               <b>{LABEL[m]}</b>

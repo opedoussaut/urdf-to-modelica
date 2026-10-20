@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import re
 import time
 import uuid
 from pathlib import Path
@@ -42,7 +43,7 @@ def _jsonable(o):
 
 def verdict(name: str, s: dict, result: dict | None = None) -> str:
     """Deterministic plain-language summary of one score (no LLM)."""
-    label = MODES[name]["label"]
+    label = MODES[base(name)]["label"] + (f" ({name.split(':', 1)[1]})" if ":" in name else "")
     attempts = (result or {}).get("attempts") or []
     if not s.get("produced"):
         why = ""
@@ -117,11 +118,23 @@ def active() -> dict | None:
     return state
 
 
-def run_comparison(source: str, modes: list[str] | None = None, log=print) -> dict:
+def base(key: str) -> str:
+    """Mode of a result key: 'urdfmodelica', 'llm', 'llm_rag' or 'llm:<ollama model>' / 'llm_rag:<ollama model>'."""
+    return key.split(":", 1)[0]
+
+
+def safe_dir(key: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_.-]", "_", key)
+
+
+def run_comparison(source: str, modes: list[str] | None = None, log=print, models: list[str] | None = None) -> dict:
+    """Run each selected method; AI methods run once per selected local model (key '<mode>:<model>')."""
     modes = modes or ["urdfmodelica", "llm", "llm_rag"]
     for m in modes:
         if m not in MODES:
             raise ValueError(f"Unknown mode {m}")
+    models = models or [llm.DEFAULT_MODEL]
+    keys = [m if m == "urdfmodelica" else f"{m}:{model}" for m in modes for model in (models if m != "urdfmodelica" else [None])]
     urdf, meta = sources.resolve(source)
     identity = uuid.uuid4().hex[:12]
     root = sources.RUNS / identity
@@ -129,11 +142,11 @@ def run_comparison(source: str, modes: list[str] | None = None, log=print) -> di
     report = {"id": identity, "source": {**meta, "sha256": sources.sha256(urdf), **sources.summary(urdf)},
               "started": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "modes": {},
               "criteria": CRITERIA, "scoring": score.__doc__}
-    progress = Progress(identity, meta.get("label", source), modes)
+    progress = Progress(identity, meta.get("label", source), keys)
     try:
-        for m in modes:
+        for m in keys:
             log(f"[{m}] starting")
-            d = root / m
+            d = root / safe_dir(m)
             d.mkdir()
             t = time.time()
             try:
@@ -143,14 +156,14 @@ def run_comparison(source: str, modes: list[str] | None = None, log=print) -> di
                     progress.phase(m, "checking")
                     r["score"] = score.score(urdf, r.get("package_file"), r.get("model"), d)
                 else:
-                    r = llm.convert(urdf, d, rag=(m == "llm_rag"),
+                    r = llm.convert(urdf, d, rag=(base(m) == "llm_rag"), model=m.split(":", 1)[1],
                                     score_fn=lambda f, model, w: score.score(urdf, f, model, w), log=log,
                                     phase=lambda ph, a, n, m=m: progress.phase(m, ph, a, n))
                     r.setdefault("score", score.finish({"produced": False}))
             except Exception as exc:  # report the failure; never invent a result
-                r = {"mode": m, "error": f"{type(exc).__name__}: {exc}"[:1500], "score": score.finish({"produced": False})}
+                r = {"mode": base(m), "error": f"{type(exc).__name__}: {exc}"[:1500], "score": score.finish({"produced": False})}
             r["wall_seconds"] = round(time.time() - t, 1)
-            r["label"], r["plain"] = MODES[m]["label"], MODES[m]["plain"]
+            r["label"], r["plain"] = MODES[base(m)]["label"], MODES[base(m)]["plain"]
             r["verdict"] = verdict(m, r["score"], r)
             report["modes"][m] = r
             progress.done(m, r)
@@ -186,7 +199,7 @@ def load(identity: str) -> dict:
     report = json.loads(f.read_text(encoding="utf-8"))
     # verdicts, labels and ties are pure functions of the stored scores: recompute so older reports read the same way
     for m, r in report["modes"].items():
-        r["label"], r["plain"] = MODES[m]["label"], MODES[m]["plain"]
+        r["label"], r["plain"] = MODES[base(m)]["label"], MODES[base(m)]["plain"]
         r["verdict"] = verdict(m, r["score"], r)
     if report.get("ranking"):
         keys = {m: report["modes"][m]["score"]["rank_key"] for m in report["ranking"]}
@@ -253,7 +266,7 @@ def save_edit(identity: str, mode: str, text: str, note: str = "") -> dict:
     m = report["modes"].get(mode)
     if not m or not m.get("main_file"):
         raise ValueError("This mode produced no file to edit")
-    root = sources.RUNS / identity / mode / "edits"
+    root = sources.RUNS / identity / safe_dir(mode) / "edits"
     n = len(m.get("edits", [])) + 1
     d = root / f"v{n}"
     main = sources.ROOT / m["main_file"]
@@ -280,7 +293,8 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("source")
     ap.add_argument("--modes", default="urdfmodelica,llm,llm_rag")
+    ap.add_argument("--models", default="", help="comma-separated local Ollama models for the AI methods (default: the studio default)")
     a = ap.parse_args()
-    rep = run_comparison(a.source, a.modes.split(","))
+    rep = run_comparison(a.source, a.modes.split(","), models=[m for m in a.models.split(",") if m] or None)
     print(json.dumps({"id": rep["id"], "ranking": rep["ranking"],
                       "verdicts": {m: v["verdict"] for m, v in rep["modes"].items()}}, indent=1))

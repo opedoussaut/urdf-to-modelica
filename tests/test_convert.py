@@ -132,3 +132,30 @@ def test_reset_deletes_only_simple_app_data(tmp_path, monkeypatch):
     assert deleted == ["c1"]
     assert not (runs / "abcdef012345").exists() and not (runs / "uploads").exists() and not (runs / "active.json").exists()
     assert (runs / "index" / "library_index.json").exists() and (runs / "notes").exists()
+
+
+def test_ai_methods_run_once_per_model(tmp_path, monkeypatch):
+    """Each AI method runs with every chosen model under its own key and directory; the converter runs once."""
+    from kkh.convert import runner
+    monkeypatch.setattr(sources, "RUNS", tmp_path)
+    monkeypatch.setattr(runner, "ACTIVE", tmp_path / "active.json")
+    calls = []
+
+    def fake_llm(urdf, d, rag, score_fn, model=None, log=print, phase=None):
+        calls.append(("llm_rag" if rag else "llm", model, d.name))
+        return {"mode": "llm_rag" if rag else "llm", "llm_model": model, "score": score.finish({"produced": False})}
+
+    def fake_umo(urdf, d):
+        calls.append(("urdfmodelica", None, d.name))
+        return {"mode": "urdfmodelica"}
+
+    monkeypatch.setattr(llm, "convert", fake_llm)
+    monkeypatch.setattr(urdfmodelica, "convert", fake_umo)
+    monkeypatch.setattr(score, "score", lambda *a, **k: score.finish({"produced": True, "loads": True}))
+    rep = runner.run_comparison("aloha_wx250s", ["llm", "llm_rag", "urdfmodelica"], log=lambda *_: None,
+                                models=["nemotron-3-nano:4b", "qwen2.5-coder:7b"])
+    assert sorted(rep["modes"]) == ["llm:nemotron-3-nano:4b", "llm:qwen2.5-coder:7b", "llm_rag:nemotron-3-nano:4b",
+                                    "llm_rag:qwen2.5-coder:7b", "urdfmodelica"]
+    assert ("llm", "qwen2.5-coder:7b", "llm_qwen2.5-coder_7b") in calls and sum(c[0] == "urdfmodelica" for c in calls) == 1
+    assert "(qwen2.5-coder:7b)" in rep["modes"]["llm:qwen2.5-coder:7b"]["verdict"]
+    assert runner.base("llm_rag:qwen2.5-coder:7b") == "llm_rag" and rep["ranking"][0] == "urdfmodelica"

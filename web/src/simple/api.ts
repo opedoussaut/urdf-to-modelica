@@ -12,6 +12,18 @@ export async function convert<T = any>(path: string, method = "GET", data?: unkn
 
 export type ModeId = "urdfmodelica" | "llm" | "llm_rag";
 export const MODE_ORDER: ModeId[] = ["llm", "llm_rag", "urdfmodelica"];
+export const BASE_LABEL: Record<ModeId, string> = { llm: "AI only", llm_rag: "AI + library search", urdfmodelica: "URDFModelica" };
+
+/** Result keys are a method ("urdfmodelica") or a method run with one local model ("llm:qwen2.5-coder:7b"). */
+export const baseOf = (key: string) => key.split(":")[0] as ModeId;
+export const modelOf = (key: string, r?: { llm_model?: string }) => (key.includes(":") ? key.slice(key.indexOf(":") + 1) : r?.llm_model);
+export const keyLabel = (key: string, r?: { llm_model?: string }) => {
+  const model = baseOf(key) === "urdfmodelica" ? undefined : modelOf(key, r);
+  return BASE_LABEL[baseOf(key)] + (model ? " · " + model : "");
+};
+export const orderKeys = (keys: string[]) =>
+  [...keys].sort((a, b) => MODE_ORDER.indexOf(baseOf(a)) - MODE_ORDER.indexOf(baseOf(b)) || a.localeCompare(b));
+export type LocalModel = { name: string; size_gb: number; default: boolean; parameters?: string };
 
 export type Criterion = { id: string; ok: boolean; value?: number | null; detail?: string | null };
 export type Score = {
@@ -37,6 +49,7 @@ export type Score = {
 };
 export type ModeResult = {
   mode: ModeId;
+  llm_model?: string;
   label: string;
   plain: string;
   verdict: string;
@@ -57,9 +70,9 @@ export type Report = {
   source: { id: string; label: string; kind: string; links: number; joints: number; movable: number; sha256: string; graph?: boolean; path: string };
   started: string;
   finished?: string;
-  ranking?: ModeId[];
-  ties?: [ModeId, ModeId][];
-  modes: Partial<Record<ModeId, ModeResult>>;
+  ranking?: string[];
+  ties?: [string, string][];
+  modes: Record<string, ModeResult>;
   criteria: Record<string, string>;
 };
-export type RunSummary = { id: string; source: string; started: string; finished?: string; ranking?: ModeId[]; modes: Record<string, { passed: number; verdict: string }> };
+export type RunSummary = { id: string; source: string; started: string; finished?: string; ranking?: string[]; modes: Record<string, { passed: number; verdict: string }> };

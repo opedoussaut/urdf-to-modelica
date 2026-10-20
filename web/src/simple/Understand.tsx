@@ -3,10 +3,9 @@ import Markdown from "react-markdown";
 import { AlertTriangle, BookOpen, Bot, Check, Lightbulb, Network, Pencil, Send, ShieldCheck, Undo2, X } from "lucide-react";
 import { useAudience } from "../audience";
 import { message, request, waitJob, type Doc } from "../studio";
-import { convert, MODE_ORDER, type ModeId, type Report, type RunSummary, type Score } from "./api";
+import { convert, keyLabel, orderKeys, type Report, type RunSummary, type Score } from "./api";
 import type { Target } from "./SimpleApp";
 
-const LABEL: Record<string, string> = { llm: "AI only", llm_rag: "AI + library search", urdfmodelica: "URDFModelica" };
 const INTENTS = [
   {
     id: "explain",
@@ -60,7 +59,7 @@ export default function Understand({ target, setTarget, toConvert, learn }: { ta
     convert<Report>("/runs/" + target.run)
       .then((r) => {
         setReport(r);
-        setVersion((r.modes[target.mode as ModeId]?.edits || []).length);
+        setVersion((r.modes[target.mode]?.edits || []).length);
       })
       .catch((e) => setError(message(e)));
   }, [target?.run, target?.mode]);
@@ -77,7 +76,7 @@ export default function Understand({ target, setTarget, toConvert, learn }: { ta
       .catch((e) => setError(message(e)));
   }, [report, version]);
 
-  const mode = target && report ? report.modes[target.mode as ModeId] : undefined;
+  const mode = target && report ? report.modes[target.mode] : undefined;
   const score: Score | undefined = version && mode?.edits?.[version - 1] ? mode.edits[version - 1].score : mode?.score;
   const graph = report?.source.kind === "pinned";
   const context = useMemo(() => (target ? { conversion: target.run, mode: target.mode } : {}), [target]);
@@ -91,7 +90,7 @@ export default function Understand({ target, setTarget, toConvert, learn }: { ta
       let conv = conversation;
       if (!conv) {
         conv = await request<Doc>("/documents/conversation", "POST", {
-          name: `Understand: ${report?.source.label} · ${LABEL[target.mode]}`.slice(0, 150),
+          name: `Understand: ${report?.source.label} · ${keyLabel(target.mode)}`.slice(0, 150),
           data: { context },
         });
         setConversation(conv);
@@ -165,9 +164,9 @@ export default function Understand({ target, setTarget, toConvert, learn }: { ta
         ) : (
           <div className="sx-picker">
             {runs.slice(0, 8).map((r) =>
-              MODE_ORDER.filter((m) => r.modes[m]).map((m) => (
+              orderKeys(Object.keys(r.modes)).map((m) => (
                 <button key={r.id + m} className={target?.run === r.id && target.mode === m ? "on" : ""} onClick={() => setTarget({ run: r.id, mode: m })}>
-                  <b>{LABEL[m]}</b>
+                  <b>{keyLabel(m)}</b>
                   <small>
                     {r.source} · {new Date(r.started).toLocaleString([], { dateStyle: "short", timeStyle: "short" })} · {r.modes[m].passed}/7 checks
                   </small>
@@ -182,7 +181,7 @@ export default function Understand({ target, setTarget, toConvert, learn }: { ta
         <>
           <section className="sx-step">
             <h2>
-              <span className="sx-n">2</span> The model · {LABEL[target.mode]} · {report?.source.label}
+              <span className="sx-n">2</span> The model · {keyLabel(target.mode, mode)} · {report?.source.label}
             </h2>
             <p className="sx-verdict">{version && mode.edits?.[version - 1] ? mode.edits[version - 1].verdict : mode.verdict}</p>
             {score && (

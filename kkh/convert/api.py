@@ -17,10 +17,27 @@ def _job(name, fn):
     return job(name, fn)
 
 
+def installed_models() -> list[dict]:
+    """Local Ollama models (never cloud ones). Empty list if Ollama is not running."""
+    from kkh.llm.ollama import DEFAULT_MODEL, Ollama
+    try:
+        client = Ollama(timeout=5)
+        try:
+            rows = client.models()
+        finally:
+            client.close()
+    except Exception:
+        return []
+    out = [{"name": m["name"], "size_gb": round(m.get("size", 0) / 1e9, 1), "default": m["name"] == DEFAULT_MODEL,
+            "parameters": (m.get("details") or {}).get("parameter_size")}
+           for m in rows if not Ollama._cloud(m["name"]) and "embed" not in m["name"]]
+    return sorted(out, key=lambda m: (not m["default"], m["size_gb"]))
+
+
 @router.get("/sources")
 def get_sources():
     return {"sources": sources.list_sources(), "modes": runner.MODES, "criteria": runner.CRITERIA,
-            "upload_limit_bytes": sources.MAX_UPLOAD}
+            "upload_limit_bytes": sources.MAX_UPLOAD, "models": installed_models()}
 
 
 class Upload(BaseModel):
@@ -39,6 +56,7 @@ def upload(body: Upload):
 class Run(BaseModel):
     source: str = Field(max_length=80)
     modes: list[str] = Field(default_factory=lambda: ["urdfmodelica", "llm", "llm_rag"], max_length=3)
+    models: list[str] = Field(default_factory=list, max_length=6)
 
 
 @router.post("/run")
@@ -49,12 +67,19 @@ def run(body: Run):
         raise HTTPException(422, str(exc)) from exc
     if any(m not in runner.MODES for m in body.modes) or not body.modes:
         raise HTTPException(422, "Unknown mode")
+    if any(m != "urdfmodelica" for m in body.modes):
+        available = {m["name"] for m in installed_models()}
+        if not body.models:
+            raise HTTPException(422, "Choose at least one local AI model for the AI methods")
+        missing = [m for m in body.models if m not in available]
+        if missing:
+            raise HTTPException(422, f"Not installed in Ollama: {', '.join(missing)}")
     if _run_lock.locked():
         raise HTTPException(409, "A comparison is already running; wait for it to finish")
 
     def work():
         with _run_lock:
-            return runner.run_comparison(body.source, body.modes)
+            return runner.run_comparison(body.source, body.modes, models=body.models or None)
     return _job("Conversion comparison", work)
 
 

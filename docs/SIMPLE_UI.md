@@ -29,6 +29,11 @@ Modes (one isolated directory each, `runs/convert/<id>/<mode>/`):
 3. **URDFModelica** (`urdfmodelica`): the DLR converter in an isolated copy, with the documented pre-processing
    (T1 '/'-names, T2 textures, T3 '-' in names, relative root).
 
+Models: the AI methods run once per local Ollama model ticked on the page (installed models are listed by
+`GET /api/convert/sources`; cloud models are excluded). Result keys are `llm:<model>` / `llm_rag:<model>` (older
+reports use plain `llm` / `llm_rag`). CLI: `--models nemotron-3-nano:4b,qwen2.5-coder:7b`. Ollama's model store is
+`E:\ollama\models` (set in the Ollama app's settings, 20 Oct 2026).
+
 Fairness: modes 1 and 2 share model, seed 42, temperature 0, `num_ctx` 24 576, 10 000 output tokens and two repair
 rounds that receive only OpenModelica's real diagnostics. A reply cut off at the token limit is scored as written and
 the next round restarts from the original prompt with a request to be more compact.
