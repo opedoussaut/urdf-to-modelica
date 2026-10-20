@@ -218,7 +218,7 @@ def audit_layout(name: str = "experimental_shared_table", scenario: dict | None 
         "cube_centre_on_table": abs(a[2] - (table["top_z"] + half)) < 1e-9,
         "task_points": {"cube_A": pa, "target_B": pb},
         "engineering_gates": gates(ok),
-        "statement": "Experimental layout — position IK only; orientation/collision/physical contact unverified. "
+        "statement": "Experimental layout - position IK only; orientation/collision/physical contact unverified. "
                      "Display transforms are not hardware calibration.",
     }
 

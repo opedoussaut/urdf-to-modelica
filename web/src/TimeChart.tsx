@@ -90,7 +90,7 @@ export default function TimeChart({
         ref={ref}
         viewBox={`0 0 ${W} ${h}`}
         role="img"
-        aria-label={`${title} (${unit}) — OpenModelica result`}
+        aria-label={`${title} (${unit}) - OpenModelica result`}
         onMouseMove={move}
         onMouseLeave={() => setCursor(null)}
       >

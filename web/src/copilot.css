@@ -1,4 +1,4 @@
-/* AI assistant — conversation view. Uses the .lab design tokens (lab.css). */
+/* AI assistant - conversation view. Uses the .lab design tokens (lab.css). */
 .lab.cp { max-width: 1560px; display: flex; flex-direction: column; gap: 18px; }
 .lab.cp .cp-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
 .lab.cp .cp-head > div:first-child { max-width: 780px; }

@@ -125,7 +125,7 @@ export default function ModelicaEditor({ context, setContext }: Props) {
       : !armSel
         ? `${selected.name} has no place on the arm (e.g. a source block or sensor).`
         : !armSel.links.some((l) => meshed.has(l))
-          ? `${armSel.links[0]} is a massless frame without geometry${armSel.parent ? ` — shown at its parent ${armSel.parent}` : ""}.`
+          ? `${armSel.links[0]} is a massless frame without geometry${armSel.parent ? ` - shown at its parent ${armSel.parent}` : ""}.`
           : String(selected.type).endsWith("RigidLink")
             ? `${selected.name}${partOfLink(armSel.links[0]) ? " · " + partOfLink(armSel.links[0])!.name : ""}`
             : `${selected.name} moves ${armSel.links[0]} relative to ${armSel.parent} (lighter)`;

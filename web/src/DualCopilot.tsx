@@ -230,7 +230,7 @@ export default function DualCopilot({ context }: { context: Context }) {
           <h1>AI assistant</h1>
           <p>
             {simple
-              ? "Ask anything about the arm. You get two answers side by side — one from the AI alone, one backed by the studio's engineering knowledge — so you can see the difference."
+              ? "Ask anything about the arm. You get two answers side by side - one from the AI alone, one backed by the studio's engineering knowledge - so you can see the difference."
               : "One question, the same local model, two answers: without and with ontology grounding. Compare the evidence."}
           </p>
         </div>
@@ -299,7 +299,7 @@ export default function DualCopilot({ context }: { context: Context }) {
               <strong>{conversation?.name || "New conversation"}</strong>
               <span>
                 Context: {simple ? part?.name || context.selected : `joint ${context.selected}`}
-                {context.model ? (simple ? " · your edited model" : ` · revision ${context.model_revision?.slice(0, 8) || "—"}`) : simple ? " · reference model" : " · generated baseline"}
+                {context.model ? (simple ? " · your edited model" : ` · revision ${context.model_revision?.slice(0, 8) || "-"}`) : simple ? " · reference model" : " · generated baseline"}
               </span>
             </div>
             <label className="cp-model" title="Local language model used for both answers">
@@ -570,7 +570,7 @@ function Answer({
                       {!simple && <small> {c.file || ""}</small>}
                     </td>
                     <td>
-                      {c.current ?? "—"} → <strong>{c.value}</strong>
+                      {c.current ?? "-"} → <strong>{c.value}</strong>
                     </td>
                     <td>{c.justification}</td>
                     <td>

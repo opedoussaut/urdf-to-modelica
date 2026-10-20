@@ -174,7 +174,7 @@ def servo_propose(identity: str, body: ServoProposal):
         raise HTTPException(422, "The candidate does not change any servo parameter")
     reason = (f"1D Lab experiment {identity[:8]} ({data['input']['label']}): "
               + ", ".join(f"{data['joint']}.{c['parameter']}={c['value']:g}" for c in changes)
-              + (f" — {body.reason}" if body.reason else ""))
+              + (f" - {body.reason}" if body.reason else ""))
     result = guard(lambda: models.propose_parameters(body.model, "Control/FollowerServoSettings.mo", changes, reason))
     store.update(identity, record["version"], {**data, "proposal_revision": result["revision"], "proposal_model": body.model})
     return result
@@ -182,7 +182,7 @@ def servo_propose(identity: str, body: ServoProposal):
 
 # ================================================================================================ Robot Model Pipeline
 SOURCES = {
-    "aloha2": {"label": "ALOHA 2 assembly — two ViperX-300 followers + WidowX-250 leader (project assembly of pinned arm URDFs)",
+    "aloha2": {"label": "ALOHA 2 assembly - two ViperX-300 followers + WidowX-250 leader (project assembly of pinned arm URDFs)",
                "files": ["data/urdf/aloha_vx300s.urdf", "data/urdf/aloha_wx250s.urdf"],
                "interface": "kkh.domain.aloha.build.build(out_root=…)"},
     "aloha_vx300s": {"label": "ViperX-300 follower arm (pinned Interbotix URDF)", "files": ["data/urdf/aloha_vx300s.urdf"],

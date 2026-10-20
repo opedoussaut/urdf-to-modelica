@@ -1369,7 +1369,7 @@ function FrameIndicator({
   return (
     <section className="wb-frame-indicator" aria-label="Workspace frames">
       <div className="wb-frame-head">
-        <strong>{lay.status === "EXPERIMENTAL_DISPLAY" ? EXPERIMENTAL_NOTICE : "Legacy display layout — task scene in the follower frame; leader cannot reach A/B"}</strong>
+        <strong>{lay.status === "EXPERIMENTAL_DISPLAY" ? EXPERIMENTAL_NOTICE : "Legacy display layout - task scene in the follower frame; leader cannot reach A/B"}</strong>
         <label>
           Layout{" "}
           <select aria-label="Display layout" value={layoutName} disabled={disabled} onChange={(e) => setLayoutName(e.target.value)}>
@@ -1514,7 +1514,7 @@ function SimulationResult({
                   ? `${servo(n).kp} · ${servo(n).kd} · ${servo(n).actuatorTime} s · ${servo(n).feedforward}`
                   : results[n].config?.kp !== undefined
                     ? `${results[n].config.kp} · ${results[n].config.kd} (legacy)`
-                    : "—"}
+                    : "-"}
               </td>
             ))}
           </tr>
@@ -1648,9 +1648,9 @@ function TrackingComparison({
         <text x="4" y="103" fill="#8da5bd">{lo.toFixed(3)} rad</text>
       </svg>
       <p className="wb-legend">
-        <span className="leader">— leader reference (mapped)</span>
+        <span className="leader">- leader reference (mapped)</span>
         <span className="ref">- - reference revision follower</span>
-        {candidate && <span className="cand">— candidate revision follower</span>}
+        {candidate && <span className="cand">- candidate revision follower</span>}
       </p>
       {candidate && (
         <>

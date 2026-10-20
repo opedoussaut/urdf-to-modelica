@@ -461,7 +461,7 @@ def workspace_layouts():
     from kkh.engineering import workspace_frames as W
     data=W.load_layouts()
     return {**data,"gates":W.gates(False)|{"display_layout_applied":True},
-            "statement":"Experimental layout — position IK only; orientation/collision/physical contact unverified."}
+            "statement":"Experimental layout - position IK only; orientation/collision/physical contact unverified."}
 
 
 # ---------------------------------------------------------------------------------------------- semantic engineering

@@ -218,7 +218,7 @@ def conclude(result, focus="shoulder", tolerance=0.01):
     head = ("Candidate measurably improves " + focus + " tracking" if improved else
             "No measured " + focus + " tracking improvement for the candidate")
     tail = f"; candidate limit-violation samples: {violations}" if violations else ""
-    return head + " — " + "; ".join(parts) + tail + "."
+    return head + " - " + "; ".join(parts) + tail + "."
 
 
 def compare(data, axes=6, runs=None, focus="shoulder"):

@@ -29,7 +29,7 @@ export default function PhysicsEvidence() {
   const point = data?.samples[sampleIndex];
   return (
     <details className="wb-card" aria-label="OpenModelica grasp surrogate evidence">
-      <summary><strong>Modelica physics evidence</strong> — isolated two-finger surrogate (not live ALOHA physics)</summary>
+      <summary><strong>Modelica physics evidence</strong> - isolated two-finger surrogate (not live ALOHA physics)</summary>
       <p>This experiment uses OpenModelica-computed motion and contact forces. It does not control the leader, move the live cube, or prove real ALOHA grasp stability.</p>
       <button type="button" disabled={loading} onClick={load}>{loading ? "Reading Modelica result…" : "Load validated OpenModelica grasp result"}</button>
       {failure && <p role="alert">Evidence unavailable: {failure}. Run <code>python -m kkh.engineering.grasp_experiment</code> locally first.</p>}

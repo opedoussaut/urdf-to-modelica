@@ -36,7 +36,7 @@ const LeaderFollower = lazy(() => import("./LeaderFollower")),
 const tabs = [
   ["Robot & motion", Boxes, "Move, record, replay", "Move the leader arm, record a motion and replay it on the follower."],
   ["Model editor", Code2, "Edit, validate, accept", "Edit the Modelica model, check it with OpenModelica and accept new revisions."],
-  ["AI assistant", Bot, "Ask the local copilot", "Ask the local AI (Nemotron) to explain behaviour and draft changes — with and without the knowledge graph."],
+  ["AI assistant", Bot, "Ask the local copilot", "Ask the local AI (Nemotron) to explain behaviour and draft changes - with and without the knowledge graph."],
   ["Knowledge graph", Network, "Entities & provenance", "Browse the robot's facts in the knowledge graph and the trace of past engineering decisions."],
   ["Guided demo", Compass, "Seven steps, start to finish", "A guided walk through the whole engineering flow on one joint."],
   ["Joint simulation", Activity, "Tune a servo, simulate", "Change a joint's servo settings and compare real OpenModelica simulations."],
@@ -69,10 +69,10 @@ const MODE: Record<number, ArmMode> = { 0: "robot", 1: "model", 2: "decide", 3: 
 const PLAIN: Record<number, string> = {
   8: "This studio checks robot changes on a computer model first, so nothing is tried blindly on the real machine.",
   4: "A short tour: we follow one part of the arm (the shoulder) from its specification to a tested, approved change.",
-  0: "Here you move the robot arm on screen, record a movement and play it back — like a flight recorder for the arm.",
+  0: "Here you move the robot arm on screen, record a movement and play it back - like a flight recorder for the arm.",
   7: "Every number about the arm comes from somewhere. This page shows where, how sure we are, and catches mistakes automatically.",
   3: "A map of everything the studio knows about the robot: its parts, how they connect, and where each fact comes from.",
-  6: "The studio turns the robot's specification file into a physics model a computer can calculate with — and checks it.",
+  6: "The studio turns the robot's specification file into a physics model a computer can calculate with - and checks it.",
   1: "The physics model of the robot, as code. Changes are saved as versions and only approved after a successful check.",
   5: "Try a new setting for one motor and see, in a real physics simulation, whether the arm follows its target better or worse.",
   2: "Ask questions in plain language. A local AI explains; it can suggest changes, but a person always decides.",
@@ -196,7 +196,7 @@ export default function App() {
         <a className="wb-brand" href="/">
           HT <span>GEN7</span> <small>PHYSAI STUDIO</small>
         </a>
-        <div className="wb-armcard" aria-label="The ALOHA 2 follower arm — click a part to focus on it">
+        <div className="wb-armcard" aria-label="The ALOHA 2 follower arm - click a part to focus on it">
           <ArmView
             focus={context.selected}
             mode={MODE[active]}
@@ -300,7 +300,7 @@ export default function App() {
               ))}
             </span>
             {!simple && (
-              <button className={"wb-atlas-toggle" + (atlasOn ? " on" : "")} aria-pressed={atlasOn} onClick={toggleAtlas} title="Show the Physical AI Atlas in the menu — a refresher on the concepts">
+              <button className={"wb-atlas-toggle" + (atlasOn ? " on" : "")} aria-pressed={atlasOn} onClick={toggleAtlas} title="Show the Physical AI Atlas in the menu - a refresher on the concepts">
                 <BookOpen size={14} /> Atlas
               </button>
             )}

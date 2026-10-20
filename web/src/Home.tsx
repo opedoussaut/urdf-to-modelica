@@ -13,7 +13,7 @@ const FLOW = [
     title: "Robot",
     question: "What is the machine?",
     does: "Load the real ALOHA 2 robot description (URDF) and move the arms in 3D.",
-    gets: "Joints, limits, masses — straight from the manufacturer's files.",
+    gets: "Joints, limits, masses - straight from the manufacturer's files.",
     open: 0,
     action: "Robot & motion",
   },
@@ -43,7 +43,7 @@ const FLOW = [
     title: "Simulate",
     question: "What happens if we change something?",
     does: "Tune a joint's servo settings and run a real simulation.",
-    gets: "Measured tracking error, torque and settling — before vs after.",
+    gets: "Measured tracking error, torque and settling - before vs after.",
     open: 5,
     action: "Joint simulation",
   },
@@ -81,7 +81,7 @@ export default function Home({ context, setContext, open }: { context: Context; 
       <section className="home-hero">
         <div className="home-hero-text">
         <span className="lab-eyebrow">HT GEN7 PHYSAI STUDIO · ENGINEERING-GROUNDED PHYSICAL AI</span>
-        <h1>Test robot changes on a trustworthy engineering model — before touching the hardware.</h1>
+        <h1>Test robot changes on a trustworthy engineering model - before touching the hardware.</h1>
         <p>
           The studio takes the real description of the ALOHA 2 robot, records what is known about it (and how reliably), turns it
           into an executable physics model, and lets you simulate, compare and approve changes. Everything runs locally on this
@@ -103,7 +103,7 @@ export default function Home({ context, setContext, open }: { context: Context; 
           </button>
         </div>
         <button className="home-atlas-link" onClick={() => open(9)}>
-          <BookOpen size={15} /> New to Physical AI? Browse the Atlas — eleven ideas, explained in plain words
+          <BookOpen size={15} /> New to Physical AI? Browse the Atlas - eleven ideas, explained in plain words
         </button>
         </div>
         <div className="home-arm">
@@ -137,7 +137,7 @@ export default function Home({ context, setContext, open }: { context: Context; 
       </section>
 
       <section aria-label="How the studio works">
-        <h2 className="home-h2">How it works — five steps</h2>
+        <h2 className="home-h2">How it works - five steps</h2>
         <ol className="home-flow">
           {FLOW.map((f, i) => (
             <li key={f.n}>
@@ -164,8 +164,8 @@ export default function Home({ context, setContext, open }: { context: Context; 
         <section className="lab-card">
           <h2>Why this matters</h2>
           <p className="home-text">
-            An animation shows a robot moving. An engineering model computes <b>why</b> it moves the way it does — torques, limits,
-            tracking errors — from traceable parameters. Combined with a knowledge graph, the studio knows which numbers are
+            An animation shows a robot moving. An engineering model computes <b>why</b> it moves the way it does - torques, limits,
+            tracking errors - from traceable parameters. Combined with a knowledge graph, the studio knows which numbers are
             manufacturer facts (never changed) and which are assumptions (safe to tune), and it catches modelling mistakes such as
             a limit written in degrees instead of radians.
           </p>

@@ -41,7 +41,7 @@ export default function Atlas({ open }: { open: (i: number) => void }) {
             <div className="atlas-chips">
               {CONCEPTS.filter((x) => x.region === r.id).map((x) => (
                 <button key={x.id} className={x.id === id ? "on" : ""} aria-current={x.id === id ? "page" : undefined} onClick={() => go(x.id)}>
-                  {x.title.replace(/ — .*$/, "")}
+                  {x.title.replace(/ - .*$/, "")}
                 </button>
               ))}
             </div>
@@ -95,13 +95,13 @@ export default function Atlas({ open }: { open: (i: number) => void }) {
             <ArrowLeft size={15} />
             <span>
               <small>Previous</small>
-              {i > 0 ? conceptById(ROUTE[i - 1])!.title : "—"}
+              {i > 0 ? conceptById(ROUTE[i - 1])!.title : "-"}
             </span>
           </button>
           <button disabled={i === ROUTE.length - 1} onClick={() => go(ROUTE[i + 1])} className="next">
             <span>
               <small>Next</small>
-              {i < ROUTE.length - 1 ? conceptById(ROUTE[i + 1])!.title : "—"}
+              {i < ROUTE.length - 1 ? conceptById(ROUTE[i + 1])!.title : "-"}
             </span>
             <ArrowRight size={15} />
           </button>
@@ -144,7 +144,7 @@ function ArmExplore() {
         ))}
       </div>
       <figcaption>
-        <b>{shown.name}</b> — {shown.plain}
+        <b>{shown.name}</b> - {shown.plain}
       </figcaption>
     </figure>
   );
@@ -194,7 +194,7 @@ const DIAGRAMS: Partial<Record<Visual, React.ReactNode>> = {
       <Arrow d="M395 102 H455" />
       <Arrow d="M535 134 C535 190, 105 190, 105 140" />
       <text x={320} y={196} textAnchor="middle" fontSize={12} fill={muted}>
-        the world changes — and the loop runs again, many times per second
+        the world changes - and the loop runs again, many times per second
       </text>
       <text x={320} y={40} textAnchor="middle" fontSize={12.5} fill={muted}>
         physics everywhere: inertia, gravity, friction, limits
@@ -261,7 +261,7 @@ const DIAGRAMS: Partial<Record<Visual, React.ReactNode>> = {
         measured angle and speed fed back
       </text>
       <text x={320} y={36} textAnchor="middle" fontSize={12.5} fill={muted}>
-        components connected like real parts — the tool derives and solves the equations
+        components connected like real parts - the tool derives and solves the equations
       </text>
       <rect x={120} y={190} width={400} height={42} rx={10} fill="#f8fafc" stroke={line} />
       <text x={320} y={216} textAnchor="middle" fontSize={14} fill={ink} fontFamily="Cambria, Georgia, serif" fontStyle="italic">
@@ -274,7 +274,7 @@ const DIAGRAMS: Partial<Record<Visual, React.ReactNode>> = {
       {[
         ["VERIFIED", "from a pinned source file", "#0f7a4f", "#e3f4ec"],
         ["DERIVED", "computed by a stated method", "#0369a1", "#e0f2fe"],
-        ["ASSUMED", "chosen, not measured — tunable", "#a15c07", "#fdf1dc"],
+        ["ASSUMED", "chosen, not measured - tunable", "#a15c07", "#fdf1dc"],
         ["SIMULATED", "output of a real OpenModelica run", "#1d4ed8", "#e8efff"],
       ].map(([t, s, c, bg], k) => (
         <g key={t} transform={`translate(${30 + (k % 2) * 300} ${30 + Math.floor(k / 2) * 80})`}>
@@ -330,7 +330,7 @@ const DIAGRAMS: Partial<Record<Visual, React.ReactNode>> = {
       <Box x={340} y={30} w={270} h={52} t="Same question" s="+ retrieved facts with sources" fill="#e8efff" stroke="#bfd0fb" color={blue} />
       <Arrow d="M165 82 V112" />
       <Arrow d="M475 82 V112" />
-      <Box x={30} y={116} w={270} h={56} t="Answer from memory" s="fluent — maybe invented" fill="#fdf1dc" stroke="#f3d9a8" color="#a15c07" />
+      <Box x={30} y={116} w={270} h={56} t="Answer from memory" s="fluent - maybe invented" fill="#fdf1dc" stroke="#f3d9a8" color="#a15c07" />
       <Box x={340} y={116} w={270} h={56} t="Answer with citations" s="checkable against the source" fill="#e3f4ec" stroke="#bfe3cf" color="#0f7a4f" />
       <text x={320} y={204} textAnchor="middle" fontSize={12} fill={muted}>
         either way, a person approves any change to the model

@@ -114,4 +114,4 @@ export const GATES = {
 } as const;
 
 export const EXPERIMENTAL_NOTICE =
-  "Experimental layout — position IK only; orientation/collision/physical contact unverified";
+  "Experimental layout - position IK only; orientation/collision/physical contact unverified";

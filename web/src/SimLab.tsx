@@ -17,8 +17,8 @@ const C_CMD = "#0f172a",
   C_CAND = "#1d4ed8";
 
 const clean = (s: string) => (/^-0(\.0+)?$/.test(s) ? s.slice(1) : s);
-const mrad = (v?: number | null) => (v === null || v === undefined ? "—" : clean((v * 1000).toFixed(1)));
-const num = (v?: number | null, d = 2) => (v === null || v === undefined ? "—" : v.toFixed(d));
+const mrad = (v?: number | null) => (v === null || v === undefined ? "-" : clean((v * 1000).toFixed(1)));
+const num = (v?: number | null, d = 2) => (v === null || v === undefined ? "-" : v.toFixed(d));
 
 const METRICS: [string, string, (m: any) => string, string][] = [
   ["rms_error_rad", "RMS tracking error", (m) => mrad(m.rms_error_rad), "mrad"],
@@ -340,7 +340,7 @@ export default function SimLab({
           )}
           <details className="lab-history">
             <summary>
-              <History size={14} /> Saved runs ({runs.length}) — archived results, labelled as such
+              <History size={14} /> Saved runs ({runs.length}) - archived results, labelled as such
             </summary>
             <ul>
               {runs.slice(0, 8).map((r) => (

@@ -167,7 +167,7 @@ export default function ModelPipeline({
                         {j.parent} → {j.child}
                       </td>
                       <td>{j.axis.join(", ")}</td>
-                      <td>{j.lower !== null ? `[${(+j.lower).toFixed(4)}, ${(+j.upper).toFixed(4)}] ${j.unit}` : "—"}</td>
+                      <td>{j.lower !== null ? `[${(+j.lower).toFixed(4)}, ${(+j.upper).toFixed(4)}] ${j.unit}` : "-"}</td>
                       <td>{j.mimic ? `${j.mimic.multiplier} × ${j.mimic.joint} + ${j.mimic.offset}` : ""}</td>
                     </tr>
                   ))}
@@ -269,7 +269,7 @@ export default function ModelPipeline({
                   </table>
                   {m.mimic_equations.length > 0 && (
                     <p className="lab-footnote">
-                      Mimic equations in the generated class: <code>{m.mimic_equations.join("  ")}</code> — the URDF multiplier −1 is
+                      Mimic equations in the generated class: <code>{m.mimic_equations.join("  ")}</code> - the URDF multiplier −1 is
                       preserved (sign errors here are caught by the ontology mimic rule; see Engineering Reasoning).
                     </p>
                   )}
