@@ -253,6 +253,7 @@ const META: Record<Visual, Meta> = {
   "twin-levels": { title: "Model, shadow, twin", caption: "The three levels of Kritzinger et al. (2018), told apart by how data flows between the real object and its digital counterpart." },
   "modelica-1d": { title: "A 1D model of one joint", caption: "The structure of the studio's Joint simulation model (kkh/studio/servo1d.py); the equation is its torque balance." },
   acausal: { title: "Signals vs physical connections", caption: "In a block diagram you decide what is input and output; in Modelica you connect parts and the tool sorts the equations." },
+  scoring: { title: "Two scorecards", caption: "Left: how a generated model is measured. Right: how a review of that model is measured against known problems." },
   "three-ways": { title: "Three methods, one set of checks", caption: "What the Convert & compare page runs. The checks are real OpenModelica runs compared with the URDF; no method sees the expected answer." },
   tools: { title: "One language, several tools", caption: "Modelica models are text; tools compile and simulate them. Dymola has not been tested with the studio's package." },
   provenance: { title: "Four labels for every number", caption: "Used across the studio for every parameter and result." },
@@ -813,6 +814,38 @@ const DIAGRAMS: Partial<Record<Visual, React.ReactNode>> = {
       <Box x={420} y={120} w={200} h={58} t="Other Modelica tools" s="commercial and open-source" />
       <Arrow d="M320 178 V200" />
       <Box x={170} y={204} w={300} h={44} t="FMU (FMI standard)" s="export a model to run in other simulators" />
+    </Svg>
+  ),
+  scoring: (
+    <Svg label="How models and reviews are scored" h={300}>
+      <T x={160} y={24} s={13} w={700} c={blue}>
+        A MODEL
+      </T>
+      <T x={480} y={24} s={13} w={700} c={violet}>
+        A REVIEW
+      </T>
+      {[
+        ["Reads · complete · runs", "OpenModelica"],
+        ["Structure", "all parts and joints"],
+        ["Geometry", "every joint driven, vs robot file"],
+        ["Parameters", "axes, masses, inertias"],
+        ["Dynamics", "torques vs MuJoCo"],
+      ].map(([t, s2], k) => (
+        <Box key={t} x={40} y={36 + k * 50} w={240} h={42} t={t} s={s2} fs={12.5} fill={k === 4 ? greenBg : blueBg} stroke={k === 4 ? "#bfe3cf" : blueLine} color={k === 4 ? green : blue} />
+      ))}
+      {[
+        ["Recall · precision", "known problems found, false alarms"],
+        ["Corrections that work", "fix applied to a copy, re-checked"],
+        ["Facts stated correctly", "quoted numbers vs robot file"],
+        ["Calibration", "Brier score of the confidence"],
+        ["Time", "AI seconds or human minutes"],
+      ].map(([t, s2], k) => (
+        <Box key={t} x={360} y={36 + k * 50} w={250} h={42} t={t} s={s2} fs={12.5} fill={violetBg} stroke="#cfc4f5" color={violet} />
+      ))}
+      <line x1={320} y1={36} x2={320} y2={280} stroke={line} strokeDasharray="4 5" />
+      <T x={320} y={296} s={11}>
+        every number is measured; none is judged by an AI
+      </T>
     </Svg>
   ),
   "three-ways": (

@@ -177,3 +177,27 @@
 .sx-model span { display: flex; flex-direction: column; }
 .sx-model small { color: var(--muted); font-size: 11.5px; }
 .sx-model.on { border-color: var(--accent); background: var(--accent-soft); }
+.sx-seg { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 12px; background: var(--canvas); }
+.sx .sx-seg button { border: 0; background: transparent; padding: 7px 12px; border-radius: 8px; font-weight: 600; color: var(--ink-2); }
+.sx .sx-seg button.on { background: var(--surface); color: var(--accent); box-shadow: 0 1px 3px rgba(15, 29, 51, 0.12); }
+.sx-findings.hidden { background: #f6f8fb; border-color: var(--line); }
+.sx-omc { margin: 8px 0 12px; font-size: 13px; }
+.sx-omc pre { white-space: pre-wrap; font-size: 11.5px; background: var(--canvas); padding: 8px; border-radius: 6px; max-height: 220px; overflow: auto; }
+.sx-mode.off { opacity: 0.45; cursor: not-allowed; }
+.sx-mode input[type="radio"] { position: absolute; top: 14px; right: 14px; width: 18px; height: 18px; accent-color: var(--accent); }
+.sx-manual { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.sx-reviewer { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.sx-manual input, .sx-manual select { font: inherit; padding: 7px 9px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.sx-issue { display: grid; grid-template-columns: 180px 220px 1fr 140px 36px; gap: 8px; align-items: start; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfe; }
+.sx-issue details { grid-column: 1 / 5; font-size: 13px; }
+.sx-corr { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 6px; }
+.sx-conf { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); }
+.sx-conf input { padding: 0; border: 0; accent-color: var(--accent); }
+.sx .sx-icon { border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); height: 34px; display: grid; place-items: center; color: var(--muted); }
+.sx-warn { color: var(--amber); }
+.sx-th-sub { display: block; font-weight: 400; color: var(--muted); font-size: 11px; }
+.sx-metric td b { font-size: 14px; }
+.sx-rev { margin: 10px 0; }
+.sx-rev ul { margin: 4px 0; padding-left: 18px; font-size: 12.5px; line-height: 1.5; }
+@media (max-width: 1000px) { .sx-issue { grid-template-columns: 1fr; } .sx-issue details { grid-column: auto; } }
+.sx-export a { color: var(--accent); font-weight: 600; }

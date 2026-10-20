@@ -6,13 +6,13 @@ import "../lab.css";
 import "./simple.css";
 
 const Convert = lazy(() => import("./Convert")),
-  Understand = lazy(() => import("./Understand")),
+  Review = lazy(() => import("./Review")),
   Atlas = lazy(() => import("../Atlas"));
 
-type Page = "convert" | "understand" | "learn";
+type Page = "convert" | "review" | "learn";
 // Full-studio page index (App tabs) → deep-link key, for the Atlas "See it in the studio" buttons.
 const STUDIO_WS = ["robot", "editor", "copilot", "knowledge", "journey", "lab", "pipeline", "reasoning", "home", "atlas"];
-export type Target = { run: string; mode: string };
+export type Target = { kind?: "conversion" | "seeded"; run?: string; mode?: string; mutation?: string };
 
 /** Switch to the full studio (all pages) and remember the choice for this browser. */
 export function openFullStudio(ws = "home") {
@@ -24,29 +24,41 @@ export function openFullStudio(ws = "home") {
 
 const PAGES: { id: Page; label: string; sub: string; Icon: typeof Workflow }[] = [
   { id: "convert", label: "Convert & compare", sub: "Robot file → physics model, three ways", Icon: Workflow },
-  { id: "understand", label: "Understand & fix", sub: "Read, question and correct a model", Icon: FileSearch },
+  { id: "review", label: "Review", sub: "Manual, AI or AI + ontologies", Icon: FileSearch },
   { id: "learn", label: "Learn the ideas", sub: "Physical AI Atlas", Icon: BookOpen },
 ];
 
-/** Simplified studio: two features (conversion comparison, model understanding) plus the Atlas. */
+/** Simplified studio: two features (conversion comparison, reviews of the converted files) plus the Atlas. */
 export default function SimpleApp() {
   const params = new URLSearchParams(location.search);
-  const [page, setPage] = useState<Page>(() => (["convert", "understand", "learn"].includes(params.get("page") || "") ? (params.get("page") as Page) : "convert"));
-  const [target, setTarget] = useState<Target | undefined>(() => (params.get("run") && params.get("mode") ? { run: params.get("run")!, mode: params.get("mode")! } : undefined));
+  const [page, setPage] = useState<Page>(() => {
+    const p = params.get("page") === "understand" ? "review" : params.get("page");
+    return ["convert", "review", "learn"].includes(p || "") ? (p as Page) : "convert";
+  });
+  const [target, setTarget] = useState<Target | undefined>(() =>
+    params.get("mutation")
+      ? { kind: "seeded", mutation: params.get("mutation")! }
+      : params.get("run") && params.get("mode")
+        ? { kind: "conversion", run: params.get("run")!, mode: params.get("mode")! }
+        : undefined,
+  );
   const [audience, setAudience] = useState<Audience>(storedAudience);
   const [resetOpen, setResetOpen] = useState(false);
-  const go = (p: Page, t?: Target) => {
+  const go = (p: Page, t?: Target, topic?: string) => {
     setPage(p);
     if (t) setTarget(t);
     const u = new URL(location.href);
+    if (p === "learn" && topic) u.searchParams.set("topic", topic);
+    else if (p !== "learn") u.searchParams.delete("topic");
     u.searchParams.set("page", p);
     const tt = t || target;
-    if (p === "understand" && tt) {
-      u.searchParams.set("run", tt.run);
-      u.searchParams.set("mode", tt.mode);
-    } else {
-      u.searchParams.delete("run");
-      u.searchParams.delete("mode");
+    for (const k of ["run", "mode", "mutation"]) u.searchParams.delete(k);
+    if (p === "review" && tt) {
+      if (tt.kind === "seeded") u.searchParams.set("mutation", tt.mutation || "");
+      else {
+        u.searchParams.set("run", tt.run || "");
+        u.searchParams.set("mode", tt.mode || "");
+      }
     }
     history.replaceState(null, "", u);
     scrollTo({ top: 0 });
@@ -95,8 +107,8 @@ export default function SimpleApp() {
         </header>
         <main>
           <Suspense fallback={<div className="lab">Loading…</div>}>
-            {page === "convert" && <Convert openUnderstand={(t) => go("understand", t)} learn={() => go("learn")} />}
-            {page === "understand" && <Understand target={target} setTarget={(t) => go("understand", t)} toConvert={() => go("convert")} learn={() => go("learn")} />}
+            {page === "convert" && <Convert openUnderstand={(t) => go("review", t)} learn={() => go("learn", undefined, "three-ways")} />}
+            {page === "review" && <Review target={target} setTarget={(t) => go("review", t)} toConvert={() => go("convert")} learn={() => go("learn", undefined, "scoring")} />}
             {page === "learn" && <Atlas open={(i) => openFullStudio(STUDIO_WS[i] || "home")} />}
           </Suspense>
         </main>

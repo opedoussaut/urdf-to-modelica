@@ -292,37 +292,6 @@ def findings(report: dict, mode: str, version: int = 0) -> list[dict]:
     return out
 
 
-def save_edit(identity: str, mode: str, text: str, note: str = "") -> dict:
-    """A person's edited version of a mode's main file: stored as a new version beside the original (never
-    overwriting it) and scored with the same real OpenModelica scorer. Only called on an explicit user action."""
-    import shutil
-    report = load(identity)
-    m = report["modes"].get(mode)
-    if not m or not m.get("main_file"):
-        raise ValueError("This mode produced no file to edit")
-    root = sources.RUNS / identity / safe_dir(mode) / "edits"
-    n = len(m.get("edits", [])) + 1
-    d = root / f"v{n}"
-    main = sources.ROOT / m["main_file"]
-    if m["mode"] == "urdfmodelica":
-        lib = sources.ROOT / m["package_file"]          # .../ws/URDFModelica/package.mo
-        shutil.copytree(lib.parent, d / "URDFModelica")
-        target = d / "URDFModelica" / main.relative_to(lib.parent)
-        package_file = d / "URDFModelica" / "package.mo"
-    else:
-        d.mkdir(parents=True)
-        target = package_file = d / main.name
-    target.write_text(text, encoding="utf-8")
-    urdf = sources.ROOT / report["source"]["path"]
-    model = m.get("model") if m["mode"] == "urdfmodelica" else llm.model_names(text, "")
-    s = score.score(urdf, package_file, model, d)
-    edit = {"version": n, "file": target, "note": note[:300], "saved": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
-            "score": s, "verdict": verdict(mode, s)}
-    m.setdefault("edits", []).append(json.loads(json.dumps(edit, default=_jsonable)))
-    (sources.RUNS / identity / "report.json").write_text(json.dumps(report, indent=1, default=_jsonable), encoding="utf-8")
-    return m["edits"][-1]
-
-
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("source")

@@ -24,6 +24,7 @@ export type Visual =
   | "acausal"
   | "tools"
   | "three-ways"
+  | "scoring"
   | "provenance"
   | "prov-o"
   | "ontology"
@@ -280,6 +281,57 @@ What to expect: rule-based converters are reliable within their rules but can mi
     visuals: ["three-ways"],
     studio: [{ page: 6, label: "Generate model", what: "the studio's own deterministic converter, checked by OpenModelica" }],
     related: ["modelica-1d", "trust", "benchmarks"],
+  },
+  {
+    id: "scoring",
+    region: "physics",
+    title: "How we score models and reviews",
+    gist: "Every score is measured: a model is checked against the robot file and a physics engine; a review against problems we already know.",
+    definitions: [
+      {
+        term: "Precision and recall",
+        text: "Precision is the fraction of the items reported that are relevant; recall is the fraction of the relevant items that were reported.",
+        source: "Manning, Raghavan & Schütze, Introduction to Information Retrieval, Cambridge University Press, 2008, ch. 8",
+        url: "https://nlp.stanford.edu/IR-book/",
+      },
+      {
+        term: "Brier score",
+        text: "The mean squared difference between the probability stated for an outcome and what happened (1 if it happened, 0 if not); 0 is perfect.",
+        source: "Brier, Verification of forecasts expressed in terms of probability, Monthly Weather Review 78(1), 1950",
+        url: "https://doi.org/10.1175/1520-0493(1950)078<0001:VOFEIT>2.0.CO;2",
+      },
+      {
+        term: "Inverse dynamics",
+        text: "Computing the joint forces and torques needed to produce a given motion (positions, velocities and accelerations) of a rigid-body system.",
+        source: "Featherstone, Rigid Body Dynamics Algorithms, Springer, 2008",
+        url: "https://doi.org/10.1007/978-0-387-74315-8",
+      },
+      {
+        term: "MuJoCo",
+        text: "A physics engine for model-based control and robot simulation; here it reads the robot file and serves as the independent torque reference.",
+        source: "Todorov, Erez & Tassa, MuJoCo: A physics engine for model-based control, IROS 2012",
+        url: "https://doi.org/10.1109/IROS.2012.6386109",
+      },
+    ],
+    body: `**Scoring a model (Convert & compare).** Each generated Modelica file passes through the same eight checks, all measured:
+
+1. **It exists, OpenModelica reads it, accepts it as complete, and it runs.** These are gates: a file that fails one gets no further score.
+2. **Structure** - every part and joint of the robot file is in the model.
+3. **Geometry** - every joint is driven through most of its range; at each instant the position and orientation of each part are compared with what the robot file says. The first wrong joint on a chain is named as the suspect.
+4. **Parameters** - joint axes, masses, centres of mass and inertias, compared in each part's own frame.
+5. **Dynamics** - for the same motion, the torque each joint needs in the model is compared with an independent physics engine (**MuJoCo**) reading the robot file: **inverse dynamics**. Friction and damping are left out on both sides so only the physics of masses and geometry is compared.
+
+**Scoring a review (Review).** A person, an AI, or an AI given the knowledge graph reviews a file and lists problems with proposed corrections. We already know the problems: either the ones the checks above measured, or one error we planted on purpose in a test file. So we can count:
+
+- **Recall** - how many of the known problems were found; **precision** - how many reported problems are real (false alarms cost engineering time).
+- **Corrections that work** - each proposed fix is applied to a copy and checked again: does the problem disappear without breaking something else?
+- **Facts stated correctly** - numbers the review quotes are checked against the robot file, which catches invented values.
+- **Calibration** - the **Brier score** compares how sure the reviewer said it was with whether it was right.
+
+No single number: a reviewer can find everything but drown it in false alarms, or be cautious and miss half. The page shows each measure side by side.`,
+    visuals: ["scoring"],
+    studio: [{ page: 6, label: "Generate model", what: "the studio's own conversion and its checks" }],
+    related: ["three-ways", "trust", "benchmarks"],
   },
   {
     id: "provenance",

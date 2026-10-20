@@ -31,7 +31,8 @@ kkh/llm/           generic: Ollama client
 kkh/rag/           GraphRAG retrieval + controlled engineering tools + copilot + repair loop
 kkh/domain/aloha/  ALOHA-specific: configuration (sourced constants, manifest), scenarios, build, pipeline, graph mapping
 kkh/benchmark/     workflow A (URDFModelica), B/C repair pilot (harness), error-detection experiment (detection)
-kkh/convert/       URDF→Modelica comparison: AI only / AI + MSL BM25 search / URDFModelica, one OMC-backed scorer (docs/SIMPLE_UI.md)
+kkh/convert/       URDF→Modelica comparison (AI only / AI + MSL BM25 / URDFModelica), 8-check OMC scorer incl. excitation +
+                   MuJoCo dynamics; reviews (manual / AI / AI+ontologies) scored vs known defects (docs/SIMPLE_UI.md)
 kkh/api/           FastAPI backend for the web app
 web/               React + TypeScript + Three.js + Cytoscape.js UI; web/src/simple = default 2-page app, full studio via ?ui=studio
 ontology/          ALOHA application ontology, SHACL shapes, reference ontology snapshots

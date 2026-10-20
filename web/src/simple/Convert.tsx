@@ -229,6 +229,9 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
       {runs.length > 0 && (
         <section className="sx-step">
           <h2>Earlier comparisons</h2>
+          <p className="sx-note sx-export">
+            All scores: <a href="/api/convert/scores?table=conversions&format=csv">download CSV</a> · <a href="/api/convert/scores?table=conversions">JSON</a>
+          </p>
           <div className="sx-runs">
             {runs.slice(0, 12).map((r) => (
               <button key={r.id} onClick={() => openRun(r.id)} className={report?.id === r.id ? "on" : ""}>
@@ -417,8 +420,8 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
                 </details>
               )}
               {r.main_file ? (
-                <button className="lab-ghost" onClick={() => openUnderstand({ run: report.id, mode: m })}>
-                  <FileSearch size={15} /> Open in Understand &amp; fix
+                <button className="lab-ghost" onClick={() => openUnderstand({ kind: "conversion", run: report.id, mode: m })}>
+                  <FileSearch size={15} /> Review this file
                 </button>
               ) : (
                 <small className="sx-muted">

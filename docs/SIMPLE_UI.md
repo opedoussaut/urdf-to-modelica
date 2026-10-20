@@ -7,7 +7,7 @@ remembered per browser (`localStorage kkh.ui`).
 | Page | What it does | Code |
 | --- | --- | --- |
 | **Convert & compare** | URDF → Modelica three ways, scored by the same seven real OpenModelica checks | `kkh/convert/`, `web/src/simple/Convert.tsx` |
-| **Understand & fix** | Read a generated model, ask the local AI (alone vs grounded in the robot knowledge graph), edit it and re-check | `kkh/studio/copilot.py` (`conversion_context`), `web/src/simple/Understand.tsx` |
+| **Review** | Review a generated (or seeded test) file: manually, AI-assisted, or AI + ontologies; each review scored against known defects | `kkh/convert/review.py`, `review_score.py`, `web/src/simple/Review.tsx` |
 | **Learn the ideas** | The Physical AI Atlas, incl. the concept "Three ways to build a model from a robot file" | `web/src/Atlas.tsx` |
 
 Simulation of the converted models beyond the 2 s check comes later.
@@ -52,23 +52,56 @@ CLI: `PYTHONPATH=. python -m kkh.convert.runner aloha_wx250s --modes llm,llm_rag
 
 API: `GET /api/convert/sources`, `POST /api/convert/upload` (JSON `{filename, content}`), `POST /api/convert/run`
 (job, poll `/api/workbench/job/{id}`), `GET /api/convert/runs`, `GET /api/convert/runs/{id}`,
-`GET /api/convert/runs/{id}/file?mode=&version=`, `POST /api/convert/runs/{id}/edit` (job).
+`GET /api/convert/runs/{id}/file?mode=`, `GET /api/convert/runs/{id}/findings?mode=`, `GET /api/convert/scores?table=conversions|reviews&format=json|csv`.
 
-## Understand & fix
+## Scoring a converted model (eight checks, all measured)
 
-- The copilot's paired answers (`kkh/studio/copilot.pair`, identical settings both sides) receive the generated file,
-  its source URDF and the file's score card. The grounded side adds GraphDB evidence for the pinned arms; for an
-  upload it declines explicitly ("no robot knowledge graph") instead of answering without grounding.
-- Preset questions: Explain this model, Find possible errors, Suggest a fix; or a free question.
-- **What the checks found** (`GET /api/convert/runs/{id}/findings`, `kkh/convert/runner.findings`): the file's measured
-  problems in plain words, derived only from its OpenModelica score and the URDF, with a likely cause when the URDF
-  explains it (e.g. a mimic joint not enforced). Shown above the code and given to both AI sides first.
-- Measured AI result (20 Oct 2026, `nemotron-3-nano:4b`, URDFModelica file of the leader arm): asked to find errors,
-  both sides answered "no modelling errors" and missed the measured 9.9 mm finger gap, even with the findings supplied;
-  the grounded side also wrongly stated the mimic coupling is enforced. This is why the deterministic findings box is
-  shown first and labelled "No AI involved".
-- Edits: a person edits the file; "Save as a new version and check" stores `edits/v<n>/` beside the original and runs
-  the same scorer. Nothing is applied automatically; AI suggestions are review-only.
+`kkh/convert/score.py`, ranking lexicographic, every check shown:
+1–4. **Validity gates**: produced → loads → checks (equations = variables) → simulates (2 s).
+5. **Coverage**: URDF links / moving joints found (lenient names).
+6. **Geometry under motion** (`kinematics`): a **standard excitation** (`kkh/convert/excite.py`) drives every
+   recognised joint through 80 % of its URDF range for 4 s (sines, distinct frequencies; URDFModelica via its `Run`
+   inputs, contract files via `extends …Test(j_x(useAxisFlange=true))` + Position sources; mimic joints are not driven
+   on their own, so an unenforced mimic shows). Link positions and orientations vs URDF FK; pass ≤ 1 mm and ≤ 0.1°.
+   **Localisation**: the first wrong joint on each chain is reported as the suspect. Fallback: the model's own motion,
+   flagged (`max_joint_motion_rad`).
+7. **Parameters**: joint axes, masses, centres of mass and inertia tensors; COM/inertia compared in the link's own
+   frame when the result exposes it (geometry-independent), otherwise in world via URDF FK; limits are not checkable
+   from results (stated).
+8. **Dynamics** (`kkh/convert/dynamics.py`): model joint torque (MSL `tau` / `f`, the rigid-body axis torque) vs
+   **MuJoCo** inverse dynamics from the cleaned URDF at the simulated q, q̇, q̈ — rigid body only on the reference
+   (damping, friction, armature 0; constraints incl. MuJoCo's mimic equalities disabled); pass ≤ 5 % of the URDF effort
+   limit per joint; mimic joints reported apart. Reference self-check (forward → inverse) ≈ 1e-14 N·m.
+
+Validated on the URDFModelica leader arm (20 Oct 2026): 9/9 axes, 15/15 masses, 12/12 centres of mass, 12/12
+inertias; arm torques within 0.01 % of effort vs MuJoCo; the unenforced finger mimic is the only defect (right finger
+up to 34 mm off under excitation; suspect joint `right_finger`). Negative tests (orientation, COM, inertia errors
+injected into the reference) are caught on exactly the injected link.
+
+## Review: three modes, one scorecard
+
+`kkh/convert/review.py` (run, store), `review_score.py` (score). Targets: a converted file (`conversion`) or a
+**seeded test file** (`seeded`): the frozen follower class with exactly one known error from
+`kkh/benchmark/detection.MUTATIONS` (M0 control … H7, held-out ones marked).
+- **Manual**: a form (entity, category, note, confidence, optional correction); time measured.
+- **AI-assisted** / **AI + ontologies**: local model (any installed), same prompt, seed 42, 24 k context, structured
+  output (`issues` with entity/category/evidence/confidence/correction, `claims` with numeric URDF facts). The
+  ontology mode adds GraphDB joint facts (`kkh/rag/retrieval.joint_facts`; pinned arms only).
+- Reviewers never see the ground truth: file (annotations removed) + cleaned URDF + OpenModelica's own messages.
+
+Ground truth: converted files → `runner.findings()` defects (entity + category); seeded → the mutation.
+Metrics: **recall** (right entity + accepted category), **precision** (affirmations filtered as in detection.py),
+**corrections that work** (applied to an isolated copy: seeded → `detection.det_diff` no longer flags the entity and
+nothing new; conversion → full OpenModelica re-score; at most 3 per review), **faithfulness** (claims vs URDF),
+**Brier score** of the confidence, time. "Compare the reviews" shows one column per review; exports via
+`/api/convert/scores`.
+
+First measurements (seeded M1, elbow axis sign): nemotron-3-nano:4b — AI and AI + ontologies both report nothing
+(recall 0; the ontology review states 20/20 correct facts but does not use them); qwen2.5-coder:7b — AI reports
+nothing, AI + ontologies reports 12 false alarms at full confidence (precision 0, Brier 1.0), none of its corrections
+applicable. A correct manual review of M3 scores recall 1, precision 1, correction 1/1.
+
+The earlier "edit and save versions" feature was removed at the user's request: the files are reviewed, not hand-fixed.
 
 ## Non-expert layer
 

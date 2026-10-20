@@ -149,22 +149,6 @@ def get_findings(identity: str, mode: str, version: int = 0):
         raise HTTPException(404, "Unknown run, mode or version") from exc
 
 
-class Edit(BaseModel):
-    mode: str = Field(max_length=20)
-    text: str = Field(min_length=10, max_length=400_000)
-    note: str = Field(default="", max_length=300)
-
-
-@router.post("/runs/{identity}/edit")
-def edit(identity: str, body: Edit):
-    """Save a person's edited file as a new version and check it with OpenModelica (job)."""
-    try:
-        runner.load(identity)
-    except (KeyError, ValueError) as exc:
-        raise HTTPException(404, "Unknown run") from exc
-    return _job("Check edited Modelica file", lambda: runner.save_edit(identity, body.mode, body.text, body.note))
-
-
 @router.get("/runs/{identity}/file")
 def get_file(identity: str, mode: str, version: int = 0):
     """Main Modelica file produced by one mode (version 0 = original, n = the person's n-th edit). Read-only."""
@@ -184,3 +168,135 @@ def get_file(identity: str, mode: str, version: int = 0):
         raise HTTPException(403, "Outside the conversion runs")
     return {"path": rel, "model": m.get("model"), "version": version, "versions": len(edits),
             "text": path.read_text(encoding="utf-8", errors="replace")}
+
+
+# ------------------------------------------------------------------------------------------- reviews
+def _target(kind: str, run: str = "", mode: str = "", mutation: str = "") -> dict:
+    if kind == "seeded":
+        from .review import _seeded_mutation
+        try:
+            _seeded_mutation(mutation)
+        except ValueError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        return {"kind": "seeded", "mutation": mutation}
+    if kind == "conversion":
+        try:
+            rep = runner.load(run)
+        except (KeyError, ValueError) as exc:
+            raise HTTPException(404, "Unknown run") from exc
+        if mode not in rep["modes"]:
+            raise HTTPException(404, "Unknown method")
+        return {"kind": "conversion", "run": run, "mode": mode}
+    raise HTTPException(422, "kind must be conversion or seeded")
+
+
+@router.get("/review/targets")
+def review_targets():
+    from .review import REVIEW_MODES, seeded_list
+    from kkh.benchmark.detection import CATEGORIES
+    return {"seeded": seeded_list(), "runs": runner.list_runs(), "modes": REVIEW_MODES, "categories": CATEGORIES,
+            "properties": __import__("kkh.convert.review", fromlist=["PROPERTIES"]).PROPERTIES, "models": installed_models()}
+
+
+@router.get("/review/file")
+def review_file(kind: str, run: str = "", mode: str = "", mutation: str = ""):
+    """The file(s) a reviewer reads (annotations removed) and the entity names for the manual form. No ground truth."""
+    from .review import entities, model_text, target_files
+    t = _target(kind, run, mode, mutation)
+    try:
+        files, _, ctx = target_files(t)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    return {"target": t, "label": ctx["label"], "text": model_text(files), "files": list(files),
+            "omc_messages": ctx["omc_messages"], "entities": entities(t), "graph": ctx["robot"] in ("aloha_vx300s", "aloha_wx250s")}
+
+
+class ReviewRun(BaseModel):
+    kind: str = Field(max_length=20)
+    run: str = Field(default="", max_length=40)
+    mode: str = Field(default="", max_length=120)
+    mutation: str = Field(default="", max_length=60)
+    review_mode: str = Field(max_length=20)
+    model: str = Field(default="", max_length=80)
+    manual: dict | None = None
+    manual_seconds: float | None = Field(default=None, ge=0, le=86400)
+    reviewer: str = Field(default="", max_length=80)
+
+
+@router.post("/review/run")
+def review_run(body: ReviewRun):
+    from .review import REVIEW_MODES, run_review
+    t = _target(body.kind, body.run, body.mode, body.mutation)
+    if body.review_mode not in REVIEW_MODES:
+        raise HTTPException(422, "Unknown review mode")
+    if body.review_mode != "manual":
+        available = {m["name"] for m in installed_models()}
+        if body.model and body.model not in available:
+            raise HTTPException(422, f"Not installed in Ollama: {body.model}")
+    elif body.manual is None:
+        raise HTTPException(422, "A manual review needs the report")
+    return _job("Review", lambda: run_review(t, body.review_mode, body.model or None, body.manual, body.manual_seconds, body.reviewer))
+
+
+@router.get("/review/list")
+def review_list(kind: str, run: str = "", mode: str = "", mutation: str = ""):
+    """Reviews of one file with their scores, plus the ground truth (shown once reviews exist, for the comparison)."""
+    from .review import list_reviews
+    from .review_score import ground_truth
+    t = _target(kind, run, mode, mutation)
+    reviews = list_reviews(t)
+    return {"target": t, "reviews": reviews, "ground_truth": ground_truth(t) if reviews else None}
+
+
+@router.get("/scores")
+def scores(table: str = "conversions", format: str = "json"):
+    """All measured scores in one table, for research reporting: table=conversions (one row per run × method) or
+    table=reviews (one row per review). format=json|csv."""
+    import csv
+    import io
+    from fastapi.responses import Response
+    from .review import list_reviews, seeded_list
+    rows = []
+    if table == "conversions":
+        for r in runner.list_runs():
+            rep = runner.load(r["id"])
+            for key, m in rep["modes"].items():
+                s = m.get("score", {})
+                crit = {c["id"]: c["ok"] for c in s.get("criteria", [])}
+                kin, dyn, par = s.get("kinematics") or {}, s.get("dynamics") or {}, s.get("parameters") or {}
+                rows.append({"run": rep["id"], "started": rep.get("started"), "robot": rep["source"].get("id"),
+                             "method": runner.base(key), "llm_model": m.get("llm_model") or "", "checks_passed": s.get("passed"),
+                             **{f"ok_{k}": v for k, v in crit.items()},
+                             "coverage": s.get("coverage"), "max_position_error_mm": kin.get("max_position_error_mm"),
+                             "max_orientation_error_deg": kin.get("max_orientation_error_deg"),
+                             "joint_motion_rad": kin.get("max_joint_motion_rad"), "motion": s.get("motion"),
+                             "params_ok": sum(par.get(f + "_ok", 0) for f in ("axes", "masses", "com", "inertia")),
+                             "params_checked": sum(par.get(f + "_checked", 0) for f in ("axes", "masses", "com", "inertia")),
+                             "dynamics_worst_pct_effort": dyn.get("worst_pct_effort"),
+                             "wall_seconds": m.get("wall_seconds"), "llm_calls": m.get("llm_calls"), "repair_attempts": m.get("repair_attempts")})
+    elif table == "reviews":
+        targets = [{"kind": "seeded", "mutation": x["id"]} for x in seeded_list()]
+        for r in runner.list_runs():
+            targets += [{"kind": "conversion", "run": r["id"], "mode": k} for k in r["modes"]]
+        for t in targets:
+            for rv in list_reviews(t):
+                s = rv["score"]
+                rows.append({"review": rv["id"], "created": rv["created"], "target": t.get("mutation") or f"{t['run']}:{t['mode']}",
+                             "target_kind": t["kind"], "review_mode": rv["mode"], "llm_model": rv.get("llm_model") or "",
+                             "reviewer": rv.get("reviewer") or "", "defects": s["defects"], "found": s["found"], "found_type": s["found_type"],
+                             "recall": s["recall"], "precision": s["precision"], "false_alarms": s["false_alarms"],
+                             "corrections_proposed": s["corrections_proposed"], "corrections_fixed": s["corrections_fixed"],
+                             "corrections_with_new_problems": s["corrections_with_new_problems"],
+                             "claims_checked": s["faithfulness"]["checked"], "claims_correct": s["faithfulness"]["correct"],
+                             "brier": s["brier"], "seconds": rv.get("seconds")})
+    else:
+        raise HTTPException(422, "table must be conversions or reviews")
+    if format == "csv":
+        buf = io.StringIO()
+        cols = list(dict.fromkeys(k for r in rows for k in r))
+        w = csv.DictWriter(buf, fieldnames=cols)
+        w.writeheader()
+        w.writerows(rows)
+        return Response(buf.getvalue(), media_type="text/csv",
+                        headers={"Content-Disposition": f'attachment; filename="physai-{table}.csv"'})
+    return rows
