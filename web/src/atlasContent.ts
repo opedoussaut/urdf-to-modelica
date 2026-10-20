@@ -23,6 +23,7 @@ export type Visual =
   | "modelica-1d"
   | "acausal"
   | "tools"
+  | "three-ways"
   | "provenance"
   | "prov-o"
   | "ontology"
@@ -241,6 +242,44 @@ In the studio, the whole arm is a Modelica **multibody** model (3D mechanics as 
       { page: 1, label: "Model editor", what: "the generated Modelica package and its kinematic schematic" },
     ],
     related: ["control", "twin", "ontology"],
+  },
+  {
+    id: "three-ways",
+    region: "physics",
+    title: "Three ways to build a model from a robot file",
+    gist: "A rule-based converter, an AI on its own, or an AI given the right building blocks - and the same checks for all three.",
+    definitions: [
+      {
+        term: "URDFModelica",
+        text: "A free open-source Modelica library from DLR whose Python script translates a URDF robot description into Modelica syntax and builds a package to simulate the robot.",
+        source: "DLR-RM, URDFModelica README (2nd prize, Library Award, 16th International Modelica & FMI Conference, 2025)",
+        url: "https://github.com/DLR-RM/urdfmodelica",
+      },
+      {
+        term: "Retrieval-augmented generation (RAG)",
+        text: "Language generation by models that combine pre-trained parametric and non-parametric memory: the model's own weights plus documents retrieved for each request.",
+        source: "Lewis et al., NeurIPS 2020",
+        url: "https://arxiv.org/abs/2005.11401",
+      },
+      {
+        term: "BM25",
+        text: "A ranking function for keyword search: a document scores higher when it contains the query's words often, when those words are rare in the collection, and less so as the document gets longer.",
+        source: "Robertson & Zaragoza, The Probabilistic Relevance Framework: BM25 and Beyond, Foundations and Trends in Information Retrieval 3(4), 2009",
+        url: "https://doi.org/10.1561/1500000019",
+      },
+    ],
+    body: `A robot's URDF file lists its parts, joints, sizes and masses. A physics simulator needs the same robot as a **Modelica model**. The studio compares three ways to get there:
+
+1. **AI only** - a local language model reads the URDF and writes the whole Modelica file itself. It knows Modelica only from what it saw during training.
+2. **AI + library search** - the same model, but first handed the real definitions of the building blocks it needs (World, Body, Revolute joint…), found by **keyword search** (BM25) in the Modelica Standard Library installed on this computer. This is **retrieval-augmented generation**.
+3. **URDFModelica** - a published, **rule-based converter** from DLR. No AI: the same file always gives the same model.
+
+All three are judged by the **same seven checks**, run by OpenModelica: is there a file, can it be read, is it a complete model, does it run, are all parts and joints in it, does its geometry match the URDF, are axes and masses right. The two AI methods get identical settings and two chances to repair their file using OpenModelica's error messages; they never see the expected answer.
+
+What to expect: rule-based converters are reliable within their rules but can miss details (here, URDFModelica does not enforce the gripper's mirrored fingers). Small local AIs often write code that only looks like Modelica. Grounding the AI in real library definitions is meant to close that gap - the comparison measures whether it does.`,
+    visuals: ["three-ways"],
+    studio: [{ page: 6, label: "Generate model", what: "the studio's own deterministic converter, checked by OpenModelica" }],
+    related: ["modelica-1d", "trust", "benchmarks"],
   },
   {
     id: "provenance",

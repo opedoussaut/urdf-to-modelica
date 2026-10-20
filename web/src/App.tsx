@@ -304,6 +304,18 @@ export default function App() {
                 <BookOpen size={14} /> Atlas
               </button>
             )}
+            <button
+              className="wb-atlas-toggle"
+              title="Back to the simplified studio: Convert & compare, Understand & fix"
+              onClick={() => {
+                try {
+                  localStorage.setItem("kkh.ui", "simple");
+                } catch {}
+                location.href = "/?ui=simple";
+              }}
+            >
+              Simple view
+            </button>
             <span className="wb-live" /> LOCAL
           </div>
         </header>

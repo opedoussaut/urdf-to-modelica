@@ -36,7 +36,7 @@ class Ollama:
         return "cloud" in model.lower() or "/" in model or "://" in model
 
     def chat(self, messages: list[dict], model: str | None = None, schema: dict | None = None,
-             seed: int = 42, max_tokens: int = 1200, num_ctx: int = 8192) -> dict:
+             seed: int = 42, max_tokens: int = 1200, num_ctx: int = 8192, allow_truncated: bool = False) -> dict:
         model = model or DEFAULT_MODEL
         if self._cloud(model):
             raise ValueError("Only local Ollama models are allowed")
@@ -52,9 +52,10 @@ class Ollama:
         response = self.http.post(self.url + "/api/chat", json=payload)
         response.raise_for_status()
         out = response.json()
-        if not out.get("done") or out.get("done_reason") == "length":
+        truncated = out.get("done_reason") == "length"
+        if not out.get("done") or (truncated and not allow_truncated):
             raise RuntimeError("Ollama response was incomplete; reduce context or increase token budget")
-        return {"content": out["message"]["content"], "model": out["model"],
+        return {"content": out["message"]["content"], "model": out["model"], "truncated": truncated,
                 "metrics": {k: out.get(k) for k in ("total_duration", "load_duration", "prompt_eval_count",
                                                     "eval_count", "eval_duration")}}
 

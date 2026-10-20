@@ -143,7 +143,52 @@ def resolve_focus(question: str, context: dict) -> tuple[dict, dict]:
     return resolved, note
 
 
+def conversion_context(context):
+    """Sources for a Modelica file produced by the conversion comparison (simple UI): that file + its source URDF.
+    Read-only; the run directory is resolved from the run report, never from client-supplied paths."""
+    from kkh.convert import runner
+    report = runner.load(str(context["conversion"]))
+    mode = report["modes"].get(str(context.get("mode")))
+    if not mode or not mode.get("main_file"):
+        raise ValueError("This conversion mode produced no Modelica file")
+    files = [C.ROOT / report["source"]["path"], C.ROOT / mode["main_file"]]
+    trace, sources = [], []
+    selected = str(context.get("selected", "")).replace("j_", "")
+    for path in files:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if path.suffix == ".urdf":
+            from kkh.convert.sources import prompt_text
+            text_short = prompt_text(path)
+            match = re.search(r'<joint\b[^>]*\bname="(?:[^"/]*/)?' + re.escape(selected) + r'"[^>]*>.*?</joint>', text_short, re.S) if selected else None
+            excerpt = match[0] if match else text_short[:10000]  # whole cleaned URDF of one arm (~9 kB, mimic tags at the end)
+        else:
+            at = text.find(selected) if selected else -1
+            start = max(0, at - 700) if at >= 0 else 0
+            excerpt = text[start:start + 6000]
+        sources.append({"path": path.relative_to(C.ROOT).as_posix(), "source": excerpt})
+        trace.append({"tool": "read_source", "path": sources[-1]["path"], "sha256": hashlib.sha256(text.encode()).hexdigest(),
+                      "truncated": len(excerpt) < len(text)})
+    robot = report["source"].get("id") if report["source"].get("id") in C.ARM_CLASS else None
+    resolved = {**context, "robot": robot, "graph": bool(robot), "source_label": report["source"].get("label"),
+                "conversion_mode": mode.get("label")}
+    score = mode.get("score", {})
+    # Measured facts about this file (real OpenModelica run vs URDF), stated plainly; identical for both answer sides.
+    from kkh.convert.runner import findings as measured
+    from kkh.engineering.urdf_model import load_urdf
+    findings = [f"{f['title']} ({f['basis']}; {f['detail']})" for f in measured(report, str(context.get("mode")))]
+    findings += [f"URDF mimic relation: joint {j.name} = {j.mimic[1]} * {j.mimic[0]} + {j.mimic[2]}"
+                 for j in load_urdf(files[0]).joints.values() if j.mimic]
+    sources.insert(0, {"record": f"conversion {report['id']} / {context.get('mode')}",  # measured facts first
+                    "data": {"verdict": mode.get("verdict"), "measured_findings": findings,
+                             "missing_links": score.get("missing_links"), "missing_joints": score.get("missing_joints"),
+                             "openmodelica_messages": (score.get("check_messages") or score.get("load_messages") or "")[-800:]}})
+    trace.append({"tool": "read_conversion_score", "run": report["id"], "mode": context.get("mode")})
+    return json.dumps({"context": resolved, "sources": sources}), trace, resolved
+
+
 def base_context(context, store):
+    if context.get("conversion"):
+        return conversion_context(context)
     trace, sources = [], []
     model = context.get("robot", "aloha_vx300s")
     if model not in C.ARM_CLASS:
@@ -218,11 +263,14 @@ def pair(store: Store, conversation, question, model, context):
         try:
             extra=""
             if mode=="with":
+                if resolved.get("graph") is False:
+                    raise ValueError("No robot knowledge graph exists for this robot (uploaded URDF): the grounded answer is not available. Only the pinned ALOHA arms are in GraphDB.")
                 from kkh.semantic.graphdb import GraphDB
                 from kkh.rag.retrieval import retrieve
                 db=GraphDB(timeout=10)
                 try:
-                    evidence=retrieve(question+" "+str(context.get("selected","")),db=db)
+                    hint=" leader" if resolved.get("robot")=="aloha_wx250s" else ""  # retrieval selects the arm from the text
+                    evidence=retrieve(question+" "+str(context.get("selected",""))+hint,db=db)
                 finally:
                     db.close()
                 report=C.ROOT / "reports/ontology.json"
@@ -253,7 +301,7 @@ def pair(store: Store, conversation, question, model, context):
             unknown=[path for path in cited if path not in allowed]
             if unknown:raise ValueError(f"Model cited source path(s) that were not supplied: {unknown[:4]} (supplied: {sorted(allowed)}). The answer was rejected; retry with a focused question.")
             proposal=parsed.get("proposed_change","").strip()
-            if proposal.lower().strip(". ") in {"none","n/a","no change","no proposed change","not applicable"}:proposal=""
+            if proposal.lower().strip(". ") in {"none","n/a","no change","no proposed change","not applicable"} or re.fullmatch(r"parameter_changes\s*:?\s*\[\s*\]\.?",proposal):proposal=""  # empty placeholders the model sometimes writes
             parameter_changes=check_parameter_changes(parsed.get("parameter_changes",[]),json.loads(base)["sources"])
             data={**record["data"],"status":"complete","content":parsed["answer"],"source_paths":cited,"assumptions":parsed.get("assumptions",[]),"proposed_change":proposal,"parameter_changes":parameter_changes,"review_status":"Generated explanation; engineering claims require review against the displayed sources",
                   "metrics":response["metrics"],"prompt_sha256":hashlib.sha256(json.dumps(messages,sort_keys=True).encode()).hexdigest(),"base_context_sha256":hashlib.sha256(base.encode()).hexdigest()}

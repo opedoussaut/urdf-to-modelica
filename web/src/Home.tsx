@@ -103,7 +103,7 @@ export default function Home({ context, setContext, open }: { context: Context; 
           </button>
         </div>
         <button className="home-atlas-link" onClick={() => open(9)}>
-          <BookOpen size={15} /> New to Physical AI? Browse the Atlas - eleven ideas, explained in plain words
+          <BookOpen size={15} /> New to Physical AI? Browse the Atlas - the key ideas, explained in plain words
         </button>
         </div>
         <div className="home-arm">

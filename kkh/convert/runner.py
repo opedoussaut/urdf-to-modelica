@@ -1,0 +1,233 @@
+"""Run the conversion comparison: each mode in its own isolated directory, one shared scorer, one report.
+
+    PYTHONPATH=. python -m kkh.convert.runner aloha_wx250s [--modes urdfmodelica,llm,llm_rag]
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import time
+import uuid
+from pathlib import Path
+
+from . import llm, score, sources, urdfmodelica
+
+MODES = {
+    "llm": {"label": "AI only", "plain": "The local AI reads the robot file and writes the model on its own."},
+    "llm_rag": {"label": "AI + Modelica library search",
+                "plain": "The same AI, but first given matching building blocks found in the Modelica libraries."},
+    "urdfmodelica": {"label": "URDFModelica converter",
+                     "plain": "A published, rule-based converter (DLR) translates the file. No AI involved."},
+}
+CRITERIA = {
+    "produced": "A model file was produced",
+    "loads": "OpenModelica can read it",
+    "checks": "OpenModelica accepts it as a complete model",
+    "simulates": "It runs (2 s simulation)",
+    "coverage": "Every part and joint of the robot is in it",
+    "kinematics": "Its geometry matches the robot file (within 1 mm)",
+    "parameters": "Joint axes and part masses match the robot file",
+}
+
+
+def _jsonable(o):
+    if isinstance(o, Path):
+        try:
+            return o.resolve().relative_to(sources.ROOT).as_posix()
+        except ValueError:
+            return o.as_posix()
+    raise TypeError(type(o))
+
+
+def verdict(name: str, s: dict, result: dict | None = None) -> str:
+    """Deterministic plain-language summary of one score (no LLM)."""
+    label = MODES[name]["label"]
+    attempts = (result or {}).get("attempts") or []
+    if not s.get("produced"):
+        why = ""
+        if any("incomplete" in str(a.get("error", "")) for a in attempts):
+            why = " The AI's reply was cut off before the file was complete."
+        elif any(a.get("error") for a in attempts):
+            why = " The AI call failed: " + str(next(a["error"] for a in attempts if a.get("error")))[:160]
+        elif (result or {}).get("error"):
+            why = " " + str(result["error"])[:160]
+        return f"{label} produced no usable model.{why}"
+    scored = next((a for a in attempts if a.get("attempt") == (result or {}).get("best_attempt")), None)
+    if scored and scored.get("truncated") and not s.get("loads"):
+        return f"{label} ran out of room: its file was cut off before the end, so OpenModelica cannot read it."
+    if not s.get("loads"):
+        return f"{label} wrote a file OpenModelica cannot read (syntax or unknown names)."
+    if not s.get("checks"):
+        return f"{label} wrote a readable file, but OpenModelica rejects it as incomplete or inconsistent."
+    if not s.get("simulates"):
+        return f"{label} produced a valid model that fails when simulated."
+    kin = s.get("kinematics") or {}
+    cov = s.get("coverage", 0)
+    parts = f"{s.get('links_found')}/{s.get('links_total')} parts and {s.get('joints_found')}/{s.get('joints_total')} moving joints"
+    if not kin:
+        return f"{label} produced a model that runs, with {parts} recognisable; its geometry could not be compared."
+    good = "matches" if kin.get("pass") else "differs from"
+    return (f"{label} produced a model that runs, with {parts}; its geometry {good} the robot file "
+            f"(largest gap {kin['max_position_error_mm']} mm, at {kin['worst_link'][0] if kin.get('worst_link') else '-'}).")
+
+
+def run_comparison(source: str, modes: list[str] | None = None, log=print) -> dict:
+    modes = modes or ["urdfmodelica", "llm", "llm_rag"]
+    for m in modes:
+        if m not in MODES:
+            raise ValueError(f"Unknown mode {m}")
+    urdf, meta = sources.resolve(source)
+    identity = uuid.uuid4().hex[:12]
+    root = sources.RUNS / identity
+    root.mkdir(parents=True)
+    report = {"id": identity, "source": {**meta, "sha256": sources.sha256(urdf), **sources.summary(urdf)},
+              "started": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "modes": {},
+              "criteria": CRITERIA, "scoring": score.__doc__}
+    for m in modes:
+        log(f"[{m}] starting")
+        d = root / m
+        d.mkdir()
+        t = time.time()
+        try:
+            if m == "urdfmodelica":
+                r = urdfmodelica.convert(urdf, d)
+                r["score"] = score.score(urdf, r.get("package_file"), r.get("model"), d)
+            else:
+                r = llm.convert(urdf, d, rag=(m == "llm_rag"),
+                                score_fn=lambda f, model, w: score.score(urdf, f, model, w), log=log)
+                r.setdefault("score", score.finish({"produced": False}))
+        except Exception as exc:  # report the failure; never invent a result
+            r = {"mode": m, "error": f"{type(exc).__name__}: {exc}"[:1500], "score": score.finish({"produced": False})}
+        r["wall_seconds"] = round(time.time() - t, 1)
+        r["label"], r["plain"] = MODES[m]["label"], MODES[m]["plain"]
+        r["verdict"] = verdict(m, r["score"], r)
+        report["modes"][m] = r
+        log(f"[{m}] {r['verdict']}")
+        (root / "report.json").write_text(json.dumps(report, indent=1, default=_jsonable), encoding="utf-8")
+    ranking = sorted(report["modes"], key=lambda m: report["modes"][m]["score"]["rank_key"], reverse=True)
+    report["ranking"] = ranking
+    keys = {m: report["modes"][m]["score"]["rank_key"] for m in ranking}
+    report["ties"] = [[a, b] for i, a in enumerate(ranking) for b in ranking[i + 1:] if keys[a] == keys[b]]
+    report["finished"] = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    (root / "report.json").write_text(json.dumps(report, indent=1, default=_jsonable), encoding="utf-8")
+    return json.loads(json.dumps(report, default=_jsonable))
+
+
+def list_runs() -> list[dict]:
+    out = []
+    for f in sorted(sources.RUNS.glob("*/report.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+        r = json.loads(f.read_text(encoding="utf-8"))
+        out.append({"id": r["id"], "source": r["source"].get("label"), "started": r.get("started"),
+                    "finished": r.get("finished"), "ranking": r.get("ranking"),
+                    "modes": {m: {"passed": v["score"].get("passed"), "verdict": v.get("verdict")} for m, v in r["modes"].items()}})
+    return out
+
+
+def load(identity: str) -> dict:
+    if not identity.isalnum():
+        raise ValueError("Bad run id")
+    f = sources.RUNS / identity / "report.json"
+    if not f.exists():
+        raise KeyError(identity)
+    report = json.loads(f.read_text(encoding="utf-8"))
+    # verdicts, labels and ties are pure functions of the stored scores: recompute so older reports read the same way
+    for m, r in report["modes"].items():
+        r["label"], r["plain"] = MODES[m]["label"], MODES[m]["plain"]
+        r["verdict"] = verdict(m, r["score"], r)
+    if report.get("ranking"):
+        keys = {m: report["modes"][m]["score"]["rank_key"] for m in report["ranking"]}
+        report["ties"] = [[a, b] for i, a in enumerate(report["ranking"]) for b in report["ranking"][i + 1:] if keys[a] == keys[b]]
+    return report
+
+
+def _first_errors(messages: str, n: int = 3) -> str:
+    lines = [l.strip() for l in (messages or "").splitlines() if "Error" in l or "error:" in l.lower()]
+    return "\n".join(lines[:n]) or (messages or "").strip()[-400:]
+
+
+def findings(report: dict, mode: str, version: int = 0) -> list[dict]:
+    """Measured problems of one generated file, in plain words, derived only from its real OpenModelica score and the
+    URDF (no AI). Each item: title (plain), detail (engineering), basis ('measured' or 'inferred from the URDF')."""
+    from kkh.engineering.urdf_model import load_urdf
+    m = report["modes"][mode]
+    s = m["edits"][version - 1]["score"] if version else m["score"]
+    robot = load_urdf(sources.ROOT / report["source"]["path"])
+    out = []
+    add = lambda title, detail="", basis="measured": out.append({"title": title, "detail": detail, "basis": basis})
+    if not s.get("produced"):
+        add("No model file was produced", m.get("error") or "")
+        return out
+    if not s.get("loads"):
+        add("OpenModelica cannot read the file (syntax error or unknown building blocks)", _first_errors(s.get("load_messages")))
+        return out
+    if not s.get("checks"):
+        add("OpenModelica rejects the model as incomplete or inconsistent", _first_errors(s.get("check_messages")))
+        return out
+    if not s.get("simulates"):
+        add("The model fails when simulated", _first_errors(s.get("simulate_messages")))
+        return out
+    if s.get("missing_links") or s.get("missing_joints"):
+        add("Parts of the robot are missing from the model",
+            "links: " + ", ".join(s.get("missing_links") or ["none"]) + "; joints: " + ", ".join(s.get("missing_joints") or ["none"]))
+    kin = s.get("kinematics") or {}
+    if kin and not kin.get("pass"):
+        link = kin["worst_link"][0] if kin.get("worst_link") else "?"
+        add(f"A part is in the wrong place: {link.split('/')[-1]} ends up {kin['max_position_error_mm']:.1f} mm from where the robot file puts it",
+            f"max {kin['max_position_error_mm']} mm, mean {kin['mean_position_error_mm']} mm over {kin['links_compared']} links (URDF forward kinematics at the simulated joint angles)")
+        parent = robot.parent_joint(link) if link in robot.links else None
+        if parent is not None and parent.mimic:
+            src, mult, off = parent.mimic
+            add(f"Likely cause: the robot file says joint '{parent.name.split('/')[-1]}' must copy joint '{src.split('/')[-1]}' "
+                f"(times {mult:g}{f', plus {off:g}' if off else ''}), and the model does not enforce this coupling",
+                f"URDF <mimic joint=\"{src}\" multiplier=\"{mult:g}\" offset=\"{off:g}\"/> on {parent.name}", "inferred from the URDF")
+    par = s.get("parameters") or {}
+    for a in [a for a in par.get("axes", []) if not a["match"]]:
+        add(f"Joint {a['joint'].split('/')[-1]} turns around the wrong axis", f"model {a['model']} vs URDF {a['urdf']}")
+    for x in [x for x in par.get("masses", []) if not x["match"]]:
+        add(f"Part {x['link'].split('/')[-1]} has the wrong mass", f"model {x['model']:.6g} kg vs URDF {x['urdf']:.6g} kg")
+    if kin and kin.get("max_joint_motion_rad", 1) < 0.01:
+        add("The joints barely moved during the check, so the geometry comparison is weak",
+            f"largest joint motion {kin.get('max_joint_motion_rad')} rad in the 2 s run", "measured")
+    return out
+
+
+def save_edit(identity: str, mode: str, text: str, note: str = "") -> dict:
+    """A person's edited version of a mode's main file: stored as a new version beside the original (never
+    overwriting it) and scored with the same real OpenModelica scorer. Only called on an explicit user action."""
+    import shutil
+    report = load(identity)
+    m = report["modes"].get(mode)
+    if not m or not m.get("main_file"):
+        raise ValueError("This mode produced no file to edit")
+    root = sources.RUNS / identity / mode / "edits"
+    n = len(m.get("edits", [])) + 1
+    d = root / f"v{n}"
+    main = sources.ROOT / m["main_file"]
+    if m["mode"] == "urdfmodelica":
+        lib = sources.ROOT / m["package_file"]          # .../ws/URDFModelica/package.mo
+        shutil.copytree(lib.parent, d / "URDFModelica")
+        target = d / "URDFModelica" / main.relative_to(lib.parent)
+        package_file = d / "URDFModelica" / "package.mo"
+    else:
+        d.mkdir(parents=True)
+        target = package_file = d / main.name
+    target.write_text(text, encoding="utf-8")
+    urdf = sources.ROOT / report["source"]["path"]
+    model = m.get("model") if m["mode"] == "urdfmodelica" else llm.model_names(text, "")
+    s = score.score(urdf, package_file, model, d)
+    edit = {"version": n, "file": target, "note": note[:300], "saved": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+            "score": s, "verdict": verdict(mode, s)}
+    m.setdefault("edits", []).append(json.loads(json.dumps(edit, default=_jsonable)))
+    (sources.RUNS / identity / "report.json").write_text(json.dumps(report, indent=1, default=_jsonable), encoding="utf-8")
+    return m["edits"][-1]
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("source")
+    ap.add_argument("--modes", default="urdfmodelica,llm,llm_rag")
+    a = ap.parse_args()
+    rep = run_comparison(a.source, a.modes.split(","))
+    print(json.dumps({"id": rep["id"], "ranking": rep["ranking"],
+                      "verdicts": {m: v["verdict"] for m, v in rep["modes"].items()}}, indent=1))

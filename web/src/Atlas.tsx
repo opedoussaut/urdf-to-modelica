@@ -41,7 +41,7 @@ export default function Atlas({ open }: { open: (i: number) => void }) {
             <MapIcon size={13} /> PHYSICAL AI ATLAS
           </span>
           <h1>The ideas behind the studio, one map</h1>
-          <p>Thirteen short concepts, from what Physical AI is to why simulations and reality disagree. Each page gives the reference definitions with their sources, pictures, and where to see it in the studio.</p>
+          <p>{CONCEPTS.length} short concepts, from what Physical AI is to why simulations and reality disagree. Each page gives the reference definitions with their sources, pictures, and where to see it in the studio.</p>
         </div>
         <div className="atlas-views" role="tablist" aria-label="Atlas view">
           <button role="tab" aria-selected={view === "map"} className={view === "map" ? "on" : ""} onClick={() => go(id)}>
@@ -253,6 +253,7 @@ const META: Record<Visual, Meta> = {
   "twin-levels": { title: "Model, shadow, twin", caption: "The three levels of Kritzinger et al. (2018), told apart by how data flows between the real object and its digital counterpart." },
   "modelica-1d": { title: "A 1D model of one joint", caption: "The structure of the studio's Joint simulation model (kkh/studio/servo1d.py); the equation is its torque balance." },
   acausal: { title: "Signals vs physical connections", caption: "In a block diagram you decide what is input and output; in Modelica you connect parts and the tool sorts the equations." },
+  "three-ways": { title: "Three methods, one set of checks", caption: "What the Convert & compare page runs. The checks are real OpenModelica runs compared with the URDF; no method sees the expected answer." },
   tools: { title: "One language, several tools", caption: "Modelica models are text; tools compile and simulate them. Dymola has not been tested with the studio's package." },
   provenance: { title: "Four labels for every number", caption: "Used across the studio for every parameter and result." },
   "prov-o": { title: "Provenance of the follower URDF, in PROV terms", caption: "A real chain from this repository (data/urdf/expansion_record.json): the pinned vendor file, the expansion run, and the file the studio reads. PROV drawing convention: entities as ovals, activities as rectangles, agents as pentagons.", data: "repository record" },
@@ -812,6 +813,32 @@ const DIAGRAMS: Partial<Record<Visual, React.ReactNode>> = {
       <Box x={420} y={120} w={200} h={58} t="Other Modelica tools" s="commercial and open-source" />
       <Arrow d="M320 178 V200" />
       <Box x={170} y={204} w={300} h={44} t="FMU (FMI standard)" s="export a model to run in other simulators" />
+    </Svg>
+  ),
+  "three-ways": (
+    <Svg label="Three conversion methods judged by the same checks" h={270}>
+      <Box x={14} y={108} w={110} h={54} t="URDF file" s="the robot" />
+      <Arrow d="M124 135 C 150 135, 150 52, 176 52" />
+      <Arrow d="M124 135 H176" />
+      <Arrow d="M124 135 C 150 135, 150 218, 176 218" />
+      <Box x={180} y={26} w={190} h={52} t="1 · AI only" s="local language model" fill={violetBg} stroke="#cfc4f5" color={violet} fs={13} />
+      <Box x={180} y={109} w={190} h={52} t="2 · AI + library search" s="BM25 over the Modelica library" fill={blueBg} stroke={blueLine} color={blue} fs={13} />
+      <Box x={180} y={192} w={190} h={52} t="3 · URDFModelica" s="rule-based converter (DLR)" fill={greenBg} stroke="#bfe3cf" color={green} fs={13} />
+      <Arrow d="M370 52 C 400 52, 400 135, 428 135" />
+      <Arrow d="M370 135 H428" />
+      <Arrow d="M370 218 C 400 218, 400 135, 428 135" />
+      <rect x={432} y={40} width={196} height={190} rx={12} fill="#fff" stroke={line} />
+      <T x={530} y={62} s={12.5} c={ink} w={700}>
+        The same 7 checks
+      </T>
+      {["file produced", "OpenModelica reads it", "complete model", "it runs", "all parts and joints", "geometry matches URDF", "axes and masses right"].map((t, k) => (
+        <T key={t} x={448} y={86 + k * 20} a="start" s={11.5}>
+          {k + 1}. {t}
+        </T>
+      ))}
+      <T x={320} y={262} s={11}>
+        AI methods: same model, settings and two repair rounds with OpenModelica's messages; no method sees the expected answer
+      </T>
     </Svg>
   ),
   provenance: (

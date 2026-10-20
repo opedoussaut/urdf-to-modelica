@@ -1,0 +1,330 @@
+import { useEffect, useRef, useState } from "react";
+import { Bot, BookOpen, Check, CircleSlash, Clock, FileCode2, FileSearch, Trophy, Upload, Wrench, X } from "lucide-react";
+import { useAudience } from "../audience";
+import { message, waitJob, type Doc } from "../studio";
+import { convert, MODE_ORDER, type ModeId, type Report, type RunSummary } from "./api";
+import type { Target } from "./SimpleApp";
+
+type Source = { id: string; label: string; kind: string; links: number; joints: number; movable: number; mass_kg: number; bytes: number; graph?: boolean; provenance: string; sha256: string };
+
+const MODE_ICON: Record<ModeId, typeof Bot> = { llm: Bot, llm_rag: BookOpen, urdfmodelica: Wrench };
+const MODE_NEEDS: Record<ModeId, string> = {
+  llm: "Local AI (Nemotron, 4 billion parameters) · a few minutes",
+  llm_rag: "Local AI + keyword search in the Modelica Standard Library · a few minutes",
+  urdfmodelica: "DLR URDFModelica converter (open source) · about 20 seconds",
+};
+const CRITERION_HELP: Record<string, string> = {
+  produced: "Did the method give us a Modelica file at all?",
+  loads: "OpenModelica reads the file: no syntax errors, no unknown building blocks.",
+  checks: "OpenModelica checks the model is complete: as many equations as unknowns, every part connected.",
+  simulates: "The model actually runs for 2 seconds (the arm moves under gravity or a test motion).",
+  coverage: "Each part (link) and moving joint of the robot file can be found in the model by its name.",
+  kinematics: "We compute, from the robot file alone, where each part must be for the simulated joint angles, and compare with where the simulation put it.",
+  parameters: "Joint rotation axes and part masses in the model are the ones written in the robot file.",
+};
+
+export default function Convert({ openUnderstand, learn }: { openUnderstand: (t: Target) => void; learn: () => void }) {
+  const expert = useAudience() === "expert";
+  const [sources, setSources] = useState<Source[]>([]),
+    [source, setSource] = useState("aloha_wx250s"),
+    [modes, setModes] = useState<ModeId[]>(["llm", "llm_rag", "urdfmodelica"]),
+    [busy, setBusy] = useState(false),
+    [started, setStarted] = useState(0),
+    [now, setNow] = useState(Date.now()),
+    [error, setError] = useState(""),
+    [report, setReport] = useState<Report>(),
+    [runs, setRuns] = useState<RunSummary[]>([]);
+  const file = useRef<HTMLInputElement>(null);
+  const load = () => {
+    convert("/sources").then((r) => setSources(r.sources)).catch((e) => setError(message(e)));
+    convert<RunSummary[]>("/runs").then(setRuns).catch(() => {});
+  };
+  useEffect(load, []);
+  useEffect(() => {
+    if (!busy) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [busy]);
+
+  const upload = async (f?: File) => {
+    if (!f) return;
+    setError("");
+    try {
+      const meta = await convert("/upload", "POST", { filename: f.name, content: await f.text() });
+      load();
+      setSource(meta.id);
+    } catch (e) {
+      setError(message(e));
+    } finally {
+      if (file.current) file.current.value = "";
+    }
+  };
+  const run = async () => {
+    setBusy(true);
+    setError("");
+    setReport(undefined);
+    setStarted(Date.now());
+    try {
+      const job = await convert<Doc>("/run", "POST", { source, modes });
+      setReport(await waitJob(job));
+      load();
+    } catch (e) {
+      setError(message(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const openRun = async (id: string) => {
+    setError("");
+    try {
+      setReport(await convert<Report>("/runs/" + id));
+      setTimeout(() => document.querySelector(".sx-results")?.scrollIntoView({ behavior: "smooth" }), 50);
+    } catch (e) {
+      setError(message(e));
+    }
+  };
+  const chosen = sources.find((s) => s.id === source);
+  const elapsed = Math.round((now - started) / 1000);
+
+  return (
+    <div className="lab sx-page">
+      <div className="lab-plain">
+        <b>IN PLAIN WORDS</b> A robot comes with a description file (URDF): its parts, joints, sizes and masses. To simulate it, that file must become a
+        physics model (Modelica). Here three methods do the conversion, and the studio measures which result is best, with real OpenModelica runs.
+      </div>
+      <span className="lab-eyebrow">CONVERT &amp; COMPARE</span>
+      <h1>Which method builds the best physics model?</h1>
+      <p className="sx-lead">
+        Pick a robot, run the three methods side by side, and read the score card. Nothing is accepted automatically: you decide what to keep.{" "}
+        <button className="sx-link" onClick={learn}>
+          New to URDF or Modelica? Read the Atlas
+        </button>
+      </p>
+
+      <section className="sx-step">
+        <h2>
+          <span className="sx-n">1</span> Choose the robot
+        </h2>
+        <div className="sx-sources">
+          {sources.map((s) => (
+            <button key={s.id} className={"sx-source" + (s.id === source ? " on" : "")} onClick={() => setSource(s.id)} disabled={busy}>
+              <b>{s.label}</b>
+              <small>
+                {s.links} parts · {s.movable} moving joints · {s.mass_kg} kg
+              </small>
+              <small className="sx-tag">{s.kind === "pinned" ? "Pinned public file · knowledge graph available" : "Your upload · no knowledge graph yet"}</small>
+              {expert && <code>{s.sha256.slice(0, 16)}…</code>}
+            </button>
+          ))}
+          <button className="sx-source sx-upload" onClick={() => file.current?.click()} disabled={busy}>
+            <Upload size={18} />
+            <b>Upload a URDF</b>
+            <small>Plain .urdf file, up to 300 kB. Meshes are not needed.</small>
+          </button>
+          <input ref={file} type="file" accept=".urdf" hidden onChange={(e) => upload(e.target.files?.[0])} />
+        </div>
+      </section>
+
+      <section className="sx-step">
+        <h2>
+          <span className="sx-n">2</span> Choose the methods
+        </h2>
+        <div className="sx-modes">
+          {MODE_ORDER.map((m, k) => {
+            const Icon = MODE_ICON[m];
+            const on = modes.includes(m);
+            return (
+              <label key={m} className={"sx-mode" + (on ? " on" : "")}>
+                <input type="checkbox" checked={on} disabled={busy} onChange={() => setModes(on ? modes.filter((x) => x !== m) : [...modes, m])} />
+                <span className="sx-mode-n">Method {k + 1}</span>
+                <Icon size={22} />
+                <b>{m === "llm" ? "AI only" : m === "llm_rag" ? "AI + Modelica library search" : "URDFModelica converter"}</b>
+                <p>
+                  {m === "llm"
+                    ? "The local AI reads the robot file and writes the model on its own."
+                    : m === "llm_rag"
+                      ? "The same AI, but first handed the matching building blocks found in the Modelica Standard Library."
+                      : "A published, rule-based converter from DLR translates the file. No AI involved."}
+                </p>
+                <small>{MODE_NEEDS[m]}</small>
+              </label>
+            );
+          })}
+        </div>
+        <p className="sx-note">
+          Fair comparison: both AI methods get the same robot file, the same model and settings, and the same two chances to repair their file using
+          OpenModelica's error messages. They never see the expected answer.
+        </p>
+        <button className="lab-primary sx-run" disabled={busy || !modes.length || !chosen} onClick={run}>
+          {busy ? (
+            <>
+              <Clock size={16} /> Running… {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, "0")}
+            </>
+          ) : (
+            <>Run the comparison on {chosen ? chosen.label : "…"}</>
+          )}
+        </button>
+        {busy && <p className="sx-note">The converter takes seconds; each AI method can take several minutes on this laptop (it writes the whole file, then OpenModelica checks it). You can leave this page open.</p>}
+        {error && <p className="lab-error">{error}</p>}
+      </section>
+
+      {report && <Results report={report} expert={expert} openUnderstand={openUnderstand} />}
+
+      {runs.length > 0 && (
+        <section className="sx-step">
+          <h2>Earlier comparisons</h2>
+          <div className="sx-runs">
+            {runs.slice(0, 12).map((r) => (
+              <button key={r.id} onClick={() => openRun(r.id)} className={report?.id === r.id ? "on" : ""}>
+                <b>{r.source}</b>
+                <small>
+                  {new Date(r.started).toLocaleString()} · {r.finished ? "best: " + (r.ranking?.[0] ? LABEL[r.ranking[0]] : "-") : "unfinished"}
+                </small>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+const LABEL: Record<ModeId, string> = { llm: "AI only", llm_rag: "AI + library search", urdfmodelica: "URDFModelica" };
+
+function Mark({ ok, na }: { ok: boolean; na?: boolean }) {
+  if (na) return <CircleSlash size={16} className="sx-na" aria-label="not reached" />;
+  return ok ? <Check size={17} className="sx-ok" aria-label="yes" /> : <X size={17} className="sx-ko" aria-label="no" />;
+}
+
+function Results({ report, expert, openUnderstand }: { report: Report; expert: boolean; openUnderstand: (t: Target) => void }) {
+  const order = MODE_ORDER.filter((m) => report.modes[m]);
+  const best = report.ranking?.[0];
+  const tiedWith = (m: ModeId) => (report.ties || []).filter((t) => t.includes(m)).map((t) => (t[0] === m ? t[1] : t[0]));
+  const bestTie = best ? tiedWith(best) : [];
+  const bestRes = best ? report.modes[best] : undefined;
+  const ids = Object.keys(report.criteria);
+  return (
+    <section className="sx-step sx-results">
+      <h2>
+        <span className="sx-n">3</span> Results · {report.source.label}
+      </h2>
+      {bestRes && (
+        <div className="sx-winner">
+          <Trophy size={22} />
+          <div>
+            <b>
+              {bestTie.length ? `Tied: ${[best!, ...bestTie].map((m) => LABEL[m]).join(" and ")}` : `Best result: ${LABEL[best!]}`}
+            </b>
+            <p>{bestRes.verdict}</p>
+            {bestRes.score.passed < 7 && <small>Best of the three is not the same as correct: it still fails {7 - bestRes.score.passed} of the 7 checks below.</small>}
+          </div>
+        </div>
+      )}
+      <div className="sx-table-wrap">
+        <table className="sx-table">
+          <thead>
+            <tr>
+              <th>Check</th>
+              {order.map((m) => (
+                <th key={m} className={m === best ? "best" : ""}>
+                  {LABEL[m]}
+                  {m === best && <span className="sx-best">{bestTie.length ? "tied" : "best"}</span>}
+                  {m !== best && tiedWith(m).length > 0 && !tiedWith(m).includes(best!) && <span className="sx-best sx-tied">tied</span>}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {ids.map((id, row) => (
+              <tr key={id}>
+                <td>
+                  <b>{report.criteria[id]}</b>
+                  <small>{CRITERION_HELP[id]}</small>
+                </td>
+                {order.map((m) => {
+                  const s = report.modes[m]!.score;
+                  const c = s.criteria.find((x) => x.id === id);
+                  const reached = s.criteria.slice(0, row).every((x, i) => i > 3 || x.ok) || row <= 0;
+                  return (
+                    <td key={m}>
+                      <Mark ok={!!c?.ok} na={!c?.ok && !reached} />
+                      {c?.detail && (expert || ["coverage", "kinematics"].includes(id)) && <small>{c.detail}</small>}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+            <tr className="sx-cost">
+              <td>
+                <b>Effort</b>
+                <small>Time on this computer, AI calls, automatic repair rounds.</small>
+              </td>
+              {order.map((m) => {
+                const r = report.modes[m]!;
+                return (
+                  <td key={m}>
+                    <small>
+                      {r.wall_seconds != null ? `${Math.round(r.wall_seconds)} s` : "-"} · {r.llm_calls ?? 0} AI call{r.llm_calls === 1 ? "" : "s"} · {r.repair_attempts ?? 0} repair{r.repair_attempts === 1 ? "" : "s"}
+                    </small>
+                  </td>
+                );
+              })}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="sx-cards">
+        {order.map((m) => {
+          const r = report.modes[m]!;
+          return (
+            <div key={m} className={"sx-card" + (m === best ? " best" : "")}>
+              <b>{LABEL[m]}</b>
+              <p>{r.verdict}</p>
+              {r.error && <p className="lab-error">{r.error}</p>}
+              {expert && r.retrieved && r.retrieved.length > 0 && (
+                <details>
+                  <summary>Library classes given to the AI ({r.retrieved.length})</summary>
+                  <ul>
+                    {r.retrieved.map((x) => (
+                      <li key={x.class}>
+                        <code>{x.class}</code>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+              {expert && (r.score.check_messages || r.score.load_messages) && !r.score.simulates && (
+                <details>
+                  <summary>OpenModelica messages</summary>
+                  <pre>{(r.score.check_messages || r.score.load_messages || "").slice(-1500)}</pre>
+                </details>
+              )}
+              {r.main_file ? (
+                <button className="lab-ghost" onClick={() => openUnderstand({ run: report.id, mode: m })}>
+                  <FileSearch size={15} /> Open in Understand &amp; fix
+                </button>
+              ) : (
+                <small className="sx-muted">
+                  <FileCode2 size={13} /> No file to open
+                </small>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="sx-proves">
+        <div>
+          <b>What these checks show</b>
+          <p>That a model can be read, is complete, runs, contains every part, and puts each part where the robot file says, with the right axes and masses.</p>
+        </div>
+        <div>
+          <b>What they do not show</b>
+          <p>
+            That the model behaves like the real robot: motors, friction and controllers are not part of the robot file, and nothing here was measured on hardware. A
+            model that runs is a starting point, not a validated twin.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}

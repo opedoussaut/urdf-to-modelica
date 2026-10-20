@@ -233,6 +233,8 @@ from kkh.studio.api import router as workbench_router
 app.include_router(workbench_router)
 from kkh.api.benchmark import router as benchmark_router  # noqa: E402
 app.include_router(benchmark_router)
+from kkh.convert.api import router as convert_router  # noqa: E402
+app.include_router(convert_router)
 app.mount("/meshes", StaticFiles(directory=ROOT / "generated/modelica/ALOHA2/Resources/Meshes"), name="meshes")
 dist = ROOT / "web/dist"
 if dist.exists():
