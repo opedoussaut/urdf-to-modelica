@@ -27,8 +27,9 @@ CRITERIA = {
     "checks": "OpenModelica accepts it as a complete model",
     "simulates": "It runs (2 s simulation)",
     "coverage": "Every part and joint of the robot is in it",
-    "kinematics": "Its geometry matches the robot file (within 1 mm)",
-    "parameters": "Joint axes and part masses match the robot file",
+    "kinematics": "Its geometry matches the robot file while the joints move (within 1 mm and 0.1°)",
+    "parameters": "Joint axes, masses, centres of mass and inertias match the robot file",
+    "dynamics": "Motor torques match the robot file's physics (within 5 % of each joint's limit)",
 }
 
 
@@ -214,47 +215,80 @@ def _first_errors(messages: str, n: int = 3) -> str:
 
 def findings(report: dict, mode: str, version: int = 0) -> list[dict]:
     """Measured problems of one generated file, in plain words, derived only from its real OpenModelica score and the
-    URDF (no AI). Each item: title (plain), detail (engineering), basis ('measured' or 'inferred from the URDF')."""
+    URDF (no AI). Each item: title (plain), detail (engineering), basis ('measured' / 'inferred from the URDF'),
+    and for defects a machine-readable `entity` (URDF name, last segment) and `category` (the categories of
+    kkh/benchmark/detection.CATEGORIES), `defect` True. These are the natural-defect ground truth for scoring reviews."""
     from kkh.engineering.urdf_model import load_urdf
     m = report["modes"][mode]
-    s = m["edits"][version - 1]["score"] if version else m["score"]
+    s = m["edits"][version - 1]["score"] if version and m.get("edits") else m["score"]
     robot = load_urdf(sources.ROOT / report["source"]["path"])
     out = []
-    add = lambda title, detail="", basis="measured": out.append({"title": title, "detail": detail, "basis": basis})
+    short = lambda n: (n or "").split("/")[-1]
+
+    def add(title, detail="", basis="measured", entity=None, category=None, defect=True):
+        out.append({"title": title, "detail": detail, "basis": basis, "entity": short(entity) if entity else None,
+                    "category": category, "defect": defect})
     if not s.get("produced"):
-        add("No model file was produced", m.get("error") or "")
+        add("No model file was produced", m.get("error") or "", entity="model", category="other")
         return out
     if not s.get("loads"):
-        add("OpenModelica cannot read the file (syntax error or unknown building blocks)", _first_errors(s.get("load_messages")))
+        add("OpenModelica cannot read the file (syntax error or unknown building blocks)", _first_errors(s.get("load_messages")),
+            entity="model", category="other")
         return out
     if not s.get("checks"):
-        add("OpenModelica rejects the model as incomplete or inconsistent", _first_errors(s.get("check_messages")))
+        add("OpenModelica rejects the model as incomplete or inconsistent", _first_errors(s.get("check_messages")),
+            entity="model", category="other")
         return out
     if not s.get("simulates"):
-        add("The model fails when simulated", _first_errors(s.get("simulate_messages")))
+        add("The model fails when simulated", _first_errors(s.get("simulate_messages")), entity="model", category="other")
         return out
-    if s.get("missing_links") or s.get("missing_joints"):
-        add("Parts of the robot are missing from the model",
-            "links: " + ", ".join(s.get("missing_links") or ["none"]) + "; joints: " + ", ".join(s.get("missing_joints") or ["none"]))
+    for l in s.get("missing_links") or []:
+        add(f"Part {short(l)} is missing from the model", "URDF link not found in the simulated model", entity=l, category="missing_component")
+    for j in s.get("missing_joints") or []:
+        add(f"Joint {short(j)} is missing from the model", "URDF moving joint not found in the simulated model", entity=j, category="missing_component")
     kin = s.get("kinematics") or {}
+    suspects = (s.get("structure") or {}).get("suspect_joints")
+    if suspects is None and kin.get("worst_link"):  # reports scored before localisation existed
+        pj = robot.parent_joint(kin["worst_link"][0]) if kin["worst_link"][0] in robot.links else None
+        suspects = [pj.name] if pj is not None else []
+    suspects = suspects or []
     if kin and not kin.get("pass"):
         link = kin["worst_link"][0] if kin.get("worst_link") else "?"
-        add(f"A part is in the wrong place: {link.split('/')[-1]} ends up {kin['max_position_error_mm']:.1f} mm from where the robot file puts it",
-            f"max {kin['max_position_error_mm']} mm, mean {kin['mean_position_error_mm']} mm over {kin['links_compared']} links (URDF forward kinematics at the simulated joint angles)")
-        parent = robot.parent_joint(link) if link in robot.links else None
-        if parent is not None and parent.mimic:
-            src, mult, off = parent.mimic
-            add(f"Likely cause: the robot file says joint '{parent.name.split('/')[-1]}' must copy joint '{src.split('/')[-1]}' "
-                f"(times {mult:g}{f', plus {off:g}' if off else ''}), and the model does not enforce this coupling",
-                f"URDF <mimic joint=\"{src}\" multiplier=\"{mult:g}\" offset=\"{off:g}\"/> on {parent.name}", "inferred from the URDF")
+        add(f"A part is in the wrong place: {short(link)} ends up {kin['max_position_error_mm']:.1f} mm from where the robot file puts it",
+            f"max {kin['max_position_error_mm']} mm, mean {kin['mean_position_error_mm']} mm over {kin['links_compared']} links"
+            + (f"; orientation up to {kin['max_orientation_error_deg']} deg" if kin.get("max_orientation_error_deg") else "")
+            + " (URDF forward kinematics at the simulated joint angles)", defect=False)
+        for jn in suspects:
+            j = robot.joints.get(jn)
+            if j is not None and j.mimic:
+                src, mult, off = j.mimic
+                add(f"Likely cause: the robot file says joint '{short(jn)}' must copy joint '{short(src)}' "
+                    f"(times {mult:g}{f', plus {off:g}' if off else ''}), and the model does not enforce this coupling",
+                    f'URDF <mimic joint="{src}" multiplier="{mult:g}" offset="{off:g}"/> on {jn}', "inferred from the URDF",
+                    entity=jn, category="mimic")
+            else:
+                add(f"Joint {short(jn)} is the first place where the geometry goes wrong (its origin, axis or parent link)",
+                    "first misplaced link on its chain from the root", entity=jn, category="geometry")
     par = s.get("parameters") or {}
     for a in [a for a in par.get("axes", []) if not a["match"]]:
-        add(f"Joint {a['joint'].split('/')[-1]} turns around the wrong axis", f"model {a['model']} vs URDF {a['urdf']}")
+        add(f"Joint {short(a['joint'])} turns around the wrong axis", f"model {a['model']} vs URDF {a['urdf']}", entity=a["joint"], category="axis")
     for x in [x for x in par.get("masses", []) if not x["match"]]:
-        add(f"Part {x['link'].split('/')[-1]} has the wrong mass", f"model {x['model']:.6g} kg vs URDF {x['urdf']:.6g} kg")
+        add(f"Part {short(x['link'])} has the wrong mass", f"model {x['model']:.6g} kg vs URDF {x['urdf']:.6g} kg",
+            entity=x["link"], category="parameter_provenance")
+    for x in [x for x in par.get("com", []) if not x["match"]]:
+        add(f"Part {short(x['link'])} has its centre of mass in the wrong place", f"{x['error_mm']} mm from the URDF <inertial> origin",
+            entity=x["link"], category="parameter_provenance")
+    for x in [x for x in par.get("inertia", []) if not x["match"]]:
+        add(f"Part {short(x['link'])} has the wrong inertia", f"largest relative difference {x['max_rel_error']:.1%}",
+            entity=x["link"], category="parameter_provenance")
+    for x in (s.get("dynamics") or {}).get("joints", []):
+        if not x.get("match", True):
+            add(f"Joint {short(x['joint'])} needs a different motor torque than the robot file implies",
+                f"RMS error {x['rms_nm']} N·m ({x['rms_pct_effort']}% of the URDF effort limit) vs MuJoCo inverse dynamics",
+                entity=x["joint"], category="parameter_provenance")
     if kin and kin.get("max_joint_motion_rad", 1) < 0.01:
         add("The joints barely moved during the check, so the geometry comparison is weak",
-            f"largest joint motion {kin.get('max_joint_motion_rad')} rad in the 2 s run", "measured")
+            f"largest joint motion {kin.get('max_joint_motion_rad')} rad in the 2 s run", defect=False)
     return out
 
 

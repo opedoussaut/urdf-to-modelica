@@ -19,8 +19,11 @@ const CRITERION_HELP: Record<string, string> = {
   checks: "OpenModelica checks the model is complete: as many equations as unknowns, every part connected.",
   simulates: "The model actually runs for 2 seconds (the arm moves under gravity or a test motion).",
   coverage: "Each part (link) and moving joint of the robot file can be found in the model by its name.",
-  kinematics: "We compute, from the robot file alone, where each part must be for the simulated joint angles, and compare with where the simulation put it.",
-  parameters: "Joint rotation axes and part masses in the model are the ones written in the robot file.",
+  kinematics:
+    "We move every joint through most of its range, compute from the robot file alone where each part must be, and compare with where the simulation put it (position and orientation). The first wrong joint on a chain is named as the suspect.",
+  parameters: "Joint axes, part masses, centres of mass and inertias in the model are the ones written in the robot file (compared in each part's own frame).",
+  dynamics:
+    "For the same motion, the motor torque each joint needs in the model is compared with an independent physics engine (MuJoCo) reading the robot file. Friction and damping are left out on both sides.",
 };
 
 export default function Convert({ openUnderstand, learn }: { openUnderstand: (t: Target) => void; learn: () => void }) {
@@ -288,7 +291,7 @@ function LiveProgress({ live, polledAt, now }: { live: Live; polledAt: number; n
                 (PHASE[s.phase || ""] || s.phase) +
                   (baseOf(m) !== "urdfmodelica" && s.attempt ? ` · attempt ${s.attempt} of ${s.attempts} (stops early once the model runs)` : "") +
                   ` · ${fmt(inPhase)} in this step`}
-              {s.status === "done" && `Finished · ${s.passed}/7 checks`}
+              {s.status === "done" && `Finished · ${s.passed} checks passed`}
               {s.status === "failed" && "Finished · no usable file"}
             </small>
           </div>
@@ -326,7 +329,11 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
               {bestTie.length ? `Tied: ${[best!, ...bestTie].map((m) => LABEL[m]).join(" and ")}` : `Best result: ${LABEL[best!]}`}
             </b>
             <p>{bestRes.verdict}</p>
-            {bestRes.score.passed < 7 && <small>Best of the three is not the same as correct: it still fails {7 - bestRes.score.passed} of the 7 checks below.</small>}
+            {bestRes.score.passed < bestRes.score.criteria.length && (
+              <small>
+                Best is not the same as correct: it still fails {bestRes.score.criteria.length - bestRes.score.passed} of the {bestRes.score.criteria.length} checks below.
+              </small>
+            )}
           </div>
         </div>
       )}

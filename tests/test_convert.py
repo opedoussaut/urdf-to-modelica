@@ -70,7 +70,7 @@ def test_finish_ranks_simulating_models_first():
     failing = score.finish({"produced": True, "loads": True, "checks": True})
     running = score.finish({"produced": True, "loads": True, "checks": True, "simulates": True, "coverage": 0.5})
     assert running["rank_key"] > failing["rank_key"]
-    assert [c["id"] for c in running["criteria"]] == ["produced", "loads", "checks", "simulates", "coverage", "kinematics", "parameters"]
+    assert [c["id"] for c in running["criteria"]] == ["produced", "loads", "checks", "simulates", "coverage", "kinematics", "parameters", "dynamics"]
 
 
 @pytest.mark.omc
@@ -159,3 +159,44 @@ def test_ai_methods_run_once_per_model(tmp_path, monkeypatch):
     assert ("llm", "qwen2.5-coder:7b", "llm_qwen2.5-coder_7b") in calls and sum(c[0] == "urdfmodelica" for c in calls) == 1
     assert "(qwen2.5-coder:7b)" in rep["modes"]["llm:qwen2.5-coder:7b"]["verdict"]
     assert runner.base("llm_rag:qwen2.5-coder:7b") == "llm_rag" and rep["ranking"][0] == "urdfmodelica"
+
+
+def test_dynamics_reference_is_exact():
+    """MuJoCo reference: forward then inverse dynamics returns the applied torque (rigid body, constraints off)."""
+    from kkh.convert import dynamics
+    for urdf in (LEADER, ROOT / "data/urdf/aloha_vx300s.urdf"):
+        assert dynamics.self_check(urdf) < 1e-9
+
+
+def test_excitation_wrappers():
+    from kkh.convert import excite
+    robot = load_urdf(LEADER)
+    code = """package R
+  model RTest
+    inner Modelica.Mechanics.MultiBody.World world;
+    Modelica.Mechanics.MultiBody.Joints.Revolute j_elbow(n={0,1,0});
+    Modelica.Mechanics.MultiBody.Joints.Prismatic j_left_finger(n={0,1,0});
+    Modelica.Mechanics.MultiBody.Joints.Prismatic j_right_finger(n={0,1,0});
+  end RTest;
+end R;"""
+    src, driven = excite.contract_wrapper(robot, code, "R.RTest")
+    assert "extends R.RTest(j_elbow(useAxisFlange=true), j_left_finger(useAxisFlange=true))" in src
+    assert "elbow" in driven and "right_finger" not in driven  # mimic joint not driven on its own
+    lim = robot.joints["elbow"].limit
+    assert abs(driven["elbow"]["amplitude"] - 0.4 * (lim.upper - lim.lower)) < 1e-12
+    assert excite.contract_wrapper(robot, "package R model RTest end RTest; end R;", "R.RTest") is None
+
+
+@pytest.mark.omc
+@pytest.mark.slow
+def test_full_tiers_on_urdfmodelica(tmp_path):
+    """Excitation drives the joints through their range; the arm's torques match MuJoCo; the finger mimic defect is
+    localised; centres of mass and inertias match in the link frame."""
+    r = urdfmodelica.convert(LEADER, tmp_path)
+    s = score.score(LEADER, r["package_file"], r["model"], tmp_path)
+    assert s["excitation"]["used"] and s["kinematics"]["max_joint_motion_rad"] > 1.0
+    assert s["structure"]["suspect_joints"] == ["right_finger"]
+    p = s["parameters"]
+    assert p["com_ok"] == p["com_checked"] > 0 and p["inertia_ok"] == p["inertia_checked"] > 0
+    arm = [j for j in s["dynamics"]["joints"] if not j["mimic"]]
+    assert all(j["rms_pct_effort"] < 1.0 for j in arm), arm

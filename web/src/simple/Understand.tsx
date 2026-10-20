@@ -168,7 +168,7 @@ export default function Understand({ target, setTarget, toConvert, learn }: { ta
                 <button key={r.id + m} className={target?.run === r.id && target.mode === m ? "on" : ""} onClick={() => setTarget({ run: r.id, mode: m })}>
                   <b>{keyLabel(m)}</b>
                   <small>
-                    {r.source} · {new Date(r.started).toLocaleString([], { dateStyle: "short", timeStyle: "short" })} · {r.modes[m].passed}/7 checks
+                    {r.source} · {new Date(r.started).toLocaleString([], { dateStyle: "short", timeStyle: "short" })} · {r.modes[m].passed} checks passed
                   </small>
                 </button>
               )),
