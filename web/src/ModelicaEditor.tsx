@@ -25,7 +25,7 @@ import { useAudience } from "./audience";
 import ArmView, { linksWithGeometry, type ArmRobot } from "./ArmView";
 import { partOfLink } from "./robotParts";
 
-// Workspaces created to verify features (round trips, AI-proposal flow). Hidden in Simple mode, tagged in Expert.
+// Workspaces created to verify features (round trips, AI-proposal flow). Hidden in Overview, tagged in Engineering.
 const isTestModel = (m: Doc) => /\b(test|verification|smoke|debug)\b/i.test(m.name);
 (globalThis as any).MonacoEnvironment = { getWorker: () => new EditorWorker() };
 monaco.languages.register({ id: "modelica" });

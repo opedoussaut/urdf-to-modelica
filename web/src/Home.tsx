@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Boxes, Network, Workflow, Activity, Bot, ArrowRight, CheckCircle2, CircleAlert, PlayCircle } from "lucide-react";
+import { Boxes, Network, Workflow, Activity, Bot, ArrowRight, CheckCircle2, CircleAlert, PlayCircle, BookOpen } from "lucide-react";
 import { request, type Context } from "./studio";
 import ArmView from "./ArmView";
 import { PARTS, partOfJoint, type Part } from "./robotParts";
@@ -102,6 +102,9 @@ export default function Home({ context, setContext, open }: { context: Context; 
             Explore the robot
           </button>
         </div>
+        <button className="home-atlas-link" onClick={() => open(9)}>
+          <BookOpen size={15} /> New to Physical AI? Browse the Atlas — eleven ideas, explained in plain words
+        </button>
         </div>
         <div className="home-arm">
           <ArmView

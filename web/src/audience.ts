@@ -1,6 +1,9 @@
 import { createContext, useContext } from "react";
 
-/** Who is looking: "simple" explains in plain words, "expert" shows identifiers, revisions and technical terms. */
+/**
+ * Level of detail, labelled "Overview" ("simple": plain words, essentials) and "Engineering" ("expert": identifiers,
+ * revisions, tool views). Stored values keep their original names so saved preferences carry over.
+ */
 export type Audience = "simple" | "expert";
 export const AudienceContext = createContext<Audience>("simple");
 export const useAudience = () => useContext(AudienceContext);

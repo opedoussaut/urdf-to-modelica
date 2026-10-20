@@ -180,6 +180,7 @@ export default function ArmView({
               overlay.userData.overlay = true;
               overlay.visible = false;
               group.add(overlay);
+              lastLinks = "(reload)"; // force a repaint so the focus highlight reaches the meshes loaded after it was set
               if (--pending === 0) {
                 place(poses);
                 frameCamera();

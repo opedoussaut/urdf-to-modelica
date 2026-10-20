@@ -74,7 +74,7 @@ function ZoomSvg({box,label,children}:{box:number[];label:string;children:React.
 export default function ModelicaDiagram({model,path,hash,selected,dirty,onSelect,onOpen}:Props) {
   const simple=useAudience()==='simple';
   const [data,setData]=useState<any>(),[error,setError]=useState(''),[busy,setBusy]=useState(false),[pick,setView]=useState<'schematic'|'native'>('schematic');
-  // The native annotation preview is a tool-level view for Modelica engineers; Simple mode keeps the schematic.
+  // The native annotation preview is a tool-level view for Modelica engineers; the Overview view keeps the schematic.
   const view=simple?'schematic':pick;
   useEffect(()=>{
     let disposed=false;setData(undefined);setError('');

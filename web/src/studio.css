@@ -1566,3 +1566,9 @@
 .wb-model-arm { margin: -4px 0 14px; padding-bottom: 12px; border-bottom: 1px solid #dfe5ee; }
 .wb-model-arm .arm-view { border-radius: 10px; background: radial-gradient(ellipse at 50% 70%, #eef3fb 0%, #f8fafc 70%); border: 1px solid #e3e9f1; }
 .wb-model-arm-note { margin: 8px 2px 0; font-size: 12px; line-height: 1.45; color: #475569; }
+
+/* Atlas entry points */
+.wb-app .home-atlas-link { margin-top: 14px; padding: 0; border: 0; background: transparent; color: #1d4ed8; font-size: 14px; font-weight: 600; justify-content: flex-start; }
+.wb-app .home-atlas-link:hover { background: transparent; border: 0; text-decoration: underline; }
+.wb-app .wb-atlas-toggle { padding: 5px 10px; font-size: 12px; border-radius: 999px; background: #fff; border-color: #dfe5ee; color: #475569; }
+.wb-app .wb-atlas-toggle.on { background: #e8efff; border-color: #bfd0fb; color: #1d4ed8; }
