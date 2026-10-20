@@ -495,8 +495,8 @@ export default function ModelicaEditor({ context, setContext }: Props) {
     <div className="wb-workspace">
       <div className="wb-title">
         <div>
-          <span className="wb-eyebrow">MODEL AUTHORING</span>
-          <h1>Modelica Engineering Editor</h1>
+          <span className="wb-eyebrow">STEP 3 · MODEL</span>
+          <h1>Model editor</h1>
           <p>
             Versioned source, physical structure and native OMEdit round trips.
           </p>

@@ -35,11 +35,11 @@ Open [HT GEN7 PhysAI Studio](http://127.0.0.1:8000) or [GraphDB Workbench](http:
 
 | Workspace | What is real |
 |---|---|
-| **Demo Journey** | Seven-step engineering story with live facts and a system-readiness check (`docs/DEMO_2026-10-18.md`). |
-| **Engineering Reasoning** | Joint reasoning chain read from the URDF and GraphDB (asserted / inferred / verified / assumed / simulated), ontology rule check of seeded faulty models on isolated copies. |
-| **Robot Model Pipeline** | Live URDF → Modelica conversion with the project converter into `runs/studio/pipeline/<id>`, mapping, completeness, OpenModelica check, integrity (sources and frozen package re-hashed). |
-| **1D Simulation Lab** | Single-joint servo model (MSL Rotational) with URDF-derived inertia and gravity, assumed servo parameters from the model revision, real OpenModelica runs, baseline vs candidate comparison, proposal as unaccepted revision. |
-| Modelica Engineering Editor · Robot Workspace · Dual AI Copilot · Knowledge Explorer | Existing workspaces (revisions/OMEdit, leader–follower and cube task, paired copilot, graph and trace). |
+| **Guided demo** | Seven-step engineering story with live facts and a system-readiness check (`docs/DEMO_2026-10-18.md`). |
+| **Engineering reasoning** | Joint reasoning chain read from the URDF and GraphDB (asserted / inferred / verified / assumed / simulated), ontology rule check of seeded faulty models on isolated copies. |
+| **Generate model** | Live URDF → Modelica conversion with the project converter into `runs/studio/pipeline/<id>`, mapping, completeness, OpenModelica check, integrity (sources and frozen package re-hashed). |
+| **Joint simulation** | Single-joint servo model (MSL Rotational) with URDF-derived inertia and gravity, assumed servo parameters from the model revision, real OpenModelica runs, baseline vs candidate comparison, proposal as unaccepted revision. |
+| Modelica Engineering Editor · Robot Workspace · AI assistant · Knowledge Explorer | Existing workspaces (revisions/OMEdit, leader–follower and cube task, paired copilot, graph and trace). |
 
 Deep links: `?ws=journey|reasoning|pipeline|lab|editor|robot|copilot|knowledge` (+ `step`, `node`, `case`, `run`).
 

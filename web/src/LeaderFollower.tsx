@@ -722,8 +722,8 @@ export default function LeaderFollower({
     <div className="wb-workspace">
       <div className="wb-title">
         <div>
-          <span className="wb-eyebrow">TELEOPERATION LAB</span>
-          <h1>Leader–Follower</h1>
+          <span className="wb-eyebrow">STEP 1 · ROBOT</span>
+          <h1>Robot &amp; motion</h1>
           <p>Shape a motion. Record the reference. Measure the follower.</p>
         </div>
         <span className="wb-badge">

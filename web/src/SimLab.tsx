@@ -141,8 +141,8 @@ export default function SimLab({
     <div className="lab">
       <header className="lab-head">
         <div>
-          <span className="lab-eyebrow">1D SIMULATION LAB · MODELICA · OPENMODELICA</span>
-          <h1>Servo joint experiment</h1>
+          <span className="lab-eyebrow">STEP 4 · SIMULATE · MODELICA 1D · OPENMODELICA</span>
+          <h1>Joint simulation</h1>
           <p>
             One follower joint as a single-degree-of-freedom servo: change a tunable parameter, run the real OpenModelica
             model and compare against the baseline on the identical command.

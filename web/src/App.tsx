@@ -11,6 +11,7 @@ import {
   Activity,
   Workflow,
   GitBranch,
+  Home as HomeIcon,
 } from "lucide-react";
 import { request, type Context, type Doc } from "./studio";
 import "./studio.css";
@@ -22,23 +23,35 @@ const LeaderFollower = lazy(() => import("./LeaderFollower")),
   Journey = lazy(() => import("./Journey")),
   SimLab = lazy(() => import("./SimLab")),
   ModelPipeline = lazy(() => import("./ModelPipeline")),
-  Reasoning = lazy(() => import("./Reasoning"));
+  Reasoning = lazy(() => import("./Reasoning")),
+  Home = lazy(() => import("./Home"));
 // Overview.tsx and ReasoningBenchmark.tsx are kept for internal use but are not part of the product navigation.
 // Indices are stable deep-link targets (open(i)); NAV_ORDER is the order shown in the rail.
+// [name, icon, short subtitle, purpose shown in the top bar]
 const tabs = [
-  ["Robot Workspace", Boxes, "Leader–follower motion & task"],
-  ["Modelica Engineering Editor", Code2, "Source, revisions & OMEdit"],
-  ["Dual AI Copilot", Bot, "Local Nemotron, with / without graph"],
-  ["Knowledge Explorer", Network, "Graph, provenance & trace"],
-  ["Demo Journey", Compass, "Seven-step engineering story"],
-  ["1D Simulation Lab", Activity, "Servo joint in OpenModelica"],
-  ["Robot Model Pipeline", Workflow, "URDF → Modelica, live"],
-  ["Engineering Reasoning", GitBranch, "Ontology chain & rule checks"],
+  ["Robot & motion", Boxes, "Move, record, replay", "Move the leader arm, record a motion and replay it on the follower."],
+  ["Model editor", Code2, "Edit, validate, accept", "Edit the Modelica model, check it with OpenModelica and accept new revisions."],
+  ["AI assistant", Bot, "Ask the local copilot", "Ask the local AI (Nemotron) to explain behaviour and draft changes — with and without the knowledge graph."],
+  ["Knowledge graph", Network, "Entities & provenance", "Browse the robot's facts in the knowledge graph and the trace of past engineering decisions."],
+  ["Guided demo", Compass, "Seven steps, start to finish", "A guided walk through the whole engineering flow on one joint."],
+  ["Joint simulation", Activity, "Tune a servo, simulate", "Change a joint's servo settings and compare real OpenModelica simulations."],
+  ["Generate model", Workflow, "URDF → Modelica, checked", "Convert the robot description into a Modelica model and verify it."],
+  ["Engineering reasoning", GitBranch, "Why a value is trusted", "See how each value is known (verified, derived, assumed) and catch modelling errors automatically."],
+  ["Home", HomeIcon, "What this studio does", "Overview of the studio and its five-step engineering flow."],
 ] as const;
-const NAV_ORDER = [4, 7, 6, 5, 1, 0, 2, 3];
-// Deep links: ?ws=journey|reasoning|pipeline|lab|editor|robot|copilot|knowledge (plus workspace-specific parameters).
-const WS: Record<string, number> = { robot: 0, editor: 1, copilot: 2, knowledge: 3, journey: 4, lab: 5, pipeline: 6, reasoning: 7 };
-const initialWs = WS[new URLSearchParams(location.search).get("ws") || ""] ?? 4;
+// The rail follows the engineering flow; indices stay stable for deep links and open(i).
+const NAV_GROUPS: { label: string; items: number[] }[] = [
+  { label: "Start", items: [8, 4] },
+  { label: "1 · Robot", items: [0] },
+  { label: "2 · Knowledge", items: [7, 3] },
+  { label: "3 · Model", items: [6, 1] },
+  { label: "4 · Simulate", items: [5] },
+  { label: "5 · Decide", items: [2] },
+];
+const groupOf = (i: number) => NAV_GROUPS.find((g) => g.items.includes(i))?.label || "";
+// Deep links: ?ws=home|journey|reasoning|pipeline|lab|editor|robot|copilot|knowledge (plus workspace-specific parameters).
+const WS: Record<string, number> = { robot: 0, editor: 1, copilot: 2, knowledge: 3, journey: 4, lab: 5, pipeline: 6, reasoning: 7, home: 8 };
+const initialWs = WS[new URLSearchParams(location.search).get("ws") || ""] ?? 8;
 
 // A stale lazy bundle after a local rebuild must not unmount other workspaces
 // (which may contain an unsaved recording or source edit).
@@ -66,7 +79,8 @@ export default function App() {
       file: "Arms/AlohaVX300s.mo",
     }),
     [session, setSession] = useState<Doc>(),
-    [ready, setReady] = useState(false);
+    [ready, setReady] = useState(false),
+    [names, setNames] = useState<{ model?: string; status?: string; trajectory?: string }>({});
   useEffect(() => {
     let disposed = false;
     request<Doc[]>("/documents/session")
@@ -116,6 +130,17 @@ export default function App() {
     );
     return () => clearTimeout(timer);
   }, [context, ready]);
+  // Human-readable names for the context bar (model, revision status, recording).
+  useEffect(() => {
+    const out: { model?: string; status?: string; trajectory?: string } = {};
+    Promise.all([
+      context.model ? request<Doc>("/record/" + context.model).then((m) => (out.model = m.name)).catch(() => {}) : null,
+      context.model_revision
+        ? request<Doc>("/record/" + context.model_revision).then((r) => (out.status = r.data.status)).catch(() => {})
+        : null,
+      context.trajectory ? request<Doc>("/record/" + context.trajectory).then((t) => (out.trajectory = t.name)).catch(() => {}) : null,
+    ]).then(() => setNames(out));
+  }, [context.model, context.model_revision, context.trajectory]);
   const choose = (index: number) => {
     setActive(index);
     setVisited((old) => new Set([...old, index]));
@@ -133,22 +158,30 @@ export default function App() {
             <small>Engineering-Grounded Physical AI</small>
           </div>
         </div>
-        <span className="wb-nav-label">WORKSPACES</span>
-        <nav>
-          {NAV_ORDER.map((index) => [tabs[index], index] as const).map(([[label, Icon, sub], index]) => (
-            <button
-              key={label}
-              className={active === index ? "active" : ""}
-              onClick={() => choose(index)}
-              title={label}
-            >
-              <Icon size={19} />
-              <span>
-                <strong>{label}</strong>
-                <small>{sub}</small>
-              </span>
-              {active === index && <ChevronRight size={14} />}
-            </button>
+        <nav aria-label="Studio sections">
+          {NAV_GROUPS.map((g) => (
+            <div key={g.label} className="wb-nav-group">
+              <span className="wb-nav-label">{g.label}</span>
+              {g.items.map((index) => {
+                const [label, Icon, sub] = tabs[index];
+                return (
+                  <button
+                    key={label}
+                    className={active === index ? "active" : ""}
+                    aria-current={active === index ? "page" : undefined}
+                    onClick={() => choose(index)}
+                    title={tabs[index][3]}
+                  >
+                    <Icon size={18} />
+                    <span>
+                      <strong>{label}</strong>
+                      <small>{sub}</small>
+                    </span>
+                    {active === index && <ChevronRight size={14} />}
+                  </button>
+                );
+              })}
+            </div>
           ))}
         </nav>
         <div className="wb-sidebar-bottom">
@@ -168,17 +201,24 @@ export default function App() {
       </aside>
       <main className="wb-main">
         <header className="wb-topbar">
-          <span>
-            HT GEN7 PhysAI Studio <ChevronRight size={13} />{" "}
-            <strong>{tabs[active][0]}</strong>
+          <span className="wb-crumbs">
+            <span>
+              {groupOf(active) && (
+                <>
+                  {groupOf(active)} <ChevronRight size={13} />{" "}
+                </>
+              )}
+              <strong>{tabs[active][0]}</strong>
+            </span>
+            <small>{tabs[active][3]}</small>
           </span>
           <div>
             <span className="wb-live" /> LOCAL SESSION{" "}
             <span className="wb-avatar">G7</span>
           </div>
         </header>
-        <div className="wb-context">
-          <span>CONTEXT</span>
+        <div className="wb-context" aria-label="What you are working on">
+          <span>WORKING ON</span>
           <span className="wb-focus" role="group" aria-label="Engineering focus robot">
             {(
               [
@@ -199,17 +239,20 @@ export default function App() {
               </button>
             ))}
           </span>
-          <span>/</span>
-          <button onClick={() => choose(1)}>{context.selected}</button>
-          <span>·</span>
-          <button onClick={() => choose(1)}>
-            revision{" "}
-            {context.model_revision?.slice(0, 8) || "generated baseline"}
-          </button>
-          <span>·</span>
-          <button onClick={() => choose(0)}>
-            trajectory {context.trajectory?.slice(0, 8) || "none selected"}
-          </button>
+          <span className="wb-ctx-item joint">
+            Joint <button onClick={() => choose(7)}>{context.selected.replaceAll("_", " ")}</button>
+          </span>
+          <span className="wb-ctx-item">
+            Model{" "}
+            <button onClick={() => choose(1)}>
+              {context.model
+                ? `${names.model || "editable model"} · revision ${context.model_revision?.slice(0, 8) || "—"}${names.status ? ` (${names.status})` : ""}`
+                : "generated baseline (read-only)"}
+            </button>
+          </span>
+          <span className="wb-ctx-item">
+            Recording <button onClick={() => choose(0)}>{context.trajectory ? names.trajectory || context.trajectory.slice(0, 8) : "none"}</button>
+          </span>
         </div>
           {ready &&
             [...visited].map((i) => (
@@ -230,8 +273,10 @@ export default function App() {
                   <SimLab context={context} setContext={setContext} open={choose} />
                 ) : i === 6 ? (
                   <ModelPipeline context={context} setContext={setContext} open={choose} />
-                ) : (
+                ) : i === 7 ? (
                   <Reasoning context={context} setContext={setContext} open={choose} />
+                ) : (
+                  <Home context={context} setContext={setContext} open={choose} />
                 )}
                 </Suspense>
                 </WorkspaceBoundary>

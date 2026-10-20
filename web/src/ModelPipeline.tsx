@@ -85,8 +85,8 @@ export default function ModelPipeline({
     <div className="lab">
       <header className="lab-head">
         <div>
-          <span className="lab-eyebrow">ROBOT MODEL PIPELINE · URDF → MODELICA</span>
-          <h1>Derive the Modelica model from the robot description</h1>
+          <span className="lab-eyebrow">STEP 3 · MODEL · URDF → MODELICA</span>
+          <h1>Generate model</h1>
           <p>
             Runs the project's deterministic converter on a pinned ALOHA URDF, writes a new package into an isolated run
             directory, maps every URDF element, and checks the result with OpenModelica. The frozen package is never

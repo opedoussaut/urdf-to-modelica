@@ -115,8 +115,8 @@ export default function DualCopilot({ context }: { context: Context }) {
     <div className="wb-workspace">
       <div className="wb-title">
         <div>
-          <span className="wb-eyebrow">LOCAL ENGINEERING INTELLIGENCE</span>
-          <h1>Dual AI Copilot</h1>
+          <span className="wb-eyebrow">STEP 5 · DECIDE</span>
+          <h1>AI assistant</h1>
           <p>
             One question. The same local model. A visible difference in
             evidence.

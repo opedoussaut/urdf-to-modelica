@@ -1431,3 +1431,64 @@
 .wb-app .ks-tools button.on { background: #e8efff; color: #1d4ed8; font-weight: 650; }
 .ks-frame.full { overflow: auto; max-height: 76vh; border: 1px solid #dfe5ee; border-radius: 10px; background: #fbfcfe; }
 .ks-frame.full .ks { border: 0; border-radius: 0; }
+
+/* ---- Navigation by engineering flow, readable context ---- */
+.wb-sidebar nav { display: flex; flex-direction: column; gap: 8px; }
+.wb-nav-group { display: grid; gap: 1px; }
+.wb-sidebar .wb-nav-group .wb-nav-label { margin: 4px 0 2px 10px; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: #7f95b3; }
+.wb-crumbs { display: grid; gap: 2px; }
+.wb-crumbs > span { display: inline-flex; align-items: center; gap: 6px; color: #64748b; font-size: 12.5px; }
+.wb-crumbs strong { color: #0f1d33; font-size: 14px; }
+.wb-crumbs small { color: #475569; font-size: 12.5px; }
+.wb-context { gap: 18px; flex-wrap: wrap; }
+.wb-ctx-item { display: inline-flex; align-items: center; gap: 4px; color: #64748b; font-size: 12px; }
+.wb-ctx-item button { padding: 2px 6px; font-weight: 600; }
+.wb-topbar { height: auto; min-height: 64px; padding-top: 10px; padding-bottom: 10px; }
+
+/* ---- Home ---- */
+.home .home-hero { background: #ffffff; border: 1px solid var(--line); border-radius: 14px; padding: 28px 30px; margin-bottom: 22px; }
+.home .home-hero h1 { font-size: 28px; line-height: 1.25; max-width: 980px; margin: 8px 0 10px; }
+.home .home-hero p { font-size: 15.5px; max-width: 900px; line-height: 1.6; }
+.home-h2 { font-size: 16px !important; margin: 0 0 12px !important; }
+.home-flow { list-style: none; padding: 0; margin: 0 0 22px; display: flex; gap: 6px; align-items: stretch; }
+.home-flow li { flex: 1 1 0; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.lab .home-step { flex: 1; height: 100%; text-align: left; display: grid; gap: 6px; align-content: start; background: #ffffff;
+  border: 1px solid var(--line); border-radius: 12px; padding: 14px; color: var(--ink); }
+.lab .home-step:hover { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.home-step-top { display: flex; align-items: center; gap: 8px; color: var(--accent); }
+.home-step-top b { color: var(--ink); font-size: 15px; }
+.home-step em { font-style: normal; font-weight: 650; color: var(--ink); font-size: 13.5px; }
+.home-does { font-size: 13px; color: var(--ink-2); }
+.home-gets { font-size: 12.5px; color: var(--green); }
+.home-open { margin-top: 4px; font-size: 12.5px; font-weight: 650; color: var(--accent); display: inline-flex; align-items: center; gap: 4px; }
+.home-arrow { color: #a3b1c2; flex: none; }
+.home-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; }
+.home-side .lab-card { margin-bottom: 18px; }
+.home-text { font-size: 14px; line-height: 1.6; margin: 8px 0 14px !important; }
+.home-gloss { display: grid; gap: 8px; margin: 0; }
+.home-gloss div { display: grid; grid-template-columns: 140px 1fr; gap: 10px; font-size: 13px; }
+.home-gloss dt { font-weight: 650; color: var(--ink); }
+.home-gloss dd { margin: 0; color: var(--ink-2); }
+.home-list { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 6px; font-size: 13px; }
+.home-list li { padding-left: 22px; position: relative; color: var(--ink-2); }
+.home-list.ok li::before { content: "✓"; position: absolute; left: 4px; color: var(--green); font-weight: 700; }
+.home-list.warn li::before { content: "!"; position: absolute; left: 7px; color: var(--amber); font-weight: 800; }
+.home-status { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 6px; font-size: 13px; }
+.home-status li { display: flex; align-items: center; gap: 7px; }
+.home-status li.ok svg { color: var(--green); }
+.home-status li.fail svg { color: var(--red); }
+@media (max-width: 1200px) { .home-flow { flex-direction: column; } .home-arrow { transform: rotate(90deg); align-self: center; } .home-grid { grid-template-columns: 1fr; } }
+/* rail fits 1440x900: compact items, project chip hidden on short screens; context bar on one line */
+.wb-sidebar nav button { padding-top: 5px; padding-bottom: 5px; }
+.wb-sidebar nav { gap: 4px; }
+.wb-sidebar .wb-nav-group .wb-nav-label { margin: 2px 0 1px 10px; }
+@media (max-height: 980px) { .wb-sidebar .wb-project { display: none; } .wb-sidebar nav small { display: none; } }
+.wb-context { flex-wrap: nowrap; overflow: hidden; }
+.wb-ctx-item { min-width: 0; white-space: nowrap; }
+.wb-ctx-item button { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+.wb-context > span:first-child, .wb-focus, .wb-focus button { white-space: nowrap; flex-shrink: 0; }
+.wb-ctx-item { flex-shrink: 1; }
+.wb-ctx-item:first-of-type { flex-shrink: 0; }
+.wb-context .wb-ctx-item:nth-of-type(1) button { max-width: none; }
+.wb-ctx-item.joint { flex-shrink: 0; }
+.wb-context .wb-ctx-item.joint button { max-width: none; overflow: visible; }
