@@ -1,5 +1,6 @@
-import { lazy, Suspense, useState } from "react";
-import { BookOpen, FileSearch, LayoutGrid, Workflow } from "lucide-react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { BookOpen, FileSearch, LayoutGrid, RotateCcw, Workflow } from "lucide-react";
+import { convert } from "./api";
 import { AudienceContext, storeAudience, storedAudience, type Audience } from "../audience";
 import "../lab.css";
 import "./simple.css";
@@ -33,6 +34,7 @@ export default function SimpleApp() {
   const [page, setPage] = useState<Page>(() => (["convert", "understand", "learn"].includes(params.get("page") || "") ? (params.get("page") as Page) : "convert"));
   const [target, setTarget] = useState<Target | undefined>(() => (params.get("run") && params.get("mode") ? { run: params.get("run")!, mode: params.get("mode")! } : undefined));
   const [audience, setAudience] = useState<Audience>(storedAudience);
+  const [resetOpen, setResetOpen] = useState(false);
   const go = (p: Page, t?: Target) => {
     setPage(p);
     if (t) setTarget(t);
@@ -83,6 +85,9 @@ export default function SimpleApp() {
                 Engineering
               </button>
             </div>
+            <button className="sx-full" onClick={() => setResetOpen(true)} title="Delete uploaded robots, comparisons and reviews, and start again">
+              <RotateCcw size={14} /> Reset
+            </button>
             <button className="sx-full" onClick={() => openFullStudio()} title="Open the complete studio with all pages (robot, knowledge graph, simulation…)">
               <LayoutGrid size={14} /> Full studio
             </button>
@@ -95,8 +100,62 @@ export default function SimpleApp() {
             {page === "learn" && <Atlas open={(i) => openFullStudio(STUDIO_WS[i] || "home")} />}
           </Suspense>
         </main>
+        {resetOpen && <ResetDialog close={() => setResetOpen(false)} />}
         <footer className="sx-foot">Local by design · Ollama · OpenModelica · GraphDB · every score comes from a real OpenModelica run</footer>
       </div>
     </AudienceContext.Provider>
+  );
+}
+
+/** Start over: deletes what this app created (uploads, comparisons, reviews). Typed confirmation, cannot be undone. */
+function ResetDialog({ close }: { close: () => void }) {
+  const [counts, setCounts] = useState<{ uploads: number; runs: number }>();
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    Promise.all([convert("/sources"), convert<any[]>("/runs")])
+      .then(([s, r]) => setCounts({ uploads: s.sources.filter((x: any) => x.kind === "upload").length, runs: r.length }))
+      .catch(() => setCounts({ uploads: 0, runs: 0 }));
+  }, []);
+  const go = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      await convert("/reset", "POST", { confirm: text });
+      location.href = "/?ui=simple&page=convert";
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="sx-modal" role="dialog" aria-modal="true" aria-labelledby="sx-reset-title" onClick={(e) => e.target === e.currentTarget && !busy && close()}>
+      <div className="sx-modal-box">
+        <h2 id="sx-reset-title">Start over?</h2>
+        <p>This permanently deletes:</p>
+        <ul>
+          <li>{counts ? counts.uploads : "…"} uploaded robot file(s)</li>
+          <li>{counts ? counts.runs : "…"} comparison(s), with their generated Modelica files, scores and edited versions</li>
+          <li>the AI review conversations about those files</li>
+        </ul>
+        <p className="sx-muted">Kept: the two pinned ALOHA arms, the Modelica library search index, and everything in the full studio.</p>
+        <label>
+          <span>
+            Type <b>RESET</b> to confirm
+          </span>
+          <input value={text} onChange={(e) => setText(e.target.value)} autoFocus disabled={busy} />
+        </label>
+        {error && <p className="lab-error">{error}</p>}
+        <div className="sx-modal-actions">
+          <button className="sx-btn" onClick={close} disabled={busy}>
+            Cancel
+          </button>
+          <button className="sx-btn danger" onClick={go} disabled={busy || text !== "RESET"}>
+            {busy ? "Deleting…" : "Delete everything and start over"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

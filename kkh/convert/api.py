@@ -64,6 +64,41 @@ def active():
     return runner.active() or {"running": False}
 
 
+class Reset(BaseModel):
+    confirm: str = Field(max_length=10)
+
+
+@router.post("/reset")
+def reset(body: Reset):
+    """Delete everything the simplified app created: uploaded robots, all conversion runs (files, scores, edits),
+    the live progress file and the "Understand" conversations about those files. Pinned robot files, the library
+    search index (a rebuildable cache) and the full studio's data are not touched. Requires confirm == "RESET"."""
+    import re
+    import shutil
+    if body.confirm != "RESET":
+        raise HTTPException(422, 'Type RESET to confirm')
+    state = runner.active() or {}
+    if _run_lock.locked() or state.get("running"):
+        raise HTTPException(409, "A comparison is running; wait for it to finish before resetting")
+    removed = {"runs": 0, "uploads": 0, "conversations": 0}
+    root = sources.RUNS.resolve()
+    for d in root.iterdir() if root.exists() else []:
+        if d.is_dir() and re.fullmatch(r"[0-9a-f]{12}", d.name):
+            shutil.rmtree(d)
+            removed["runs"] += 1
+    if sources.UPLOADS.exists():
+        removed["uploads"] = sum(1 for d in sources.UPLOADS.iterdir() if d.is_dir())
+        shutil.rmtree(sources.UPLOADS)
+    for f in (runner.ACTIVE, runner.ACTIVE.with_suffix(".tmp")):
+        f.unlink(missing_ok=True)
+    from kkh.studio.api import store
+    for c in store.list("conversation", limit=2000):
+        if isinstance(c["data"].get("context"), dict) and c["data"]["context"].get("conversion"):
+            store.update(c["id"], c["version"], delete=True)
+            removed["conversations"] += 1
+    return {"removed": removed}
+
+
 @router.get("/runs")
 def runs():
     return runner.list_runs()

@@ -94,3 +94,41 @@ def test_urdfmodelica_mode_scores_from_real_run(tmp_path):
     assert s["coverage"] == 1.0 and s["parameters"]["axes_ok"] == s["parameters"]["axes_checked"] > 0
     # the converter does not enforce the URDF finger mimic: a real, measured kinematic gap on the right finger
     assert s["kinematics"]["max_position_error_mm"] > 1.0 and "right_finger" in s["kinematics"]["worst_link"][0]
+
+
+def test_reset_deletes_only_simple_app_data(tmp_path, monkeypatch):
+    """Reset removes run directories, uploads, live progress and conversion conversations; keeps the index cache
+    and anything else. Never touches the real runs/ or studio database (both replaced here)."""
+    from fastapi.testclient import TestClient
+    from kkh.api.main import app
+    from kkh.convert import runner
+    import kkh.studio.api as studio_api
+
+    runs = tmp_path / "convert"
+    (runs / "abcdef012345").mkdir(parents=True)
+    (runs / "index").mkdir()
+    (runs / "index" / "library_index.json").write_text("{}")
+    (runs / "uploads" / "x").mkdir(parents=True)
+    (runs / "notes").mkdir()
+    monkeypatch.setattr(sources, "RUNS", runs)
+    monkeypatch.setattr(sources, "UPLOADS", runs / "uploads")
+    monkeypatch.setattr(runner, "ACTIVE", runs / "active.json")
+    (runs / "active.json").write_text('{"running": false}')
+
+    deleted = []
+    class FakeStore:
+        def list(self, kind, limit=200):
+            return [{"id": "c1", "version": 1, "data": {"context": {"conversion": "abcdef012345"}}},
+                    {"id": "c2", "version": 1, "data": {"context": {"robot": "aloha_vx300s"}}}]
+        def update(self, identity, version, delete=False):
+            deleted.append(identity)
+    monkeypatch.setattr(studio_api, "store", FakeStore())
+
+    client = TestClient(app)
+    assert client.post("/api/convert/reset", json={"confirm": "yes"}).status_code == 422
+    r = client.post("/api/convert/reset", json={"confirm": "RESET"})
+    assert r.status_code == 200, r.text
+    assert r.json()["removed"] == {"runs": 1, "uploads": 1, "conversations": 1}
+    assert deleted == ["c1"]
+    assert not (runs / "abcdef012345").exists() and not (runs / "uploads").exists() and not (runs / "active.json").exists()
+    assert (runs / "index" / "library_index.json").exists() and (runs / "notes").exists()
