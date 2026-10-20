@@ -1492,3 +1492,63 @@
 .wb-context .wb-ctx-item:nth-of-type(1) button { max-width: none; }
 .wb-ctx-item.joint { flex-shrink: 0; }
 .wb-context .wb-ctx-item.joint button { max-width: none; overflow: visible; }
+
+/* ---- Arm as the studio's visual thread; Simple / Expert ---- */
+.wb-armcard { margin: 12px 0 10px; border-radius: 12px; background: radial-gradient(120% 90% at 50% 30%, #1d3557 0%, #13233f 60%, #0f1d33 100%);
+  border: 1px solid #23395f; overflow: hidden; }
+.wb-armcap { display: grid; gap: 1px; padding: 6px 12px 10px; }
+.wb-armcap small { color: #8fa6c4 !important; font-size: 10px; letter-spacing: 0.4px; }
+.wb-armcap strong { color: #ffffff !important; font-size: 14px; }
+.wb-armcap span { color: #c3d2e6; font-size: 11.5px; line-height: 1.35; }
+.compact .wb-armcard { display: none; }
+@media (max-height: 980px) { .wb-armcard .arm-view { height: 120px !important; } .wb-armcap span { display: none; } }
+.arm-view { position: relative; width: 100%; }
+.arm-view canvas { display: block; }
+.arm-tip { position: absolute; left: 8px; right: 8px; bottom: 6px; background: rgba(15, 29, 51, 0.92); color: #fff; border-radius: 8px;
+  padding: 6px 9px; font-size: 11.5px; line-height: 1.35; pointer-events: none; display: grid; gap: 1px; border: 1px solid #2b4a75; }
+.arm-view.light .arm-tip { background: rgba(255, 255, 255, 0.96); color: #0f1d33; border-color: #c9d3e0; box-shadow: 0 4px 14px rgba(15, 29, 51, 0.12); }
+.arm-tip b { font-size: 12.5px; }
+.arm-failed { color: #94a3b8; font-size: 12px; padding: 10px; }
+.wb-top-right { display: flex; align-items: center; gap: 12px; font-size: 11px; letter-spacing: 0.8px; color: #64748b; }
+.wb-audience { display: inline-flex; border: 1px solid #c9d3e0; border-radius: 999px; overflow: hidden; }
+.wb-app .wb-audience button { border: 0; border-radius: 0; padding: 5px 14px; font-size: 12px; background: #ffffff; color: #334459; letter-spacing: 0; }
+.wb-app .wb-audience button.on { background: #1d4ed8; color: #ffffff; font-weight: 650; }
+.wb-plain { margin: 14px 32px 0; padding: 10px 16px; border-radius: 10px; background: #eef4ff; border: 1px solid #c9d8ff; color: #1e3a8a;
+  font-size: 14px; line-height: 1.5; }
+.wb-plain b { margin-right: 8px; font-size: 11px; letter-spacing: 0.8px; text-transform: uppercase; color: #1d4ed8; }
+
+/* ---- Five-step progress bar (replaces breadcrumb + "working on" line) ---- */
+.wb-topbar { padding-top: 8px; padding-bottom: 8px; }
+.wb-steps-bar { display: flex; align-items: stretch; gap: 0; flex: 1; min-width: 0; }
+.wb-app .wb-step { display: inline-flex; align-items: center; gap: 9px; border: 0; border-radius: 0; background: transparent; padding: 8px 18px 8px 14px;
+  color: #64748b; position: relative; min-width: 0; }
+.wb-app .wb-step::after { content: ""; position: absolute; right: -1px; top: 50%; width: 9px; height: 9px; border-top: 1.5px solid #c9d3e0;
+  border-right: 1.5px solid #c9d3e0; transform: translateY(-50%) rotate(45deg); }
+.wb-app .wb-step:last-child::after { display: none; }
+.wb-app .wb-step:hover { background: #f1f5fc; color: #1d4ed8; border: 0; }
+.wb-step-n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #c9d3e0; font-size: 12px;
+  font-weight: 700; color: #64748b; background: #fff; flex: none; }
+.wb-step-t { display: grid; text-align: left; line-height: 1.2; }
+.wb-step-t b { font-size: 13.5px; font-weight: 600; }
+.wb-step-t small { font-size: 11.5px; color: #1d4ed8; font-weight: 500; white-space: nowrap; }
+.wb-app .wb-step.on { color: #0f1d33; }
+.wb-step.on .wb-step-n { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.wb-step.on .wb-step-t b { color: #0f1d33; font-weight: 700; }
+.wb-step.done .wb-step-n { background: #e3f4ec; border-color: #7cc4a1; color: #0f7a4f; }
+.wb-app .wb-step.start.on { color: #1d4ed8; }
+.wb-app .wb-step.start .wb-step-t b { font-weight: 700; }
+.wb-armrobot { display: flex; gap: 4px; padding: 0 12px; }
+.wb-app .wb-armrobot button { flex: 1; padding: 3px 8px; font-size: 11px; border-radius: 6px; background: transparent; border: 1px solid #2b4a75; color: #c3d2e6; }
+.wb-app .wb-armrobot button.on { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+@media (max-width: 1500px) { .wb-app .wb-step { padding: 8px 12px 8px 10px; } .wb-step-t small { display: none; } }
+/* Home hero with the explorable arm */
+.home .home-hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); gap: 26px; align-items: center; }
+.home-arm { border-radius: 14px; background: radial-gradient(110% 90% at 50% 35%, #f4f8ff 0%, #e8eef7 70%, #e2e9f3 100%); border: 1px solid #dfe5ee;
+  padding: 8px 10px 12px; }
+.home-part { display: grid; gap: 2px; padding: 4px 6px 8px; min-height: 64px; }
+.home-part b { font-size: 16px; color: #0f1d33; }
+.home-part span:last-child { font-size: 13px; color: #334459; line-height: 1.45; }
+.home-parts { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 6px; }
+.lab .home-parts button { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #fff; border: 1px solid #c9d3e0; color: #334459; }
+.lab .home-parts button.on { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+@media (max-width: 1200px) { .home .home-hero { grid-template-columns: 1fr; } }

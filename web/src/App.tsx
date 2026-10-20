@@ -14,6 +14,9 @@ import {
   Home as HomeIcon,
 } from "lucide-react";
 import { request, type Context, type Doc } from "./studio";
+import ArmView, { type ArmMode } from "./ArmView";
+import { partOfJoint } from "./robotParts";
+import { AudienceContext, storeAudience, storedAudience, type Audience } from "./audience";
 import "./studio.css";
 import "./lab.css";
 const LeaderFollower = lazy(() => import("./LeaderFollower")),
@@ -48,6 +51,28 @@ const NAV_GROUPS: { label: string; items: number[] }[] = [
   { label: "4 · Simulate", items: [5] },
   { label: "5 · Decide", items: [2] },
 ];
+// The arm in the rail changes its look with the engineering step of the current page.
+const MODE: Record<number, ArmMode> = { 0: "robot", 1: "model", 2: "decide", 3: "knowledge", 4: "robot", 5: "simulate", 6: "model", 7: "knowledge", 8: "robot" };
+// One plain-language sentence per page, shown in Simple mode.
+const PLAIN: Record<number, string> = {
+  8: "This studio checks robot changes on a computer model first, so nothing is tried blindly on the real machine.",
+  4: "A short tour: we follow one part of the arm (the shoulder) from its specification to a tested, approved change.",
+  0: "Here you move the robot arm on screen, record a movement and play it back — like a flight recorder for the arm.",
+  7: "Every number about the arm comes from somewhere. This page shows where, how sure we are, and catches mistakes automatically.",
+  3: "A map of everything the studio knows about the robot: its parts, how they connect, and where each fact comes from.",
+  6: "The studio turns the robot's specification file into a physics model a computer can calculate with — and checks it.",
+  1: "The physics model of the robot, as code. Changes are saved as versions and only approved after a successful check.",
+  5: "Try a new setting for one motor and see, in a real physics simulation, whether the arm follows its target better or worse.",
+  2: "Ask questions in plain language. A local AI explains; it can suggest changes, but a person always decides.",
+};
+const STEPS: { label: string; pages: number[]; hint: string }[] = [
+  { label: "Start", pages: [8, 4], hint: "Home and guided demo" },
+  { label: "Robot", pages: [0], hint: "What is the machine? Move it, record a motion." },
+  { label: "Knowledge", pages: [7, 3], hint: "What do we know about it, and how sure are we?" },
+  { label: "Model", pages: [6, 1], hint: "Turn the robot into a physics model and check it." },
+  { label: "Simulate", pages: [5], hint: "Change a setting and simulate the effect." },
+  { label: "Decide", pages: [2], hint: "Ask the AI, review and approve changes." },
+];
 const groupOf = (i: number) => NAV_GROUPS.find((g) => g.items.includes(i))?.label || "";
 // Deep links: ?ws=home|journey|reasoning|pipeline|lab|editor|robot|copilot|knowledge (plus workspace-specific parameters).
 const WS: Record<string, number> = { robot: 0, editor: 1, copilot: 2, knowledge: 3, journey: 4, lab: 5, pipeline: 6, reasoning: 7, home: 8 };
@@ -80,7 +105,12 @@ export default function App() {
     }),
     [session, setSession] = useState<Doc>(),
     [ready, setReady] = useState(false),
-    [names, setNames] = useState<{ model?: string; status?: string; trajectory?: string }>({});
+    [audience, setAudienceState] = useState<Audience>(storedAudience);
+  const setAudience = (a: Audience) => {
+    setAudienceState(a);
+    storeAudience(a);
+  };
+  const simple = audience === "simple";
   useEffect(() => {
     let disposed = false;
     request<Doc[]>("/documents/session")
@@ -130,17 +160,6 @@ export default function App() {
     );
     return () => clearTimeout(timer);
   }, [context, ready]);
-  // Human-readable names for the context bar (model, revision status, recording).
-  useEffect(() => {
-    const out: { model?: string; status?: string; trajectory?: string } = {};
-    Promise.all([
-      context.model ? request<Doc>("/record/" + context.model).then((m) => (out.model = m.name)).catch(() => {}) : null,
-      context.model_revision
-        ? request<Doc>("/record/" + context.model_revision).then((r) => (out.status = r.data.status)).catch(() => {})
-        : null,
-      context.trajectory ? request<Doc>("/record/" + context.trajectory).then((t) => (out.trajectory = t.name)).catch(() => {}) : null,
-    ]).then(() => setNames(out));
-  }, [context.model, context.model_revision, context.trajectory]);
   const choose = (index: number) => {
     setActive(index);
     setVisited((old) => new Set([...old, index]));
@@ -151,11 +170,30 @@ export default function App() {
         <a className="wb-brand" href="/">
           HT <span>GEN7</span> <small>PHYSAI STUDIO</small>
         </a>
-        <div className="wb-project">
-          <span className="wb-project-icon">A2</span>
-          <div>
-            <strong>ALOHA 2</strong>
-            <small>Engineering-Grounded Physical AI</small>
+        <div className="wb-armcard" aria-label="The ALOHA 2 follower arm — click a part to focus on it">
+          <ArmView
+            focus={context.selected}
+            mode={MODE[active]}
+            theme="dark"
+            height={150}
+            onSelect={(joint) => setContext({ selected: joint, robot: "aloha_vx300s" })}
+          />
+          <div className="wb-armrobot" role="group" aria-label="Which arm">
+            {(
+              [
+                ["aloha_vx300s", "Follower"],
+                ["aloha_wx250s", "Leader"],
+              ] as const
+            ).map(([id, label]) => (
+              <button key={id} className={context.robot === id ? "on" : ""} aria-pressed={context.robot === id} onClick={() => setContext({ robot: id })}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="wb-armcap">
+            <small>ALOHA 2 · follower arm · click a part</small>
+            <strong>{partOfJoint(context.selected)?.name || context.selected.replaceAll("_", " ")}</strong>
+            <span>{simple ? partOfJoint(context.selected)?.plain || "" : `joint ${context.selected} · ${partOfJoint(context.selected)?.expert || ""}`}</span>
           </div>
         </div>
         <nav aria-label="Studio sections">
@@ -201,59 +239,49 @@ export default function App() {
       </aside>
       <main className="wb-main">
         <header className="wb-topbar">
-          <span className="wb-crumbs">
-            <span>
-              {groupOf(active) && (
-                <>
-                  {groupOf(active)} <ChevronRight size={13} />{" "}
-                </>
-              )}
-              <strong>{tabs[active][0]}</strong>
+          <nav className="wb-steps-bar" aria-label="Engineering steps">
+            {STEPS.map((st, i) => {
+              const current = st.pages.includes(active),
+                done = i > 0 && STEPS.findIndex((x) => x.pages.includes(active)) > i;
+              return (
+                <button
+                  key={st.label}
+                  className={"wb-step" + (current ? " on" : "") + (done ? " done" : "") + (i === 0 ? " start" : "")}
+                  aria-current={current ? "step" : undefined}
+                  onClick={() => choose(st.pages[0])}
+                  title={st.hint}
+                >
+                  {i > 0 && <span className="wb-step-n">{i}</span>}
+                  <span className="wb-step-t">
+                    <b>{st.label}</b>
+                    {current && i > 0 && <small>{tabs[active][0]}</small>}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+          <div className="wb-top-right">
+            <span className="wb-audience" role="group" aria-label="Explanation level">
+              {(
+                [
+                  ["simple", "Simple"],
+                  ["expert", "Expert"],
+                ] as const
+              ).map(([a, l]) => (
+                <button key={a} className={audience === a ? "on" : ""} aria-pressed={audience === a} onClick={() => setAudience(a)}>
+                  {l}
+                </button>
+              ))}
             </span>
-            <small>{tabs[active][3]}</small>
-          </span>
-          <div>
-            <span className="wb-live" /> LOCAL SESSION{" "}
-            <span className="wb-avatar">G7</span>
+            <span className="wb-live" /> LOCAL
           </div>
         </header>
-        <div className="wb-context" aria-label="What you are working on">
-          <span>WORKING ON</span>
-          <span className="wb-focus" role="group" aria-label="Engineering focus robot">
-            {(
-              [
-                ["aloha_vx300s", "ViperX follower"],
-                ["aloha_wx250s", "WidowX leader"],
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                className={
-                  (context.robot === id ? "active " : "") +
-                  (id === "aloha_vx300s" ? "follower" : "leader")
-                }
-                aria-pressed={context.robot === id}
-                onClick={() => setContext({ robot: id })}
-              >
-                {label}
-              </button>
-            ))}
-          </span>
-          <span className="wb-ctx-item joint">
-            Joint <button onClick={() => choose(7)}>{context.selected.replaceAll("_", " ")}</button>
-          </span>
-          <span className="wb-ctx-item">
-            Model{" "}
-            <button onClick={() => choose(1)}>
-              {context.model
-                ? `${names.model || "editable model"} · revision ${context.model_revision?.slice(0, 8) || "—"}${names.status ? ` (${names.status})` : ""}`
-                : "generated baseline (read-only)"}
-            </button>
-          </span>
-          <span className="wb-ctx-item">
-            Recording <button onClick={() => choose(0)}>{context.trajectory ? names.trajectory || context.trajectory.slice(0, 8) : "none"}</button>
-          </span>
-        </div>
+          {simple && (
+            <div className="wb-plain" role="note">
+              <b>In plain words</b> {PLAIN[active]}
+            </div>
+          )}
+          <AudienceContext.Provider value={audience}>
           {ready &&
             [...visited].map((i) => (
               <div key={i} hidden={active !== i}>
@@ -282,6 +310,7 @@ export default function App() {
                 </WorkspaceBoundary>
               </div>
             ))}
+          </AudienceContext.Provider>
         <footer className="wb-footer">
           HT GEN7 PhysAI Studio · Engineering-Grounded Physical AI{" "}
           <span>Source facts · explicit assumptions · measured simulation</span>

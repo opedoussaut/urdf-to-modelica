@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Boxes, Network, Workflow, Activity, Bot, ArrowRight, CheckCircle2, CircleAlert, PlayCircle } from "lucide-react";
 import { request, type Context } from "./studio";
+import ArmView from "./ArmView";
+import { PARTS, partOfJoint, type Part } from "./robotParts";
+import { useAudience } from "./audience";
 
 /** Plain-language entry point: what the studio is for, the five-step flow, and what is real vs experimental. */
 const FLOW = [
@@ -65,14 +68,18 @@ const GLOSSARY: [string, string][] = [
   ["Local AI", "A language model (NVIDIA Nemotron) running on this laptop; it explains, it never decides."],
 ];
 
-export default function Home({ context, open }: { context: Context; setContext: (c: Partial<Context>) => void; open: (i: number) => void }) {
-  const [ready, setReady] = useState<any>();
+export default function Home({ context, setContext, open }: { context: Context; setContext: (c: Partial<Context>) => void; open: (i: number) => void }) {
+  const [ready, setReady] = useState<any>(),
+    [hover, setHover] = useState<Part>();
+  const simple = useAudience() === "simple";
+  const shown = hover || partOfJoint(context.selected) || PARTS[1];
   useEffect(() => {
     request("/lab/readiness").then(setReady).catch(() => {});
   }, []);
   return (
     <div className="lab home">
       <section className="home-hero">
+        <div className="home-hero-text">
         <span className="lab-eyebrow">HT GEN7 PHYSAI STUDIO · ENGINEERING-GROUNDED PHYSICAL AI</span>
         <h1>Test robot changes on a trustworthy engineering model — before touching the hardware.</h1>
         <p>
@@ -87,6 +94,35 @@ export default function Home({ context, open }: { context: Context; setContext: 
           <button className="lab-ghost" onClick={() => open(0)}>
             Explore the robot
           </button>
+        </div>
+        </div>
+        <div className="home-arm">
+          <ArmView
+            focus={shown.joint}
+            mode="robot"
+            theme="light"
+            height={330}
+            onSelect={(joint) => setContext({ selected: joint, robot: "aloha_vx300s" })}
+            onHover={setHover}
+          />
+          <div className="home-part">
+            <span className="lab-eyebrow">{hover ? "THIS PART" : "IN FOCUS"} · ALOHA 2 FOLLOWER ARM</span>
+            <b>{shown.name}</b>
+            <span>{simple ? shown.plain : `${shown.plain} · ${shown.expert}`}</span>
+          </div>
+          <div className="home-parts" role="group" aria-label="Parts of the arm">
+            {PARTS.map((p) => (
+              <button
+                key={p.joint}
+                className={p.joint === shown.joint ? "on" : ""}
+                onMouseEnter={() => setHover(p)}
+                onMouseLeave={() => setHover(undefined)}
+                onClick={() => setContext({ selected: p.joint, robot: "aloha_vx300s" })}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
