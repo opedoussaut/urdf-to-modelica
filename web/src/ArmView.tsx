@@ -22,14 +22,26 @@ const ACCENT: Record<ArmMode, string> = {
   decide: "#f59e0b",
 };
 
+export type ArmRobot = "aloha_vx300s" | "aloha_wx250s";
+// Geometry prefix and /pose side for each arm (the follower shown is the right-hand ViperX).
+const SIDE: Record<ArmRobot, { prefix: string; pose: "follower" | "leader" }> = {
+  aloha_vx300s: { prefix: "follower_right/", pose: "follower" },
+  aloha_wx250s: { prefix: "leader/", pose: "leader" },
+};
+
 let cache: Promise<{ geometry: any[]; config: any; home: any }> | null = null;
 function loadBasics() {
   cache ??= Promise.all([api<any[]>("/api/geometry"), request("/configuration")]).then(async ([geometry, config]) => ({
-    geometry: geometry.filter((g) => g.link.startsWith("follower_right/")),
+    geometry,
     config,
-    home: (await request("/pose", "POST", { q: config.home })).follower,
+    home: await request("/pose", "POST", { q: config.home }),
   }));
   return cache;
+}
+/** Link names (no prefix) that have a mesh on the given arm. */
+export async function linksWithGeometry(robot: ArmRobot) {
+  const { geometry } = await loadBasics();
+  return new Set(geometry.filter((g) => g.link.startsWith(SIDE[robot].prefix)).map((g) => g.link.split("/")[1]));
 }
 
 export default function ArmView({
@@ -41,7 +53,17 @@ export default function ArmView({
   autoRotate = true,
   onSelect,
   onHover,
+  robot = "aloha_vx300s",
+  links,
+  secondary,
+  onPickLink,
 }: {
+  robot?: ArmRobot;
+  /** Explicit highlight (link names without prefix); overrides the focus joint. */
+  links?: string[];
+  /** Lighter highlight, e.g. the parent link of a selected joint. */
+  secondary?: string[];
+  onPickLink?: (link: string) => void;
   focus?: string;
   mode?: ArmMode;
   theme?: "light" | "dark";
@@ -52,10 +74,11 @@ export default function ArmView({
   onHover?: (part?: Part) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
-  const props = useRef({ focus, mode, onSelect, onHover });
-  props.current = { focus, mode, onSelect, onHover };
+  const props = useRef({ focus, mode, onSelect, onHover, links, secondary, onPickLink });
+  props.current = { focus, mode, onSelect, onHover, links, secondary, onPickLink };
   const [failed, setFailed] = useState("");
   const [hover, setHover] = useState<Part>();
+  const [hoverLink, setHoverLink] = useState<string>();
 
   useEffect(() => {
     const el = host.current!;
@@ -88,6 +111,7 @@ export default function ArmView({
     controls.enableDamping = true;
     const base = new THREE.MeshStandardMaterial({ color: theme === "dark" ? 0x9fb3cc : 0x8b9bb0, metalness: 0.35, roughness: 0.45 });
     const focusMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, metalness: 0.2, roughness: 0.35, emissive: 0x1d4ed8, emissiveIntensity: 0.35 });
+    const secondMat = new THREE.MeshStandardMaterial({ color: 0x93c5fd, metalness: 0.2, roughness: 0.4, emissive: 0x1d4ed8, emissiveIntensity: 0.08 });
     const hoverMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.1, roughness: 0.4, emissive: 0x64748b, emissiveIntensity: 0.25 });
     const wire = new THREE.MeshBasicMaterial({ color: 0x7dd3fc, wireframe: true, transparent: true, opacity: 0.35 });
     const groups = new Map<string, THREE.Group>();
@@ -126,9 +150,10 @@ export default function ArmView({
       controls.update();
     };
     loadBasics()
-      .then(({ geometry, home }) => {
+      .then(({ geometry: all, home }) => {
         if (disposed) return;
-        poses = home;
+        const geometry = all.filter((g) => g.link.startsWith(SIDE[robot].prefix));
+        poses = home[SIDE[robot].pose];
         let pending = geometry.length;
         geometry.forEach((item) => {
           const group = new THREE.Group();
@@ -179,7 +204,7 @@ export default function ArmView({
         Array.from({ length: 16 }, (_, k) => {
           const q = [...config.home];
           q[i] += 0.32 * Math.sin((2 * Math.PI * k) / 16);
-          return request("/pose", "POST", { q }).then((p) => p.follower).catch(() => null);
+          return request("/pose", "POST", { q }).then((p) => p[SIDE[robot].pose]).catch(() => null);
         }),
       );
       if (swingJoint === joint) swing = frames.filter(Boolean);
@@ -198,20 +223,25 @@ export default function ArmView({
     const onMove = (e: PointerEvent) => {
       const link = pick(e);
       const part = partOfLink(link);
-      hovered = part ? link : undefined;
-      renderer.domElement.style.cursor = part && props.current.onSelect ? "pointer" : "grab";
+      const pickable = !!link && !!props.current.onPickLink;
+      hovered = part || pickable ? link : undefined;
+      renderer.domElement.style.cursor = (part && props.current.onSelect) || pickable ? "pointer" : "grab";
       setHover(part);
+      setHoverLink(pickable ? link!.split("/")[1] : undefined);
       props.current.onHover?.(part);
     };
     const onLeave = () => {
       hovered = undefined;
       setHover(undefined);
+      setHoverLink(undefined);
       props.current.onHover?.(undefined);
     };
     const onDown = () => (downAt = performance.now());
     const onUp = (e: PointerEvent) => {
       if (performance.now() - downAt > 250) return; // a drag, not a click
-      const part = partOfLink(pick(e));
+      const link = pick(e);
+      if (link) props.current.onPickLink?.(link.split("/")[1]);
+      const part = partOfLink(link);
       if (part) props.current.onSelect?.(part.joint);
     };
     if (interactive) {
@@ -230,7 +260,8 @@ export default function ArmView({
     });
     resize.observe(el);
 
-    let lastFocus = "",
+    let lastLinks = "",
+      lastFocus = "",
       lastMode = "",
       lastHover: string | undefined,
       t0 = performance.now();
@@ -246,23 +277,28 @@ export default function ArmView({
         place(poses);
       }
       if (m === "simulate" && swing.length) place(swing[Math.floor(((performance.now() - t0) / 90) % swing.length)]);
-      if (f !== lastFocus || m !== lastMode || hovered !== lastHover) {
+      const { links: L, secondary: S } = props.current;
+      const linkKey = (L || []).join(",") + "|" + (S || []).join(",");
+      if (f !== lastFocus || m !== lastMode || hovered !== lastHover || linkKey !== lastLinks) {
         focusMat.color.set(ACCENT[m]);
         focusMat.emissive.set(ACCENT[m]);
         for (const [link, g] of groups) {
           const name = link.split("/")[1];
-          const isFocus =
-            !!part && (name === part.link || (part.joint === "left_finger" && ["left_finger_link", "right_finger_link"].includes(name)));
+          const isFocus = L
+            ? L.includes(name)
+            : !!part && (name === part.link || (part.joint === "left_finger" && ["left_finger_link", "right_finger_link"].includes(name)));
+          const isSecond = !isFocus && !!S?.includes(name);
           const isHover = hovered === link && !isFocus;
           g.traverse((o) => {
             if (!(o instanceof THREE.Mesh)) return;
             if (o.userData.overlay) o.visible = m === "model";
-            else o.material = isFocus ? focusMat : isHover ? hoverMat : base;
+            else o.material = isFocus ? focusMat : isHover ? hoverMat : isSecond ? secondMat : base;
           });
         }
         lastFocus = f || "";
         lastMode = m;
         lastHover = hovered;
+        lastLinks = linkKey;
       }
       controls.update();
       renderer.render(scene, camera);
@@ -278,19 +314,19 @@ export default function ArmView({
       renderer.domElement.removeEventListener("pointerdown", onDown);
       renderer.domElement.removeEventListener("pointerup", onUp);
       scene.traverse((o) => o instanceof THREE.Mesh && o.geometry.dispose());
-      [base, focusMat, hoverMat, wire].forEach((m) => m.dispose());
+      [base, focusMat, hoverMat, secondMat, wire].forEach((m) => m.dispose());
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [theme, interactive, autoRotate]);
+  }, [theme, interactive, autoRotate, robot]);
 
   return (
     <div className={"arm-view " + theme} style={{ height }} ref={host}>
       {failed && <p className="arm-failed">{failed}</p>}
-      {hover && (
+      {(hover || hoverLink) && (
         <div className="arm-tip">
-          <b>{hover.name}</b>
-          <span>{hover.plain}</span>
+          <b>{hover ? hover.name : hoverLink}</b>
+          <span>{hoverLink ? `${hover ? hoverLink + " · " : ""}click to select it in the model` : hover!.plain}</span>
         </div>
       )}
     </div>

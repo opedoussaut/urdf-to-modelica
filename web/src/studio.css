@@ -1561,3 +1561,8 @@
 .wb-app .wb-zoom-tools button { padding: 3px 9px; min-width: 28px; background: #ffffff; border-color: transparent; font-size: 13px; }
 .wb-app .wb-zoom-tools button:hover { background: #eef2f7; border-color: #dfe5ee; }
 .wb-zoom-tools span { font-size: 11px; color: #64748b; padding: 0 6px; min-width: 44px; text-align: right; }
+
+/* Model editor: 3D arm synced with the selected component */
+.wb-model-arm { margin: -4px 0 14px; padding-bottom: 12px; border-bottom: 1px solid #dfe5ee; }
+.wb-model-arm .arm-view { border-radius: 10px; background: radial-gradient(ellipse at 50% 70%, #eef3fb 0%, #f8fafc 70%); border: 1px solid #e3e9f1; }
+.wb-model-arm-note { margin: 8px 2px 0; font-size: 12px; line-height: 1.45; color: #475569; }

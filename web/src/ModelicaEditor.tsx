@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { request, waitJob, message, type Doc, type Context } from "./studio";
 import { useAudience } from "./audience";
+import ArmView, { linksWithGeometry, type ArmRobot } from "./ArmView";
+import { partOfLink } from "./robotParts";
 
 // Workspaces created to verify features (round trips, AI-proposal flow). Hidden in Simple mode, tagged in Expert.
 const isTestModel = (m: Doc) => /\b(test|verification|smoke|debug)\b/i.test(m.name);
@@ -95,6 +97,46 @@ export default function ModelicaEditor({ context, setContext }: Props) {
   const [modelItems,setModelItems]=useState<Doc[]>([]);
   const simple = useAudience() === "simple";
   const shownModels = modelItems.filter(m => !simple || !isTestModel(m) || m.id === workspace?.id);
+  // 3D arm synced with the model: which arm the open file describes, its URDF joints and meshed links.
+  const armFile = /^Arms\/AlohaWX250s/.test(context.file) ? "aloha_wx250s" : /^Arms\/AlohaVX300s/.test(context.file) ? "aloha_vx300s" : null;
+  const armRobot: ArmRobot = armFile || (context.robot === "aloha_wx250s" ? "aloha_wx250s" : "aloha_vx300s");
+  const [armConfig, setArmConfig] = useState<any>(),
+    [meshed, setMeshed] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    request("/configuration").then(setArmConfig).catch(() => {});
+  }, []);
+  useEffect(() => {
+    linksWithGeometry(armRobot).then(setMeshed).catch(() => {});
+  }, [armRobot]);
+  // Selected component -> highlighted links: a link is itself; a joint is its moving (child) link, parent shaded.
+  const urdfJoints: any[] = armConfig?.[armRobot === "aloha_wx250s" ? "leader" : "follower"]?.joints || [];
+  const armSel = (() => {
+    if (!armFile || !selected) return null;
+    if (String(selected.type).endsWith("RigidLink"))
+      return { links: [selected.name], parent: undefined as string | undefined, joint: urdfJoints.find((j) => j.child === selected.name)?.name };
+    const j = urdfJoints.find((j) => "j_" + j.name === selected.name);
+    return j ? { links: [j.child], parent: j.parent as string | undefined, joint: j.name as string } : null;
+  })();
+  const armLinks = armSel ? (armSel.links.some((l) => meshed.has(l)) ? armSel.links : armSel.parent ? [armSel.parent] : []) : undefined;
+  const armNote = !armFile
+    ? "This file is not an arm description; the arm shows the joint in focus."
+    : !selected
+      ? "Click a component in the model, or a part of the arm."
+      : !armSel
+        ? `${selected.name} has no place on the arm (e.g. a source block or sensor).`
+        : !armSel.links.some((l) => meshed.has(l))
+          ? `${armSel.links[0]} is a massless frame without geometry${armSel.parent ? ` — shown at its parent ${armSel.parent}` : ""}.`
+          : String(selected.type).endsWith("RigidLink")
+            ? `${selected.name}${partOfLink(armSel.links[0]) ? " · " + partOfLink(armSel.links[0])!.name : ""}`
+            : `${selected.name} moves ${armSel.links[0]} relative to ${armSel.parent} (lighter)`;
+  /** Arm click -> model component: first the joint that moves the part, a second click the link itself. */
+  const pickFromArm = (link: string) => {
+    if (!armFile || !source) return;
+    const joint = urdfJoints.find((j) => j.child === link)?.name;
+    const jointName = joint && source.components.some((c: any) => c.name === "j_" + joint) ? "j_" + joint : undefined;
+    const target = jointName && selected?.name !== jointName ? jointName : source.components.some((c: any) => c.name === link) ? link : jointName;
+    if (target) selection.current(target);
+  };
   const host = useRef<HTMLDivElement>(null),
     editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null),
     diffEditor = useRef<monaco.editor.IStandaloneDiffEditor | null>(null),
@@ -772,6 +814,25 @@ export default function ModelicaEditor({ context, setContext }: Props) {
           )}
         </section>
         <aside className="wb-card wb-inspector">
+          <div className="wb-model-arm">
+            <div className="wb-panel-heading">
+              <h2>On the robot</h2>
+              <span>{armRobot === "aloha_wx250s" ? "LEADER · WX250S" : "FOLLOWER · VX300S"}</span>
+            </div>
+            <ArmView
+              robot={armRobot}
+              focus={context.selected}
+              links={armLinks}
+              secondary={armSel?.parent && armLinks?.[0] !== armSel.parent ? [armSel.parent] : undefined}
+              mode="robot"
+              theme="light"
+              height={210}
+              autoRotate={false}
+              onPickLink={armFile ? pickFromArm : undefined}
+              onSelect={armFile ? undefined : (joint) => setContext({ selected: joint, robot: armRobot })}
+            />
+            <p className="wb-model-arm-note">{armNote}</p>
+          </div>
           <div className="wb-panel-heading">
             <h2>Parameter inspector</h2>
             <span>SOURCE VALUES</span>
