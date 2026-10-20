@@ -168,6 +168,25 @@ export default function LeaderFollower({
         })
         .catch((e) => setError(message(e)));
   }, [context.trajectory, !!config]);
+  // Recording deselected elsewhere (e.g. Home "Explore the robot"): return to a clean live view at home.
+  useEffect(() => {
+    if (context.trajectory || recording || !draft) return;
+    setPlaying(false);
+    followerRow.current = null;
+    setDraft(undefined);
+    setSimulation(undefined);
+    setTaskResult(undefined);
+    setAttemptTask(undefined);
+    setSource("live");
+    setTime(0);
+    if (config) {
+      goal.current = [...config.home];
+      current.current = [...config.home];
+      setQ(config.home);
+    }
+    if (scenario) setCube(initialCube(scenario));
+    lifted.current = false;
+  }, [context.trajectory]);
   // Task metrics on the OpenModelica follower response of the selected run (same declared Level-1 rule).
   useEffect(() => {
     setSimTask(undefined);
@@ -647,7 +666,7 @@ export default function LeaderFollower({
     : playing
       ? `▶ REPLAY · ${simulation && source === "replay" ? "follower = OpenModelica result" : "kinematic"} · ${time.toFixed(2)} s`
       : source === "replay" && draft
-        ? `${draft.reference_space === "follower_joints" ? "FOLLOWER ATTEMPT · leader parked" : "SAVED RECORDING"} · ${simulation ? "OpenModelica follower selected" : "kinematic replay"} · press Play`
+        ? `${draft.reference_space === "follower_joints" ? "FOLLOWER ATTEMPT · leader shown faint (it demonstrated this path in the same space)" : "SAVED RECORDING"} · ${simulation ? "OpenModelica follower selected" : "kinematic replay"} · press Play`
         : mode === "joint"
           ? `MOVE LEADER ARM${ikWorking ? " · solving IK…" : dragInfo ? " · " + dragInfo : ""}`
           : mode === "ee"
@@ -816,6 +835,7 @@ export default function LeaderFollower({
             scene={shown && scenario ? sceneToWorld(sceneFor(scenario, shown.cube, shown.attached), scenario, lay) : undefined}
             status={status}
             help={help}
+            ghostLeader={source === "replay" && draft?.reference_space === "follower_joints"}
           />
           <div className="wb-record-bar">
             <button className={recording ? "wb-danger" : ""} onClick={toggleRecording}>

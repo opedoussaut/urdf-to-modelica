@@ -1552,3 +1552,12 @@
 .lab .home-parts button { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #fff; border: 1px solid #c9d3e0; color: #334459; }
 .lab .home-parts button.on { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
 @media (max-width: 1200px) { .home .home-hero { grid-template-columns: 1fr; } }
+
+/* zoomable native annotation preview */
+.wb-zoom { position: relative; }
+.wb-zoom > svg { display: block; width: 100%; height: 68vh; min-height: 420px; background: #fbfcfe; border: 1px solid #dfe5ee; border-radius: 10px; cursor: grab; touch-action: none; }
+.wb-zoom > svg:active { cursor: grabbing; }
+.wb-zoom-tools { position: absolute; top: 10px; right: 10px; display: flex; align-items: center; gap: 4px; background: #ffffff; border: 1px solid #dfe5ee; border-radius: 9px; padding: 4px; box-shadow: 0 2px 8px rgba(15, 29, 51, 0.08); z-index: 1; }
+.wb-app .wb-zoom-tools button { padding: 3px 9px; min-width: 28px; background: #ffffff; border-color: transparent; font-size: 13px; }
+.wb-app .wb-zoom-tools button:hover { background: #eef2f7; border-color: #dfe5ee; }
+.wb-zoom-tools span { font-size: 11px; color: #64748b; padding: 0 6px; min-width: 44px; text-align: right; }

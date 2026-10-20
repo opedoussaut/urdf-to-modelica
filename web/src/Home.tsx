@@ -91,7 +91,14 @@ export default function Home({ context, setContext, open }: { context: Context; 
           <button className="lab-primary" onClick={() => open(4)}>
             <PlayCircle size={16} /> Start the guided demo (5 min)
           </button>
-          <button className="lab-ghost" onClick={() => open(0)}>
+          <button
+            className="lab-ghost"
+            onClick={() => {
+              // Explore = a clean live arm, not the last recording or simulation (they stay in the Robot page lists).
+              setContext({ trajectory: undefined, run: undefined });
+              open(0);
+            }}
+          >
             Explore the robot
           </button>
         </div>

@@ -21,6 +21,10 @@ import {
   FileCode2,
 } from "lucide-react";
 import { request, waitJob, message, type Doc, type Context } from "./studio";
+import { useAudience } from "./audience";
+
+// Workspaces created to verify features (round trips, AI-proposal flow). Hidden in Simple mode, tagged in Expert.
+const isTestModel = (m: Doc) => /\b(test|verification|smoke|debug)\b/i.test(m.name);
 (globalThis as any).MonacoEnvironment = { getWorker: () => new EditorWorker() };
 monaco.languages.register({ id: "modelica" });
 monaco.languages.setMonarchTokensProvider("modelica", {
@@ -89,6 +93,8 @@ export default function ModelicaEditor({ context, setContext }: Props) {
     [className, setClassName] = useState("ALOHA2.Experiments.RightArmReach"),
     [stopTime, setStopTime] = useState(9);
   const [modelItems,setModelItems]=useState<Doc[]>([]);
+  const simple = useAudience() === "simple";
+  const shownModels = modelItems.filter(m => !simple || !isTestModel(m) || m.id === workspace?.id);
   const host = useRef<HTMLDivElement>(null),
     editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null),
     diffEditor = useRef<monaco.editor.IStandaloneDiffEditor | null>(null),
@@ -501,21 +507,24 @@ export default function ModelicaEditor({ context, setContext }: Props) {
             Versioned source, physical structure and native OMEdit round trips.
           </p>
         </div>
-        <button
-          className="wb-primary"
-          disabled={!workspace || !!busy}
-          onClick={() => action("open")}
-        >
-          <ExternalLink size={15} />
-          Open in OMEdit
-        </button>
+        {!simple && (
+          <button
+            className="wb-primary"
+            disabled={!workspace || !!busy}
+            onClick={() => action("open")}
+            title="Opens this working copy in the OpenModelica desktop editor on this computer"
+          >
+            <ExternalLink size={15} />
+            Open in OMEdit
+          </button>
+        )}
       </div>
       <div className="wb-toolbar wb-card">
-        <span className="wb-badge">BASELINE PROTECTED</span>
+        <span className="wb-badge" title="The generated baseline is read-only; you always edit a working copy">{simple ? "ORIGINAL KEPT SAFE" : "BASELINE PROTECTED"}</span>
         <select aria-label="Engineering model workspace" value={workspace?.id||""} onChange={e=>{
           if(dirty){setError("Save or revert unsaved source before selecting another model.");return;}
           load(e.target.value,context.file).catch(err=>setError(message(err)));
-        }}><option value="" disabled>Select model…</option>{modelItems.map(m=><option key={m.id} value={m.id}>{m.name} · {m.id.slice(0,8)}</option>)}</select>
+        }}><option value="" disabled>Select model…</option>{shownModels.map(m=><option key={m.id} value={m.id} title={"Workspace "+m.id}>{simple ? m.name : `${m.name} · ${m.id.slice(0,8)}${isTestModel(m) ? " · test" : ""}`}</option>)}</select>
         <button disabled={!workspace||!!busy||dirty} onClick={()=>action("engineering_variant")}>Create engineering variant</button>
         <span className="wb-mono">
           Working {workspace?.data.head?.slice(0, 8) || "loading"}{" "}

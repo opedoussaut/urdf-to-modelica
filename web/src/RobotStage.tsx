@@ -16,6 +16,7 @@ type Props = {
   scene?: SceneState;
   status?: string;
   help?: string;
+  ghostLeader?: boolean; // leader parked and not part of what is shown (follower attempt replay): draw it faint
 };
 /** Task objects in STUDIO_DISPLAY_WORLD (metres). Convert scenario-frame points with workspaceFrames first. */
 export type SceneState = {
@@ -110,6 +111,7 @@ export default function RobotStage(props: Props) {
     sceneGroup.visible = false;
     scene.add(sceneGroup);
     const highlight = new THREE.MeshStandardMaterial({ color: "#5eead4", emissive: "#0d9488", emissiveIntensity: 0.9 });
+    const ghost = new THREE.MeshStandardMaterial({ color: "#0D9488", transparent: true, opacity: 0.12, depthWrite: false });
     const objects = new Map<string, THREE.Group>(),
       materials = [
         new THREE.MeshStandardMaterial({
@@ -240,7 +242,7 @@ export default function RobotStage(props: Props) {
       } else {
         const hit = ray
           .intersectObjects([...objects.values()], true)
-          .find((h) => h.object.parent?.visible);
+          .find((h) => h.object.parent?.visible && !(p.ghostLeader && h.object.userData.link?.startsWith("leader/")));
         if (hit) {
           p.onSelect(hit.object.userData.link);
           dragging =
@@ -331,11 +333,12 @@ export default function RobotStage(props: Props) {
         cubeMaterial.emissive.set(sc.attached ? "#7c4a03" : "#5b3600");
       }
       for (const [name, group] of objects) {
-        const isSelected = name === p.selected && name.startsWith("leader/") && p.mode !== "orbit";
+        const isGhost = !!p.ghostLeader && name.startsWith("leader/");
+        const isSelected = !isGhost && name === p.selected && name.startsWith("leader/") && p.mode !== "orbit";
         group.traverse((o) => {
           if (o instanceof THREE.Mesh) {
             o.userData.base ??= o.material;
-            o.material = isSelected ? highlight : o.userData.base;
+            o.material = isGhost ? ghost : isSelected ? highlight : o.userData.base;
           }
         });
       }
@@ -381,6 +384,7 @@ export default function RobotStage(props: Props) {
         }
       });
       materials.forEach((m) => m.dispose());
+      ghost.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
