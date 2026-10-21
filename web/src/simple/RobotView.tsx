@@ -80,6 +80,7 @@ export default function RobotView({
   autoRotate = false,
   moving = false,
   showCom = false,
+  speed = 0.25,
   height = 360,
   onHover,
   onInfo,
@@ -90,6 +91,7 @@ export default function RobotView({
   autoRotate?: boolean;
   moving?: boolean;
   showCom?: boolean;
+  speed?: number;
   height?: number;
   onHover?: (h: Hover) => void;
   onInfo?: (r: Robot3D, loaded: { meshes: number; total: number }) => void;
@@ -97,6 +99,8 @@ export default function RobotView({
   const host = useRef<HTMLDivElement>(null);
   const movingRef = useRef(moving);
   movingRef.current = moving;
+  const speedRef = useRef(speed);
+  speedRef.current = speed;
   const showComRef = useRef(showCom);
   showComRef.current = showCom;
   const hoverRef = useRef(onHover);
@@ -320,11 +324,16 @@ export default function RobotView({
       })
       .catch(() => !disposed && setState("error"));
 
-    const t0 = performance.now();
+    // test time advances at the chosen speed (1 = the real excitation, where the 43-joint G1 reaches ~2.4 Hz)
+    let last = performance.now(),
+      testTime = 0;
     let wasMoving = false;
     const loop = () => {
       raf = requestAnimationFrame(loop);
-      if (movingRef.current) pose(sweep(joints, (performance.now() - t0) / 1000));
+      const nowMs = performance.now();
+      if (movingRef.current) testTime += ((nowMs - last) / 1000) * speedRef.current;
+      last = nowMs;
+      if (movingRef.current) pose(sweep(joints, testTime));
       else if (wasMoving) pose(rest(joints));
       wasMoving = movingRef.current;
       updateCom();

@@ -577,6 +577,7 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
 function RobotStage({ source }: { source: Source }) {
   const [moving, setMoving] = useState(false),
     [showCom, setShowCom] = useState(false),
+    [speed, setSpeed] = useState(0.25),
     [hover, setHover] = useState<Hover>(null),
     [meshInfo, setMeshInfo] = useState("");
   useEffect(() => {
@@ -592,6 +593,7 @@ function RobotStage({ source }: { source: Source }) {
           interactive
           moving={moving}
           showCom={showCom}
+          speed={speed}
           height={420}
           onHover={setHover}
           onInfo={(_, l) => setMeshInfo(l.total ? `${l.meshes}/${l.total} part shapes loaded from the maker's files` : "No part shapes in this file: skeleton view")}
@@ -619,6 +621,18 @@ function RobotStage({ source }: { source: Source }) {
         <button className={"btn" + (moving ? "" : " primary")} onClick={() => setMoving((m) => !m)}>
           {moving ? <Pause size={15} /> : <Move3d size={15} />} {moving ? "Stop" : "Move the joints"}
         </button>
+        <div className="sx-speed" role="group" aria-label="Motion speed">
+          <span>Speed</span>
+          {[
+            [0.25, "¼ slow motion"],
+            [0.5, "½"],
+            [1, "1× real test"],
+          ].map(([v, l]) => (
+            <button key={v} className={speed === v ? "on" : ""} onClick={() => setSpeed(v as number)}>
+              {l}
+            </button>
+          ))}
+        </div>
         <label className="sx-check">
           <input type="checkbox" checked={showCom} onChange={(e) => setShowCom(e.target.checked)} /> Show the centre of mass
         </label>
@@ -629,7 +643,7 @@ function RobotStage({ source }: { source: Source }) {
           </small>
         )}
         <small className="sx-muted">
-          Each joint swings through most of its range, as written in the file. This is exactly the motion used later to test the converted models (geometry and torque checks).
+          Each joint swings through most of its range, as written in the file. At 1× this is exactly the motion used later to test the converted models (geometry and torque checks); slow motion makes it easier to follow.
         </small>
         <dl>
           <dt>Parts · moving joints</dt>
