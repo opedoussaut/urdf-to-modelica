@@ -141,7 +141,7 @@ def test_ai_methods_run_once_per_model(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "ACTIVE", tmp_path / "active.json")
     calls = []
 
-    def fake_llm(urdf, d, rag, score_fn, model=None, log=print, phase=None):
+    def fake_llm(urdf, d, rag, score_fn, model=None, log=print, phase=None, stream=None):
         calls.append(("llm_rag" if rag else "llm", model, d.name))
         return {"mode": "llm_rag" if rag else "llm", "llm_model": model, "score": score.finish({"produced": False})}
 
