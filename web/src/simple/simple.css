@@ -252,3 +252,5 @@
 .sx-live-checks em { flex-basis: 100%; font-size: 12px; color: var(--accent); }
 .sx-spin { animation: sx-spin 1s linear infinite; }
 @keyframes sx-spin { to { transform: rotate(360deg); } }
+.sx-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.sx-com-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #ea580c; margin-right: 3px; }

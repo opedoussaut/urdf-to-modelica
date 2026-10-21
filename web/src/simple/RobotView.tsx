@@ -8,7 +8,7 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
  * Parts without a mesh (or uploaded URDFs, which come without meshes) are drawn as a skeleton of joints and bars. */
 
 type Visual = { mesh: number | null; xyz: number[]; rpy: number[]; scale: number[]; rgba: number[] | null };
-type Link = { mass: number | null; placeholder: boolean; visuals: Visual[] };
+type Link = { mass: number | null; placeholder: boolean; com: number[] | null; visuals: Visual[] };
 type Joint = {
   name: string;
   type: string;
@@ -22,7 +22,7 @@ type Joint = {
   mimic: { joint: string; multiplier: number; offset: number } | null;
 };
 export type Robot3D = { source: string; robot: string; root: string; links: Record<string, Link>; joints: Joint[]; meshes: number; mesh_bytes: number };
-export type Hover = { link: string; mass: number | null; joint?: string; jointType?: string } | null;
+export type Hover = { link: string; mass: number | null; joint?: string; jointType?: string; shapeless?: boolean } | null;
 
 const describeCache = new Map<string, Promise<Robot3D>>();
 const geometryCache = new Map<string, Promise<THREE.BufferGeometry>>();
@@ -79,6 +79,7 @@ export default function RobotView({
   interactive = false,
   autoRotate = false,
   moving = false,
+  showCom = false,
   height = 360,
   onHover,
   onInfo,
@@ -88,6 +89,7 @@ export default function RobotView({
   interactive?: boolean;
   autoRotate?: boolean;
   moving?: boolean;
+  showCom?: boolean;
   height?: number;
   onHover?: (h: Hover) => void;
   onInfo?: (r: Robot3D, loaded: { meshes: number; total: number }) => void;
@@ -95,6 +97,8 @@ export default function RobotView({
   const host = useRef<HTMLDivElement>(null);
   const movingRef = useRef(moving);
   movingRef.current = moving;
+  const showComRef = useRef(showCom);
+  showComRef.current = showCom;
   const hoverRef = useRef(onHover);
   hoverRef.current = onHover;
   const infoRef = useRef(onInfo);
@@ -126,6 +130,7 @@ export default function RobotView({
     const pickable: THREE.Object3D[] = [];
     let joints: Joint[] = [];
     let raf = 0;
+    let updateCom = () => {};
 
     const resize = () => {
       const w = el.clientWidth || 300;
@@ -191,16 +196,18 @@ export default function RobotView({
         }
         world.add(linkGroup.get(r.root) ?? new THREE.Group());
 
-        // skeleton: a bar from each part's frame to each of its child joints, a dot at each joint
+        // skeleton: a bar from each part's frame to each of its child joints, a dot at each joint. On a robot drawn with
+        // its meshes, only parts without a shape (sensors, reference frames) get a small, muted dot.
         const reach = Math.max(0.05, ...r.joints.map((j) => Math.hypot(j.xyz[0], j.xyz[1], j.xyz[2])));
-        const dot = new THREE.SphereGeometry(Math.max(0.004, reach * 0.06), 12, 8);
-        const skeletonMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.6 });
-        const barMat = new THREE.LineBasicMaterial({ color: 0x64748b });
         const meshed = new Set(
           Object.entries(r.links)
             .filter(([, l]) => l.visuals.some((v) => v.mesh !== null))
             .map(([n]) => n),
         );
+        const withMeshes = meshed.size > 0;
+        const dot = new THREE.SphereGeometry(Math.max(0.003, reach * (withMeshes ? 0.012 : 0.06)), 12, 8);
+        const skeletonMat = new THREE.MeshStandardMaterial({ color: withMeshes ? 0x94a3b8 : 0x2563eb, roughness: 0.6 });
+        const barMat = new THREE.LineBasicMaterial({ color: 0x64748b });
         for (const j of r.joints) {
           const parent = linkGroup.get(j.parent);
           if (!parent || (meshed.has(j.parent) && meshed.has(j.child))) continue;
@@ -241,6 +248,43 @@ export default function RobotView({
             );
           }
         }
+        // whole-robot centre of mass: mass-weighted mean of each part's URDF centre of mass, placed with the current pose
+        const massive = Object.entries(r.links).filter(([, l]) => l.mass && l.com) as [string, Link & { mass: number; com: number[] }][];
+        const totalMass = massive.reduce((m, [, l]) => m + l.mass, 0);
+        if (totalMass > 0) {
+          const size = Math.max(0.01, reach * 0.05);
+          const marker = new THREE.Group();
+          const ball = new THREE.Mesh(
+            new THREE.SphereGeometry(size, 24, 16),
+            new THREE.MeshBasicMaterial({ color: 0xea580c, depthTest: false, transparent: true, opacity: 0.95 }),
+          );
+          const plumb = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+            new THREE.LineDashedMaterial({ color: 0xea580c, dashSize: size, gapSize: size * 0.6, depthTest: false }),
+          );
+          ball.renderOrder = plumb.renderOrder = 10;
+          marker.add(ball);
+          scene.add(marker, plumb);
+          const p = new THREE.Vector3(),
+            acc = new THREE.Vector3();
+          updateCom = () => {
+            marker.visible = plumb.visible = showComRef.current;
+            if (!showComRef.current) return;
+            world.updateMatrixWorld(true);
+            acc.set(0, 0, 0);
+            for (const [name, l] of massive) {
+              const g = linkGroup.get(name);
+              if (!g) continue;
+              acc.addScaledVector(g.localToWorld(p.set(l.com[0], l.com[1], l.com[2])), l.mass);
+            }
+            acc.divideScalar(totalMass);
+            marker.position.copy(acc);
+            // dashed plumb line down to the lowest point of the robot: shows whether the centre of mass is over the feet
+            const floor = new THREE.Box3().setFromObject(world).min.y;
+            plumb.geometry.setFromPoints([acc.clone(), new THREE.Vector3(acc.x, floor, acc.z)]);
+            plumb.computeLineDistances();
+          };
+        }
         pose(rest(joints));
         frame();
         setState("ready");
@@ -264,7 +308,9 @@ export default function RobotView({
             if (link === last) return;
             last = link;
             const pj = parentJoint.get(link);
-            hoverRef.current?.(link ? { link, mass: r.links[link]?.mass ?? null, joint: pj?.name, jointType: pj?.type } : null);
+            hoverRef.current?.(
+              link ? { link, mass: r.links[link]?.mass ?? null, joint: pj?.name, jointType: pj?.type, shapeless: withMeshes && !meshed.has(link) } : null,
+            );
           });
           renderer.domElement.addEventListener("pointerleave", () => {
             last = "";
@@ -281,6 +327,7 @@ export default function RobotView({
       if (movingRef.current) pose(sweep(joints, (performance.now() - t0) / 1000));
       else if (wasMoving) pose(rest(joints));
       wasMoving = movingRef.current;
+      updateCom();
       controls.update();
       renderer.render(scene, camera);
     };

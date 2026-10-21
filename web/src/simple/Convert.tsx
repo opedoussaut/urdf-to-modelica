@@ -570,6 +570,7 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
 /** Large interactive view of the chosen robot: orbit, zoom, sweep the joints, hover a part for its name and mass. */
 function RobotStage({ source }: { source: Source }) {
   const [moving, setMoving] = useState(false),
+    [showCom, setShowCom] = useState(false),
     [hover, setHover] = useState<Hover>(null),
     [meshInfo, setMeshInfo] = useState("");
   useEffect(() => {
@@ -584,6 +585,7 @@ function RobotStage({ source }: { source: Source }) {
           source={source.id}
           interactive
           moving={moving}
+          showCom={showCom}
           height={420}
           onHover={setHover}
           onInfo={(_, l) => setMeshInfo(l.total ? `${l.meshes}/${l.total} part shapes loaded from the maker's files` : "No part shapes in this file: skeleton view")}
@@ -593,6 +595,7 @@ function RobotStage({ source }: { source: Source }) {
             <>
               <b>{hover.link}</b>
               <span>{hover.mass != null ? `${hover.mass.toPrecision(3)} kg` : "no mass in the file"}</span>
+              {hover.shapeless && <span>no shape in the file: a sensor (IMU = motion sensor, camera, lidar) or a reference point</span>}
               {hover.joint && (
                 <span>
                   moved by joint <b>{hover.joint}</b> ({hover.jointType})
@@ -610,6 +613,15 @@ function RobotStage({ source }: { source: Source }) {
         <button className={"btn" + (moving ? "" : " primary")} onClick={() => setMoving((m) => !m)}>
           {moving ? <Pause size={15} /> : <Move3d size={15} />} {moving ? "Stop" : "Move the joints"}
         </button>
+        <label className="sx-check">
+          <input type="checkbox" checked={showCom} onChange={(e) => setShowCom(e.target.checked)} /> Show the centre of mass
+        </label>
+        {showCom && (
+          <small className="sx-muted">
+            <span className="sx-com-dot" /> The point where the robot's whole weight acts, computed from each part's mass and centre of mass written in
+            the file. The dashed line drops it to the lowest point: a standing robot stays balanced while this line falls between its feet.
+          </small>
+        )}
         <small className="sx-muted">
           Each joint swings through most of its range, as written in the file. This is exactly the motion used later to test the converted models (geometry and torque checks).
         </small>

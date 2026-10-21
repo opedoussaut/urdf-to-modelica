@@ -76,7 +76,8 @@ def describe(source: str) -> tuple[dict, list[Path]]:
                 idx = meshes.index(p)
             vis.append({"mesh": idx, "xyz": [float(x) for x in v.origin.xyz], "rpy": [float(x) for x in v.origin.rpy],
                         "scale": [float(x) for x in v.scale], "rgba": [float(x) for x in v.rgba] if v.rgba else None})
-        links[name] = {"mass": float(link.inertial.mass) if link.inertial else None, "placeholder": bool(link.is_placeholder), "visuals": vis}
+        links[name] = {"mass": float(link.inertial.mass) if link.inertial else None, "placeholder": bool(link.is_placeholder),
+                       "com": [float(x) for x in link.inertial.origin.xyz] if link.inertial else None, "visuals": vis}
     joints = [{"name": j.name, "type": j.type, "parent": j.parent, "child": j.child,
                "xyz": [float(x) for x in j.origin.xyz], "rpy": [float(x) for x in j.origin.rpy],
                "axis": [float(x) for x in j.axis],
