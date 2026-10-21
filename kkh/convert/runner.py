@@ -99,10 +99,15 @@ class Progress:
         m.update(phase=phase, phase_started=time.time(), attempt=attempt, attempts=attempts)
         self.write()
 
+    def checks(self, mode: str, items: list[dict], activity: str):
+        self.state["modes"][mode].update(checks=items, activity=activity)
+        self.write()
+
     def done(self, mode: str, r: dict):
         m = self.state["modes"][mode]
         m.update(status="done" if r["score"].get("produced") else "failed", finished=time.time(),
-                 passed=r["score"].get("passed"), phase=None)
+                 passed=r["score"].get("passed"), phase=None, activity=None,
+                 checks=score.live_checks(r["score"], {c["id"] for c in r["score"]["criteria"]}))
         self.write()
 
     def close(self):
@@ -150,15 +155,16 @@ def run_comparison(source: str, modes: list[str] | None = None, log=print, model
             d = root / safe_dir(m)
             d.mkdir()
             t = time.time()
+            live = lambda items, activity, m=m: progress.checks(m, items, activity)  # noqa: E731
             try:
                 if m == "urdfmodelica":
                     progress.phase(m, "converting")
                     r = urdfmodelica.convert(urdf, d)
                     progress.phase(m, "checking")
-                    r["score"] = score.score(urdf, r.get("package_file"), r.get("model"), d)
+                    r["score"] = score.score(urdf, r.get("package_file"), r.get("model"), d, on_step=live)
                 else:
                     r = llm.convert(urdf, d, rag=(base(m) == "llm_rag"), model=m.split(":", 1)[1],
-                                    score_fn=lambda f, model, w: score.score(urdf, f, model, w), log=log,
+                                    score_fn=lambda f, model, w, live=live: score.score(urdf, f, model, w, on_step=live), log=log,
                                     phase=lambda ph, a, n, m=m: progress.phase(m, ph, a, n))
                     r.setdefault("score", score.finish({"produced": False}))
             except Exception as exc:  # report the failure; never invent a result

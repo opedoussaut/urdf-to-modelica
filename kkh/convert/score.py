@@ -257,13 +257,41 @@ def _excite(omc, robot, urdf: Path, model: str, package_file: Path, work: Path) 
     return info, MatResult(sim.data["resultFile"])
 
 
-def score(urdf: Path, package_file: Path | None, model: str | None, work: Path) -> dict:
+GATES = ("produced", "loads", "checks", "simulates")
+
+
+def live_checks(s: dict, decided: set[str], running: str | None = None) -> list[dict]:
+    """The 8 checks as the page shows them while scoring: pass / fail for decided ones, running, waiting, or
+    not reached (an earlier gate failed)."""
+    out, blocked = [], False
+    for c in finish(dict(s))["criteria"]:
+        if c["id"] in decided:
+            state = "pass" if c["ok"] else "fail"
+        elif blocked:
+            state = "skipped"
+        else:
+            state = "running" if c["id"] == running else "pending"
+        out.append({"id": c["id"], "state": state, "detail": c.get("detail") if c["id"] in decided else None})
+        blocked = blocked or (c["id"] in GATES and state == "fail")
+    return out
+
+
+def score(urdf: Path, package_file: Path | None, model: str | None, work: Path, on_step=None) -> dict:
     """Load, check and simulate `model` from `package_file`, then compare with the URDF. When possible, a standard
     excitation (every joint through most of its range) replaces the model's own motion for the geometry and
-    dynamics checks; otherwise the model's own motion is used and flagged."""
+    dynamics checks; otherwise the model's own motion is used and flagged. on_step(checks, activity) reports progress live."""
     s: dict = {"produced": bool(package_file and Path(package_file).exists() and model)}
+    decided: set[str] = {"produced"}
+
+    def step(running: str | None, activity: str, *ids: str):
+        decided.update(ids)
+        if on_step:
+            on_step(live_checks(s, decided, running), activity)
+
     if not s["produced"]:
+        step(None, "No model file to test")
         return finish(s)
+    step("loads", "OpenModelica is reading the file")
     robot = load_urdf(urdf)
     omc = OMCService(work / "omc")
     t = time.time()
@@ -272,14 +300,18 @@ def score(urdf: Path, package_file: Path | None, model: str | None, work: Path) 
         s["loads"] = lr.ok
         s["load_messages"] = lr.messages[-1500:]
         if not lr.ok:
+            step(None, "OpenModelica could not read the file", "loads")
             return finish(s)
+        step("checks", "OpenModelica is counting equations and unknowns", "loads")
         chk = omc.check(model)
         s["checks"] = chk.ok
         s["equations"], s["variables"] = chk.data.get("equations"), chk.data.get("variables")
         s["balanced"] = bool(chk.data) and chk.data.get("equations") == chk.data.get("variables")
         s["check_messages"] = chk.messages[-1500:]
         if not chk.ok:
+            step(None, "OpenModelica rejected the model as incomplete", "checks")
             return finish(s)
+        step("simulates", f"OpenModelica is simulating {STOP_TIME:g} s", "checks")
         sim = omc.simulate(model, stop_time=STOP_TIME, intervals=100, timeout_s=120)
         s["simulates"] = sim.ok
         s["simulate_messages"] = sim.messages[-1500:]
@@ -289,16 +321,23 @@ def score(urdf: Path, package_file: Path | None, model: str | None, work: Path) 
             res = MatResult(sim.data["resultFile"])
             s.update(kinematic_match(res, robot))
             s["motion"] = "the model's own test motion"
+            step("kinematics", "Moving every joint through 80 % of its range (OpenModelica), then comparing each part with the robot file",
+                 "simulates", "coverage")
             info, res_ex = _excite(omc, robot, urdf, model, package_file, work)
             s["excitation"] = info
             if res_ex is not None:
                 s.update(kinematic_match(res_ex, robot))
                 s["motion"] = "standard excitation (every joint through 80 % of its range)"
                 res = res_ex
+            step("dynamics", "Computing the reference torques with MuJoCo and comparing joint by joint",
+                 "kinematics", "parameters")
             try:
                 s["dynamics"] = dynamics.compare(res, robot, urdf, s.get("joint_vars") or {})
             except Exception as exc:  # the reference could not be built for this URDF: say so, never guess
                 s["dynamics"] = {"checked": False, "reason": f"{type(exc).__name__}: {exc}"[:300]}
+            step(None, "All checks done", "dynamics")
+        else:
+            step(None, "The simulation failed", "simulates")
     finally:
         s["omc_seconds"] = round(time.time() - t, 2)
         try:

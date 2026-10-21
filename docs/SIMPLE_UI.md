@@ -14,8 +14,18 @@ Simulation of the converted models beyond the 2 s check comes later.
 
 ## Convert & compare
 
-Inputs: the pinned ALOHA arms (`aloha_vx300s` follower, `aloha_wx250s` leader) or an uploaded `.urdf` (≤ 300 kB,
-parsed before acceptance, stored by hash in `runs/convert/uploads/`). Uploads have no knowledge graph.
+Inputs (`kkh/convert/sources.py`): four pinned robots — **Unitree G1 EDU with Dex3-1 hands** (default; unitree_ros
+`g1_29dof_with_hand_rev_1_0.urdf`, BSD-3), **Berkeley Humanoid Lite** (CC-BY-SA-4.0), the ALOHA 2 **follower**
+(`aloha_vx300s`) and **leader** (`aloha_wx250s`) — or an uploaded `.urdf` (≤ 300 kB, parsed before acceptance, stored by
+hash in `runs/convert/uploads/`). The humanoids are pinned sparse checkouts (URDF + the meshes it references, listed in
+`config/public_sources.json` `sparse_files`). Only the ALOHA arms are in the knowledge graph so far.
+
+**3D view** (`kkh/convert/robot3d.py`, `web/src/simple/RobotView.tsx`): drawn from the same URDF that is converted —
+joint frames from URDF origins (rpy as Z·Y·X), motion about the URDF axis, mimic joints applied, the maker's STL meshes.
+`GET /api/convert/robot3d?source=` describes links/joints; `GET /api/convert/mesh?source=&i=&lod=` serves a mesh by index
+only (paths resolved server-side, never outside the repository). Card previews use `lod=low` (vertex clustering, cached
+in `runs/convert/mesh_cache/`, ~10 % of the size). "Move the joints" plays the scorer's standard excitation. Uploads,
+which come without meshes, are drawn as a skeleton.
 
 Modes (one isolated directory each, `runs/convert/<id>/<mode>/`):
 
@@ -56,7 +66,10 @@ API: `GET /api/convert/sources`, `POST /api/convert/upload` (JSON `{filename, co
 
 ## Scoring a converted model (eight checks, all measured)
 
-`kkh/convert/score.py`, ranking lexicographic, every check shown:
+`kkh/convert/score.py`, ranking lexicographic, every check shown. **Completion** = checks passed / 8, shown in %;
+colours follow the percentage (red < 50 %, amber 50–99 %, green only at 100 %), never the rank — the highest score
+of a run can still be red. While a run is in progress each check is reported live (`on_step` → `active.json`):
+running / passed / failed / not reached, with what OpenModelica or MuJoCo is doing.
 1–4. **Validity gates**: produced → loads → checks (equations = variables) → simulates (2 s).
 5. **Coverage**: URDF links / moving joints found (lenient names).
 6. **Geometry under motion** (`kinematics`): a **standard excitation** (`kkh/convert/excite.py`) drives every

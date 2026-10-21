@@ -398,3 +398,27 @@ def download(kind: str, what: str = "file", run: str = "", mode: str = "", mutat
         ]) + "\n")
     return Response(buf.getvalue(), media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="{tag}.zip"'})
+
+
+@router.get("/robot3d")
+def robot3d(source: str):
+    """Links, visuals and joints of a robot for the 3D view (meshes referenced by index)."""
+    from .robot3d import describe
+    try:
+        return describe(source)[0]
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+
+@router.get("/mesh")
+def mesh(source: str, i: int, lod: str = "full"):
+    """One visual mesh of a robot, by index into its URDF's resolved meshes (never by path); lod=low: light preview copy."""
+    from fastapi.responses import FileResponse
+    from .robot3d import describe, simplified
+    try:
+        _, meshes = describe(source)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    if not 0 <= i < len(meshes):
+        raise HTTPException(404, "Unknown mesh")
+    return FileResponse(simplified(meshes[i]) if lod == "low" else meshes[i], media_type="model/stl", headers={"Cache-Control": "max-age=86400"})

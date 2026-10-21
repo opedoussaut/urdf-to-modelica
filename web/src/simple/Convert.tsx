@@ -1,11 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, BookOpen, Check, CircleSlash, Clock, FileArchive, FileCode2, FileSearch, Trophy, Upload, Wrench, X } from "lucide-react";
+import { AlertTriangle, Bot, BookOpen, Check, CircleSlash, Clock, Loader2, FileArchive, FileCode2, FileSearch, Move3d, Pause, Trophy, Upload, Wrench, X } from "lucide-react";
 import { useAudience } from "../audience";
 import { message, waitJob, type Doc } from "../studio";
 import { baseOf, convert, keyLabel, MODE_ORDER, orderKeys, type LocalModel, type ModeId, type Report, type RunSummary } from "./api";
 import type { Target } from "./SimpleApp";
+import RobotView, { type Hover } from "./RobotView";
 
-type Source = { id: string; label: string; kind: string; links: number; joints: number; movable: number; mass_kg: number; bytes: number; graph?: boolean; provenance: string; sha256: string };
+type Source = {
+  id: string;
+  label: string;
+  kind: string;
+  links: number;
+  joints: number;
+  movable: number;
+  mimic?: number;
+  mass_kg: number;
+  bytes: number;
+  graph?: boolean;
+  provenance: string;
+  sha256: string;
+  what?: string;
+  sources?: string[];
+  license?: string;
+  repo?: string;
+  default?: boolean;
+};
 
 const MODE_ICON: Record<ModeId, typeof Bot> = { llm: Bot, llm_rag: BookOpen, urdfmodelica: Wrench };
 const MODE_NEEDS: Record<ModeId, string> = {
@@ -29,7 +48,7 @@ const CRITERION_HELP: Record<string, string> = {
 export default function Convert({ openUnderstand, learn }: { openUnderstand: (t: Target) => void; learn: () => void }) {
   const expert = useAudience() === "expert";
   const [sources, setSources] = useState<Source[]>([]),
-    [source, setSource] = useState("aloha_wx250s"),
+    [source, setSource] = useState(""),
     [modes, setModes] = useState<ModeId[]>(["llm", "llm_rag", "urdfmodelica"]),
     [busy, setBusy] = useState(false),
     [started, setStarted] = useState(0),
@@ -44,6 +63,7 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
     convert("/sources")
       .then((r) => {
         setSources(r.sources);
+        setSource((cur) => cur || r.sources.find((x: Source) => x.default)?.id || r.sources[0]?.id || "");
         setInstalled(r.models || []);
         setModels((cur) => (cur.length ? cur.filter((m) => r.models.some((x: LocalModel) => x.name === m)) : r.models.filter((x: LocalModel) => x.default).map((x: LocalModel) => x.name)));
       })
@@ -115,6 +135,8 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
     }
   };
   const chosen = sources.find((s) => s.id === source);
+  const pinned = sources.filter((s) => s.kind === "pinned"),
+    uploads = sources.filter((s) => s.kind !== "pinned");
   const elapsed = Math.round((now - started) / 1000);
 
   return (
@@ -134,23 +156,57 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
 
       <section className="sx-step">
         <h2>
-          <span className="sx-n">1</span> Choose the robot
+          <span className="sx-n">1</span> Choose a robot
         </h2>
+        <p className="sx-muted sx-intro">
+          Four robots described by public files from their makers. What you see is drawn from the very file that will be converted: every part, every
+          joint, where it sits and how it turns. That is what the physics model has to reproduce.
+        </p>
+        <div className="sx-robots">
+          {pinned.map((s) => (
+            <button key={s.id} className={"sx-source sx-robot" + (s.id === source ? " on" : "")} onClick={() => setSource(s.id)} disabled={busy}>
+              <RobotView source={s.id} lod="low" autoRotate height={170} />
+              <b>{s.label}</b>
+              <small>{s.what}</small>
+              <small>
+                {s.links} parts · {s.movable} moving joints · {s.mass_kg} kg
+              </small>
+              <small className="sx-tag">
+                {s.license} · {s.graph ? "knowledge graph available" : "not yet in the knowledge graph"}
+              </small>
+              {expert && <code>{s.sha256.slice(0, 16)}…</code>}
+            </button>
+          ))}
+        </div>
+        {chosen && <RobotStage source={chosen} />}
+      </section>
+
+      <section className="sx-step">
+        <h2>
+          <span className="sx-n">
+            <Upload size={14} />
+          </span>{" "}
+          Or upload your own URDF
+        </h2>
+        <p className="sx-muted sx-intro">
+          Any robot description file (.urdf, up to 300 kB). Meshes are not needed: the studio draws it as a skeleton of joints and bars, and the
+          conversion works from the numbers in the file.
+        </p>
         <div className="sx-sources">
-          {sources.map((s) => (
+          {uploads.map((s) => (
             <button key={s.id} className={"sx-source" + (s.id === source ? " on" : "")} onClick={() => setSource(s.id)} disabled={busy}>
               <b>{s.label}</b>
               <small>
                 {s.links} parts · {s.movable} moving joints · {s.mass_kg} kg
               </small>
-              <small className="sx-tag">{s.kind === "pinned" ? "Pinned public file · knowledge graph available" : "Your upload · no knowledge graph yet"}</small>
+              <small className="sx-tag">Your upload · no knowledge graph</small>
               {expert && <code>{s.sha256.slice(0, 16)}…</code>}
             </button>
           ))}
           <button className="sx-source sx-upload" onClick={() => file.current?.click()} disabled={busy}>
             <Upload size={18} />
             <b>Upload a URDF</b>
-            <small>Plain .urdf file, up to 300 kB. Meshes are not needed.</small>
+            <small>Plain .urdf file, up to 300 kB. Expand xacro files first.</small>
           </button>
           <input ref={file} type="file" accept=".urdf" hidden onChange={(e) => upload(e.target.files?.[0])} />
         </div>
@@ -237,8 +293,13 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
               <button key={r.id} onClick={() => openRun(r.id)} className={report?.id === r.id ? "on" : ""}>
                 <b>{r.source}</b>
                 <small>
-                  {new Date(r.started).toLocaleString()} · {r.finished ? "best: " + (r.ranking?.[0] ? keyLabel(r.ranking[0]) : "-") : "unfinished"}
+                  {new Date(r.started).toLocaleString()} · {r.finished ? "highest: " + (r.ranking?.[0] ? keyLabel(r.ranking[0]) : "-") : "unfinished"}
                 </small>
+                {r.ranking?.[0] && r.modes[r.ranking[0]] && (
+                  <span className={"sx-pill " + tone(Math.round((r.modes[r.ranking[0]].passed * 100) / 8))}>
+                    {Math.round((r.modes[r.ranking[0]].passed * 100) / 8)} %
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -248,7 +309,33 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
   );
 }
 
-type LiveMode = { status: "waiting" | "running" | "done" | "failed"; started?: number; finished?: number; phase?: string | null; phase_started?: number; attempt?: number; attempts?: number; passed?: number };
+type LiveCheck = { id: string; state: "pass" | "fail" | "running" | "pending" | "skipped"; detail?: string | null };
+type LiveMode = {
+  status: "waiting" | "running" | "done" | "failed";
+  started?: number;
+  finished?: number;
+  phase?: string | null;
+  phase_started?: number;
+  attempt?: number;
+  attempts?: number;
+  passed?: number;
+  checks?: LiveCheck[];
+  activity?: string | null;
+};
+
+/** Overall completion: share of the 8 checks passed. Colour follows the number, never the rank. */
+export const completion = (s: { passed?: number; criteria?: unknown[] }) => Math.round((100 * (s.passed || 0)) / (s.criteria?.length || 8));
+export const tone = (pct: number) => (pct >= 100 ? "good" : pct >= 50 ? "mid" : "bad");
+const SHORT: Record<string, string> = {
+  produced: "File produced",
+  loads: "Readable",
+  checks: "Complete",
+  simulates: "Runs",
+  coverage: "All parts present",
+  kinematics: "Geometry in motion",
+  parameters: "Axes, masses, inertias",
+  dynamics: "Torques vs MuJoCo",
+};
 type Live = { id?: string; source?: string; running: boolean; started?: number; now?: number; modes?: Record<string, LiveMode> };
 
 // Typical durations on this laptop (seconds), used only to move the bar inside a phase; phases and times are exact.
@@ -294,13 +381,31 @@ function LiveProgress({ live, polledAt, now }: { live: Live; polledAt: number; n
                 (PHASE[s.phase || ""] || s.phase) +
                   (baseOf(m) !== "urdfmodelica" && s.attempt ? ` · attempt ${s.attempt} of ${s.attempts} (stops early once the model runs)` : "") +
                   ` · ${fmt(inPhase)} in this step`}
-              {s.status === "done" && `Finished · ${s.passed} checks passed`}
+              {s.status === "done" && `Finished · ${s.passed} of 8 checks passed (${Math.round(((s.passed || 0) * 100) / 8)} %)`}
               {s.status === "failed" && "Finished · no usable file"}
             </small>
+            {s.checks && s.status !== "waiting" && (
+              <div className="sx-live-checks">
+                {s.checks.map((c) => (
+                  <span key={c.id} className={"sx-lc " + c.state} title={c.detail || undefined}>
+                    {c.state === "pass" && <Check size={13} />}
+                    {c.state === "fail" && <X size={13} />}
+                    {c.state === "running" && <Loader2 size={13} className="sx-spin" />}
+                    {c.state === "skipped" && <CircleSlash size={12} />}
+                    {c.state === "pending" && <i className="sx-lc-dot" />}
+                    {SHORT[c.id] || c.id}
+                  </span>
+                ))}
+                {s.status === "running" && s.activity && <em>{s.activity}</em>}
+              </div>
+            )}
           </div>
         );
       })}
-      <small className="sx-muted">Times are exact. Inside a step the bar is an estimate: the local AI does not report how far it has written.</small>
+      <small className="sx-muted">
+        Times and checks are live. Inside a step the bar is an estimate: the local AI does not report how far it has written. An AI method is
+        tested after each attempt, so its checks start again when it repairs its file.
+      </small>
     </div>
   );
 }
@@ -325,16 +430,22 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
         <span className="sx-n">3</span> Results · {report.source.label}
       </h2>
       {bestRes && (
-        <div className="sx-winner">
-          <Trophy size={22} />
+        <div className={"sx-winner " + tone(completion(bestRes.score))}>
+          <div className="sx-pct">{completion(bestRes.score)} %</div>
           <div>
             <b>
-              {bestTie.length ? `Tied: ${[best!, ...bestTie].map((m) => LABEL[m]).join(" and ")}` : `Best result: ${LABEL[best!]}`}
+              {completion(bestRes.score) >= 100 ? <Trophy size={17} /> : <AlertTriangle size={17} />}{" "}
+              {bestTie.length
+                ? `Tied highest score: ${[best!, ...bestTie].map((m) => LABEL[m]).join(" and ")}`
+                : completion(bestRes.score) >= 100
+                  ? `Passes every check: ${LABEL[best!]}`
+                  : `Highest score of this run: ${LABEL[best!]}`}
             </b>
             <p>{bestRes.verdict}</p>
             {bestRes.score.passed < bestRes.score.criteria.length && (
               <small>
-                Best is not the same as correct: it still fails {bestRes.score.criteria.length - bestRes.score.passed} of the {bestRes.score.criteria.length} checks below.
+                Highest is not the same as good: it passes {bestRes.score.passed} of the {bestRes.score.criteria.length} checks and fails{" "}
+                {bestRes.score.criteria.length - bestRes.score.passed}. Colours follow the percentage: red below 50 %, amber from 50 %, green only at 100 %.
               </small>
             )}
           </div>
@@ -347,7 +458,7 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
               <th>Check</th>
               {order.map((m) => (
                 <th key={m} className={m === best ? "best" : ""}>
-                  {LABEL[m]}
+                  <span className={"sx-pill " + tone(completion(report.modes[m].score))}>{completion(report.modes[m].score)} %</span> {LABEL[m]}
                   {m === best && <span className="sx-best">{bestTie.length ? "tied" : "best"}</span>}
                   {m !== best && tiedWith(m).length > 0 && !tiedWith(m).includes(best!) && <span className="sx-best sx-tied">tied</span>}
                 </th>
@@ -397,8 +508,10 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
         {order.map((m) => {
           const r = report.modes[m];
           return (
-            <div key={m} className={"sx-card" + (m === best ? " best" : "")}>
-              <b>{LABEL[m]}</b>
+            <div key={m} className={"sx-card " + tone(completion(r.score))}>
+              <b>
+                <span className={"sx-pill " + tone(completion(r.score))}>{completion(r.score)} %</span> {LABEL[m]}
+              </b>
               <p>{r.verdict}</p>
               {r.error && <p className="lab-error">{r.error}</p>}
               {expert && r.retrieved && r.retrieved.length > 0 && (
@@ -451,5 +564,89 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
         </div>
       </div>
     </section>
+  );
+}
+
+/** Large interactive view of the chosen robot: orbit, zoom, sweep the joints, hover a part for its name and mass. */
+function RobotStage({ source }: { source: Source }) {
+  const [moving, setMoving] = useState(false),
+    [hover, setHover] = useState<Hover>(null),
+    [meshInfo, setMeshInfo] = useState("");
+  useEffect(() => {
+    setMoving(false);
+    setHover(null);
+    setMeshInfo("");
+  }, [source.id]);
+  return (
+    <div className="sx-stage">
+      <div className="sx-stage-view">
+        <RobotView
+          source={source.id}
+          interactive
+          moving={moving}
+          height={420}
+          onHover={setHover}
+          onInfo={(_, l) => setMeshInfo(l.total ? `${l.meshes}/${l.total} part shapes loaded from the maker's files` : "No part shapes in this file: skeleton view")}
+        />
+        <div className="sx-stage-hover">
+          {hover ? (
+            <>
+              <b>{hover.link}</b>
+              <span>{hover.mass != null ? `${hover.mass.toPrecision(3)} kg` : "no mass in the file"}</span>
+              {hover.joint && (
+                <span>
+                  moved by joint <b>{hover.joint}</b> ({hover.jointType})
+                </span>
+              )}
+            </>
+          ) : (
+            <span>Point at a part to see its name, mass and joint · drag to turn · scroll to zoom</span>
+          )}
+        </div>
+      </div>
+      <div className="sx-stage-side">
+        <h3>{source.label}</h3>
+        {source.what && <p>{source.what}</p>}
+        <button className={"btn" + (moving ? "" : " primary")} onClick={() => setMoving((m) => !m)}>
+          {moving ? <Pause size={15} /> : <Move3d size={15} />} {moving ? "Stop" : "Move the joints"}
+        </button>
+        <small className="sx-muted">
+          Each joint swings through most of its range, as written in the file. This is exactly the motion used later to test the converted models (geometry and torque checks).
+        </small>
+        <dl>
+          <dt>Parts · moving joints</dt>
+          <dd>
+            {source.links} · {source.movable}
+            {source.mimic ? ` (${source.mimic} copy another joint)` : ""}
+          </dd>
+          <dt>Total mass in the file</dt>
+          <dd>{source.mass_kg} kg</dd>
+          {source.sources && (
+            <>
+              <dt>Sources</dt>
+              <dd>
+                <ul>
+                  {source.sources.map((x) => (
+                    <li key={x}>{x}</li>
+                  ))}
+                </ul>
+              </dd>
+            </>
+          )}
+          <dt>{source.license ? "Licence · pinned version" : "Origin"}</dt>
+          <dd>
+            {source.license && source.license + " · "}
+            {source.repo ? (
+              <a href={source.repo} target="_blank" rel="noreferrer">
+                {source.provenance}
+              </a>
+            ) : (
+              source.provenance
+            )}
+          </dd>
+        </dl>
+        {meshInfo && <small className="sx-muted">{meshInfo}</small>}
+      </div>
+    </div>
   );
 }

@@ -15,9 +15,33 @@ UPLOADS = RUNS / "uploads"
 MAX_UPLOAD = 300_000  # bytes
 
 PINNED = {
-    "aloha_vx300s": {"path": "data/urdf/aloha_vx300s.urdf", "label": "ViperX 300 S follower arm (ALOHA)",
+    "unitree_g1": {
+        "path": "third_party/unitree_ros/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf",
+        "label": "Unitree G1 EDU with Dex3-1 hands", "short": "Unitree G1", "default": True,
+        "what": "Bipedal humanoid with dexterous three-finger hands",
+        "sources": ["Unitree unitree_ros g1_description (official URDF g1_29dof_with_hand_rev_1_0)",
+                    "Unitree G1 product page and developer documentation"],
+        "license": "BSD-3-Clause", "repo": "https://github.com/unitreerobotics/unitree_ros",
+        "provenance": "unitree_ros @ 5994d4f (pinned, config/public_sources.json)", "graph": False},
+    "berkeley_humanoid_lite": {
+        "path": "third_party/berkeley_humanoid_lite_assets/data/robots/berkeley_humanoid/berkeley_humanoid_lite/urdf/berkeley_humanoid_lite.urdf",
+        "label": "Berkeley Humanoid Lite", "short": "Berkeley Humanoid Lite",
+        "what": "Open-source humanoid, about 0.8 m and 16 kg, 3D-printed cycloidal actuators",
+        "sources": ["Berkeley Humanoid Lite assets (URDF exported from the project's CAD)",
+                    "Project README joint table and motor configuration", "RSS 2025 paper (arXiv 2504.17249)"],
+        "license": "CC-BY-SA-4.0", "repo": "https://github.com/HybridRobotics/Berkeley-Humanoid-Lite-Assets",
+        "provenance": "Berkeley-Humanoid-Lite-Assets @ fc90fed (pinned, config/public_sources.json)", "graph": False},
+    "aloha_vx300s": {"path": "data/urdf/aloha_vx300s.urdf", "label": "ALOHA 2 follower arm (ViperX 300 S)", "short": "ALOHA follower",
+                     "what": "The arm that does the work in the ALOHA 2 bimanual workcell, with a two-finger gripper",
+                     "sources": ["Interbotix ALOHA xacro (aloha_vx300s), expanded by tools/expand_xacro.py",
+                                 "Trossen specification pages", "ALOHA 2 paper (arXiv 2405.02292)"],
+                     "license": "BSD-3-Clause", "repo": "https://github.com/Interbotix/interbotix_ros_manipulators",
                      "provenance": "Interbotix xacro, pinned commit, expanded by tools/expand_xacro.py", "graph": True},
-    "aloha_wx250s": {"path": "data/urdf/aloha_wx250s.urdf", "label": "WidowX 250 S leader arm (ALOHA)",
+    "aloha_wx250s": {"path": "data/urdf/aloha_wx250s.urdf", "label": "ALOHA 2 leader arm (WidowX 250 S)", "short": "ALOHA leader",
+                     "what": "The arm a person moves by hand to teach ALOHA 2 (teleoperation)",
+                     "sources": ["Interbotix ALOHA xacro (aloha_wx250s), expanded by tools/expand_xacro.py",
+                                 "Trossen specification pages", "ALOHA 2 paper (arXiv 2405.02292)"],
+                     "license": "BSD-3-Clause", "repo": "https://github.com/Interbotix/interbotix_ros_manipulators",
                      "provenance": "Interbotix xacro, pinned commit, expanded by tools/expand_xacro.py", "graph": True},
 }
 
