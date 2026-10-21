@@ -263,3 +263,4 @@
 .sx-speed span { margin-right: 4px; }
 .sx .sx-speed button { border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 2px 9px; font-size: 12px; color: var(--ink); cursor: pointer; }
 .sx .sx-speed button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+.sx-demo-tag { align-self: flex-start; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--green); background: var(--green-soft); border-radius: 999px; padding: 2px 8px; }

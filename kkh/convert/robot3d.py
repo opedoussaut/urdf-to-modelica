@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 from functools import lru_cache
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 import numpy as np
 
@@ -59,15 +60,37 @@ def resolve_mesh(urdf: Path, filename: str | None) -> Path | None:
     return p
 
 
+def _primitives(urdf: Path) -> dict[str, list[dict | None]]:
+    """Per link, in visual order: the primitive shape (box / cylinder / sphere, sizes in m) or None for a mesh."""
+    out: dict[str, list[dict | None]] = {}
+    for le in ET.parse(urdf).getroot().iter("link"):
+        shapes = []
+        for ve in le.findall("visual"):
+            g = ve.find("geometry")
+            shape = None
+            if g is not None:
+                if (b := g.find("box")) is not None:
+                    shape = {"type": "box", "size": [float(x) for x in b.get("size", "0 0 0").split()]}
+                elif (c := g.find("cylinder")) is not None:
+                    shape = {"type": "cylinder", "radius": float(c.get("radius", 0)), "length": float(c.get("length", 0))}
+                elif (sp := g.find("sphere")) is not None:
+                    shape = {"type": "sphere", "radius": float(sp.get("radius", 0))}
+            shapes.append(shape)
+        out[le.get("name")] = shapes
+    return out
+
+
 @lru_cache(maxsize=32)
 def describe(source: str) -> tuple[dict, list[Path]]:
     urdf, meta = sources.resolve(source)
     robot = load_urdf(urdf)
+    prims = _primitives(urdf)
     meshes: list[Path] = []
     links = {}
     for name, link in robot.links.items():
         vis = []
-        for v in link.visuals:
+        shapes = prims.get(name, [])
+        for k, v in enumerate(link.visuals):
             p = resolve_mesh(urdf, v.mesh)
             idx = None
             if p is not None:
@@ -75,7 +98,8 @@ def describe(source: str) -> tuple[dict, list[Path]]:
                     meshes.append(p)
                 idx = meshes.index(p)
             vis.append({"mesh": idx, "xyz": [float(x) for x in v.origin.xyz], "rpy": [float(x) for x in v.origin.rpy],
-                        "scale": [float(x) for x in v.scale], "rgba": [float(x) for x in v.rgba] if v.rgba else None})
+                        "scale": [float(x) for x in v.scale], "rgba": [float(x) for x in v.rgba] if v.rgba else None,
+                        "shape": shapes[k] if idx is None and k < len(shapes) else None})
         links[name] = {"mass": float(link.inertial.mass) if link.inertial else None, "placeholder": bool(link.is_placeholder),
                        "com": [float(x) for x in link.inertial.origin.xyz] if link.inertial else None, "visuals": vis}
     joints = [{"name": j.name, "type": j.type, "parent": j.parent, "child": j.child,

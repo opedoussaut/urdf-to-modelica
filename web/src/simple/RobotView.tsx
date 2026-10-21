@@ -7,7 +7,8 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
  * (xyz, then roll-pitch-yaw), turning or sliding along its URDF axis; each part carries its URDF meshes.
  * Parts without a mesh (or uploaded URDFs, which come without meshes) are drawn as a skeleton of joints and bars. */
 
-type Visual = { mesh: number | null; xyz: number[]; rpy: number[]; scale: number[]; rgba: number[] | null };
+type Shape = { type: "box"; size: number[] } | { type: "cylinder"; radius: number; length: number } | { type: "sphere"; radius: number };
+type Visual = { mesh: number | null; xyz: number[]; rpy: number[]; scale: number[]; rgba: number[] | null; shape?: Shape | null };
 type Link = { mass: number | null; placeholder: boolean; com: number[] | null; visuals: Visual[] };
 type Joint = {
   name: string;
@@ -205,7 +206,7 @@ export default function RobotView({
         const reach = Math.max(0.05, ...r.joints.map((j) => Math.hypot(j.xyz[0], j.xyz[1], j.xyz[2])));
         const meshed = new Set(
           Object.entries(r.links)
-            .filter(([, l]) => l.visuals.some((v) => v.mesh !== null))
+            .filter(([, l]) => l.visuals.some((v) => v.mesh !== null || v.shape))
             .map(([n]) => n),
         );
         const withMeshes = meshed.size > 0;
@@ -226,6 +227,34 @@ export default function RobotView({
         const pending: Promise<void>[] = [];
         let loadedMeshes = 0;
         const total = Object.values(r.links).reduce((n, l) => n + l.visuals.filter((v) => v.mesh !== null).length, 0);
+        const colour = (v: Visual) => {
+          const c = v.rgba ? new THREE.Color(v.rgba[0], v.rgba[1], v.rgba[2]) : new THREE.Color(0x9aa3ad);
+          // very dark URDF colours read as black blobs on screen: lift them slightly, keep the hue
+          const hsl = { h: 0, s: 0, l: 0 };
+          c.getHSL(hsl);
+          if (hsl.l < 0.28) c.setHSL(hsl.h, hsl.s, 0.28);
+          return c;
+        };
+        const place = (m: THREE.Mesh, v: Visual, name: string) => {
+          m.position.set(v.xyz[0], v.xyz[1], v.xyz[2]);
+          m.setRotationFromEuler(euler(v.rpy));
+          m.userData.link = name;
+          linkGroup.get(name)?.add(m);
+          pickable.push(m);
+        };
+        // primitive shapes written in the URDF itself (box, cylinder along z, sphere)
+        for (const [name, link] of Object.entries(r.links))
+          for (const v of link.visuals) {
+            if (v.mesh !== null || !v.shape) continue;
+            const sh = v.shape;
+            const geo =
+              sh.type === "box"
+                ? new THREE.BoxGeometry(sh.size[0], sh.size[1], sh.size[2])
+                : sh.type === "cylinder"
+                  ? new THREE.CylinderGeometry(sh.radius, sh.radius, sh.length, 32).rotateX(Math.PI / 2)
+                  : new THREE.SphereGeometry(sh.radius, 24, 16);
+            place(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: colour(v), roughness: 0.5, metalness: 0.1 })), v, name);
+          }
         for (const [name, link] of Object.entries(r.links)) {
           for (const v of link.visuals) {
             if (v.mesh === null) continue;
@@ -234,18 +263,9 @@ export default function RobotView({
               geometry(url)
                 .then((geo) => {
                   if (disposed) return;
-                  const c = v.rgba ? new THREE.Color(v.rgba[0], v.rgba[1], v.rgba[2]) : new THREE.Color(0x9aa3ad);
-                  // very dark URDF colours read as black blobs on screen: lift them slightly, keep the hue
-                  const hsl = { h: 0, s: 0, l: 0 };
-                  c.getHSL(hsl);
-                  if (hsl.l < 0.28) c.setHSL(hsl.h, hsl.s, 0.28);
-                  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, metalness: 0.1 }));
-                  m.position.set(v.xyz[0], v.xyz[1], v.xyz[2]);
-                  m.setRotationFromEuler(euler(v.rpy));
+                  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: colour(v), roughness: 0.55, metalness: 0.1 }));
                   m.scale.set(v.scale[0], v.scale[1], v.scale[2]);
-                  m.userData.link = name;
-                  linkGroup.get(name)?.add(m);
-                  pickable.push(m);
+                  place(m, v, name);
                   loadedMeshes++;
                 })
                 .catch(() => {}),

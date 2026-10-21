@@ -22,8 +22,9 @@ type Source = {
   what?: string;
   sources?: string[];
   license?: string;
-  repo?: string;
+  repo?: string | null;
   default?: boolean;
+  demo?: boolean;
 };
 
 const MODE_ICON: Record<ModeId, typeof Bot> = { llm: Bot, llm_rag: BookOpen, urdfmodelica: Wrench };
@@ -159,20 +160,21 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
           <span className="sx-n">1</span> Choose a robot
         </h2>
         <p className="sx-muted sx-intro">
-          Four robots described by public files from their makers. What you see is drawn from the very file that will be converted: every part, every
+          Four real robots described by public files from their makers, plus a two-joint teaching arm for quick demos. What you see is drawn from the very file that will be converted: every part, every
           joint, where it sits and how it turns. That is what the physics model has to reproduce.
         </p>
         <div className="sx-robots">
           {pinned.map((s) => (
             <button key={s.id} className={"sx-source sx-robot" + (s.id === source ? " on" : "")} onClick={() => setSource(s.id)} disabled={busy}>
               <RobotView source={s.id} lod="low" autoRotate height={170} />
+              {s.demo && <span className="sx-demo-tag">Quick demo · a few minutes</span>}
               <b>{s.label}</b>
               <small>{s.what}</small>
               <small>
                 {s.links} parts · {s.movable} moving joints · {s.mass_kg} kg
               </small>
               <small className="sx-tag">
-                {s.license} · {s.graph ? "knowledge graph available" : "not yet in the knowledge graph"}
+                {s.demo ? "Teaching robot defined in this project" : `${s.license} · ${s.graph ? "knowledge graph available" : "not yet in the knowledge graph"}`}
               </small>
               {expert && <code>{s.sha256.slice(0, 16)}…</code>}
             </button>
@@ -596,7 +598,15 @@ function RobotStage({ source }: { source: Source }) {
           speed={speed}
           height={420}
           onHover={setHover}
-          onInfo={(_, l) => setMeshInfo(l.total ? `${l.meshes}/${l.total} part shapes loaded from the maker's files` : "No part shapes in this file: skeleton view")}
+          onInfo={(r, l) =>
+            setMeshInfo(
+              l.total
+                ? `${l.meshes}/${l.total} part shapes loaded from the maker's files`
+                : Object.values(r.links).some((k) => k.visuals.some((v) => v.shape))
+                  ? "Simple shapes (boxes) written in the robot file itself"
+                  : "No part shapes in this file: skeleton view",
+            )
+          }
         />
         <div className="sx-stage-hover">
           {hover ? (

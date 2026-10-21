@@ -11,7 +11,7 @@ def test_pinned_robots_resolve_every_mesh(source):
         pytest.skip("pinned source not fetched (tools/fetch_sources.py)")
     d, meshes = robot3d.describe(source)
     visuals = [v for link in d["links"].values() for v in link["visuals"]]
-    assert visuals and all(v["mesh"] is not None for v in visuals)
+    assert visuals and all(v["mesh"] is not None or v["shape"] for v in visuals)  # a mesh file or a URDF primitive
     root = sources.ROOT.resolve()
     assert all(root in p.parents for p in meshes)
     assert len(d["joints"]) == len(d["links"]) - 1

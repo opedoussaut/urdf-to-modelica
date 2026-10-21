@@ -15,6 +15,13 @@ UPLOADS = RUNS / "uploads"
 MAX_UPLOAD = 300_000  # bytes
 
 PINNED = {
+    "demo_two_link_arm": {
+        "path": "data/urdf/demo_two_link_arm.urdf", "label": "Demo: two-link arm (quick)", "short": "Demo arm", "demo": True,
+        "what": "A small teaching robot for live demos: two joints, three boxes. A full comparison takes minutes, not a quarter hour",
+        "sources": ["Defined in this project (tools/make_demo_robot.py): uniform boxes, inertia I = m/12 (b² + c²)",
+                    "Not a real product: values chosen to be simple and checkable by hand"],
+        "license": "Project file", "repo": None,
+        "provenance": "tools/make_demo_robot.py (generated, not hand-edited)", "graph": False},
     "unitree_g1": {
         "path": "third_party/unitree_ros/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf",
         "label": "Unitree G1 EDU with Dex3-1 hands", "short": "Unitree G1", "default": True,
