@@ -42,3 +42,17 @@ def test_live_checks_states():
     assert all(states[k] == "skipped" for k in ("simulates", "coverage", "kinematics", "parameters", "dynamics"))
     running = score.live_checks({"produced": True}, {"produced"}, "loads")
     assert [c["state"] for c in running][:3] == ["pass", "running", "pending"]
+
+
+def test_llm_budget_grows_with_the_robot():
+    from kkh.convert import llm
+    from kkh.engineering.urdf_model import load_urdf
+    small = load_urdf(sources.resolve("aloha_wx250s")[0])
+    msgs = [{"role": "user", "content": "x" * 16000}]
+    b = llm.budget(small, msgs)
+    assert b["max_tokens"] == llm.SETTINGS["max_tokens"]  # the arms keep the campaign's output cap
+    assert b["num_ctx"] >= b["prompt_tokens_est"] + 2 * b["max_tokens"] and b["num_ctx"] % 1024 == 0
+    g1 = sources.resolve("unitree_g1")[0]
+    if g1.exists():
+        big = llm.budget(load_urdf(g1), msgs)
+        assert big["max_tokens"] > b["max_tokens"] and big["num_ctx"] > b["num_ctx"]

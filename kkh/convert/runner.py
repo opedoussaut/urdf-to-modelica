@@ -98,13 +98,13 @@ class Progress:
         tmp.write_text(json.dumps({**self.state, "now": time.time()}), encoding="utf-8")
         tmp.replace(ACTIVE)
 
-    def phase(self, mode: str, phase: str, attempt: int | None = None, attempts: int | None = None):
+    def phase(self, mode: str, phase: str, attempt: int | None = None, attempts: int | None = None, limit: int | None = None):
         m = self.state["modes"][mode]
         if m["status"] == "waiting":
             m.update(status="running", started=time.time())
         m.update(phase=phase, phase_started=time.time(), attempt=attempt, attempts=attempts)
         if phase == "writing":
-            m.update(tokens=0, chars=0, max_tokens=llm.SETTINGS["max_tokens"])
+            m.update(tokens=0, chars=0, max_tokens=limit or llm.SETTINGS["max_tokens"])
             self._text[mode] = ""
         elif mode in self._text:
             self._flush(mode)  # the complete text of the attempt, before it is checked
@@ -192,7 +192,7 @@ def run_comparison(source: str, modes: list[str] | None = None, log=print, model
                 else:
                     r = llm.convert(urdf, d, rag=(base(m) == "llm_rag"), model=m.split(":", 1)[1],
                                     score_fn=lambda f, model, w, live=live: score.score(urdf, f, model, w, on_step=live), log=log,
-                                    phase=lambda ph, a, n, m=m: progress.phase(m, ph, a, n),
+                                    phase=lambda ph, a, n, m=m, **kw: progress.phase(m, ph, a, n, **kw),
                                     stream=lambda text, n, m=m: progress.stream(m, text, n))
                     r.setdefault("score", score.finish({"produced": False}))
             except Exception as exc:  # report the failure; never invent a result

@@ -18,6 +18,22 @@ from kkh.llm.ollama import DEFAULT_MODEL, Ollama
 from .sources import prompt_text
 
 SETTINGS = {"seed": 42, "temperature": 0, "num_ctx": 24576, "max_tokens": 10000, "repair_attempts": 2}
+# Budget per robot (bigger robots need longer files): output cap = max(10 000, 1 500 + 250 per joint), so the ALOHA
+# arms keep the campaign settings; context = prompt + two outputs (a repair resends the previous file) + diagnostics.
+# CHARS_PER_TOKEN measured on the campaign: nemotron read the ALOHA URDF prompt at ~1.8 characters per token (numbers
+# split into digits); 1.6 keeps a margin.
+TOKENS_PER_JOINT, OUTPUT_MARGIN, REPAIR_OVERHEAD, CHARS_PER_TOKEN = 250, 1500, 1500, 1.6
+
+
+def budget(robot, messages: list[dict]) -> dict:
+    """Output cap and context window for one robot and prompt (prompt tokens estimated conservatively, see CHARS_PER_TOKEN)."""
+    prompt = int(sum(len(m["content"]) for m in messages) / CHARS_PER_TOKEN) + 1
+    max_tokens = max(SETTINGS["max_tokens"], OUTPUT_MARGIN + TOKENS_PER_JOINT * len(robot.joints))
+    need = prompt + 2 * max_tokens + REPAIR_OVERHEAD
+    num_ctx = max(SETTINGS["num_ctx"], -(-need // 1024) * 1024)
+    return {"max_tokens": max_tokens, "num_ctx": num_ctx, "prompt_tokens_est": prompt, "joints": len(robot.joints),
+            "rule": f"output cap = max({SETTINGS['max_tokens']}, {OUTPUT_MARGIN} + {TOKENS_PER_JOINT} x joints); "
+                    f"context = prompt + 2 x cap + {REPAIR_OVERHEAD}, at least {SETTINGS['num_ctx']}"}
 
 SYSTEM = """You are a Modelica engineer. Convert a robot described in URDF into ONE self-contained Modelica file that
 OpenModelica 1.27 can load, check and simulate with the Modelica Standard Library 4.1.0 (Modelica.Mechanics.MultiBody).
@@ -72,7 +88,7 @@ def _library_context(robot) -> tuple[str, list[dict]]:
 
 
 def convert(urdf: Path, out_dir: Path, rag: bool, score_fn, model: str | None = None, log=print,
-            phase=lambda name, attempt, attempts: None, stream=None) -> dict:
+            phase=lambda name, attempt, attempts, **kw: None, stream=None) -> dict:
     """Generate, then check with OpenModelica (via score_fn) and repair at most SETTINGS['repair_attempts'] times."""
     t0 = time.time()
     model = model or DEFAULT_MODEL
@@ -90,16 +106,18 @@ def convert(urdf: Path, out_dir: Path, rag: bool, score_fn, model: str | None = 
            "prompt_sha256": hashlib.sha256(json.dumps(messages).encode()).hexdigest(),
            "prompt_chars": sum(len(m["content"]) for m in messages), "attempts": [], "llm_calls": 0,
            "human_interventions": 0}
-    client = Ollama(timeout=900)
+    plan = budget(robot, messages)
+    out["budget"] = plan
+    client = Ollama(timeout=900 + plan["max_tokens"] // 5)  # slow local models: ~5 tokens/s worst case
     best = None
     try:
         for attempt in range(1 + SETTINGS["repair_attempts"]):
             a = {"attempt": attempt + 1}
             t = time.time()
-            phase("writing", attempt + 1, 1 + SETTINGS["repair_attempts"])
+            phase("writing", attempt + 1, 1 + SETTINGS["repair_attempts"], limit=plan["max_tokens"])
             try:
-                resp = client.chat(messages, model=model, seed=SETTINGS["seed"], max_tokens=SETTINGS["max_tokens"],
-                                   num_ctx=SETTINGS["num_ctx"], allow_truncated=True, on_token=stream)
+                resp = client.chat(messages, model=model, seed=SETTINGS["seed"], max_tokens=plan["max_tokens"],
+                                   num_ctx=plan["num_ctx"], allow_truncated=True, on_token=stream)
             except Exception as exc:
                 a.update(error=f"LLM call failed: {exc}"[:500], seconds=round(time.time() - t, 1))
                 out["attempts"].append(a)
@@ -125,7 +143,7 @@ def convert(urdf: Path, out_dir: Path, rag: bool, score_fn, model: str | None = 
                 break
             if a["truncated"]:
                 # restart from the original prompt (the cut-off file would not fit in the context with a rewrite)
-                messages = [messages[0], {"role": "user", "content": user + "\n\n" + TRUNCATED.format(limit=SETTINGS["max_tokens"]) + "\n/no_think"}]
+                messages = [messages[0], {"role": "user", "content": user + "\n\n" + TRUNCATED.format(limit=plan["max_tokens"]) + "\n/no_think"}]
                 continue
             diag = s.get("simulate_messages") or s.get("check_messages") or s.get("load_messages") or "No Modelica model found in the reply."
             messages += [{"role": "assistant", "content": code},

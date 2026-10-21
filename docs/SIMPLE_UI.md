@@ -29,6 +29,13 @@ which come without meshes, are drawn as a skeleton.
 
 Modes (one isolated directory each, `runs/convert/<id>/<mode>/`):
 
+**Token budget of the AI methods** (`llm.budget`, stored per run as `budget`): output cap = max(10 000, 1 500 + 250 ×
+joints) — the ALOHA arms keep the campaign's 10 000, the G1 gets 14 500; context window = estimated prompt + 2 × cap
+(a repair resends the previous file) + 1 500, rounded up to 1 024 and never below 24 576. Prompt size is estimated at
+1.6 characters per token (nemotron measured ~1.8 on URDF text). The campaign of 21 Oct 2026 never exceeded its fixed
+24 576-token window (largest attempt 18 951). A cut-off file is scored as written; the next attempt is asked to be
+more compact. The live view shows tokens written against this cap.
+
 1. **AI only** (`llm`): local Ollama (`nemotron-3-nano:4b`), URDF text with visuals/collisions removed, a fixed
    output contract (package `<Robot>`, model `<Robot>Test`, one body per link, `j_<joint>` per joint, unactuated).
 2. **AI + Modelica library search** (`llm_rag`): the same prompt plus Modelica Standard Library classes: the core
