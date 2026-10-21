@@ -205,3 +205,4 @@
 .sx-downloads small { color: var(--muted); font-size: 12px; }
 .sx a.sx-btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-size: 13px; }
 .sx a.sx-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sx-proto { margin: 10px 0 6px; }

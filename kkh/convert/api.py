@@ -247,6 +247,7 @@ class ReviewRun(BaseModel):
     manual: dict | None = None
     manual_seconds: float | None = Field(default=None, ge=0, le=86400)
     reviewer: str = Field(default="", max_length=80)
+    protocol: str = Field(default="v1", max_length=4)
 
 
 @router.post("/review/run")
@@ -261,7 +262,9 @@ def review_run(body: ReviewRun):
             raise HTTPException(422, f"Not installed in Ollama: {body.model}")
     elif body.manual is None:
         raise HTTPException(422, "A manual review needs the report")
-    return _job("Review", lambda: run_review(t, body.review_mode, body.model or None, body.manual, body.manual_seconds, body.reviewer))
+    if body.protocol not in ("v1", "v2"):
+        raise HTTPException(422, "Unknown review protocol")
+    return _job("Review", lambda: run_review(t, body.review_mode, body.model or None, body.manual, body.manual_seconds, body.reviewer, body.protocol))
 
 
 @router.get("/review/list")
@@ -308,7 +311,7 @@ def scores(table: str = "conversions", format: str = "json"):
             for rv in list_reviews(t):
                 s = rv["score"]
                 rows.append({"review": rv["id"], "created": rv["created"], "target": t.get("mutation") or f"{t['run']}:{t['mode']}",
-                             "target_kind": t["kind"], "review_mode": rv["mode"], "llm_model": rv.get("llm_model") or "",
+                             "target_kind": t["kind"], "review_mode": rv["mode"], "protocol": rv.get("protocol", "v1"), "llm_model": rv.get("llm_model") or "",
                              "reviewer": rv.get("reviewer") or "", "defects": s["defects"], "found": s["found"], "found_type": s["found_type"],
                              "recall": s["recall"], "precision": s["precision"], "false_alarms": s["false_alarms"],
                              "corrections_proposed": s["corrections_proposed"], "corrections_fixed": s["corrections_fixed"],

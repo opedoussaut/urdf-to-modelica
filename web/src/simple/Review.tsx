@@ -23,7 +23,7 @@ type ReviewScore = {
   faithfulness: { checked: number; correct: number; rate: number | null };
   brier: number | null;
 };
-type ReviewRec = { id: string; mode: ReviewMode; created: string; llm_model?: string; seconds?: number; reviewer?: string; report: { summary: string; issues: Issue[] }; score: ReviewScore };
+type ReviewRec = { id: string; mode: ReviewMode; protocol?: string; created: string; llm_model?: string; seconds?: number; reviewer?: string; report: { summary: string; issues: Issue[] }; score: ReviewScore };
 type Targets = { seeded: { id: string; description: string; held_out: boolean }[]; runs: RunSummary[]; modes: Record<ReviewMode, string>; categories: string[]; models: LocalModel[] };
 type FileView = { label: string; text: string; omc_messages: string; entities: string[]; graph: boolean };
 
@@ -61,6 +61,7 @@ export default function Review({ target, setTarget, toConvert, learn }: { target
     [spoil, setSpoil] = useState(false),
     [mode, setMode] = useState<ReviewMode>("ai"),
     [model, setModel] = useState(""),
+    [protocol, setProtocol] = useState<"v1" | "v2">("v2"),
     [issues, setIssues] = useState<Issue[]>([blankIssue()]),
     [reviewer, setReviewer] = useState(""),
     [busy, setBusy] = useState(false),
@@ -106,7 +107,7 @@ export default function Review({ target, setTarget, toConvert, learn }: { target
     setBusy(true);
     setError("");
     try {
-      const body: any = { ...target, kind: target.kind || "conversion", review_mode: mode, model: mode === "manual" ? "" : model };
+      const body: any = { ...target, kind: target.kind || "conversion", review_mode: mode, model: mode === "manual" ? "" : model, protocol };
       if (mode === "manual") {
         body.manual = { summary: "", issues: issues.filter((i) => i.entity), claims: [] };
         body.manual_seconds = (Date.now() - startedAt.current) / 1000;
@@ -266,6 +267,14 @@ export default function Review({ target, setTarget, toConvert, learn }: { target
                   </label>
                 ))}
               </div>
+              <div className="sx-seg sx-proto" role="radiogroup" aria-label="Review protocol">
+                <button className={protocol === "v2" ? "on" : ""} onClick={() => setProtocol("v2")} title="At most 3 issues, each quoting the Modelica value and the differing URDF value">
+                  Focused: top 3 issues, with evidence
+                </button>
+                <button className={protocol === "v1" ? "on" : ""} onClick={() => setProtocol("v1")} title="Every inconsistency the AI sees, up to 12">
+                  Exhaustive: up to 12 issues
+                </button>
+              </div>
               <small>The AI sees the file, the robot file and OpenModelica's messages, never the known errors. Same settings for both AI modes.</small>
             </div>
           ) : (
@@ -373,7 +382,10 @@ function ManualForm({
 }
 
 function Compare({ reviews, truth, expert, learn }: { reviews: ReviewRec[]; truth: { entity: string; category: string; title: string }[]; expert: boolean; learn: () => void }) {
-  const head = (r: ReviewRec) => MODE_INFO[r.mode].label.replace(" review", "") + (r.llm_model ? ` · ${r.llm_model}` : r.reviewer ? ` · ${r.reviewer}` : "");
+  const head = (r: ReviewRec) =>
+    MODE_INFO[r.mode].label.replace(" review", "") +
+    (r.llm_model ? ` · ${r.llm_model}` : r.reviewer ? ` · ${r.reviewer}` : "") +
+    (r.mode !== "manual" ? ((r.protocol || "v1") === "v2" ? " · focused" : " · exhaustive") : "");
   return (
     <section className="sx-step sx-compare">
       <h2>

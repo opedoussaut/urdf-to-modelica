@@ -25,8 +25,8 @@ def _log(f, msg):
     f.flush()
 
 
-def done_reviews(target: dict) -> set[tuple[str, str]]:
-    return {(r["mode"], r.get("llm_model") or "") for r in review.list_reviews(target)}
+def done_reviews(target: dict) -> set[tuple[str, str, str]]:
+    return {(r["mode"], r.get("llm_model") or "", r.get("protocol", "v1")) for r in review.list_reviews(target)}
 
 
 def main():
@@ -36,6 +36,7 @@ def main():
     ap.add_argument("--run", default="", help="reuse an existing conversion run instead of starting a new one")
     ap.add_argument("--skip-convert", action="store_true")
     ap.add_argument("--seeded-only", action="store_true")
+    ap.add_argument("--protocol", default="v1", choices=["v1", "v2"], help="review protocol (see kkh.convert.review.PROTOCOLS)")
     a = ap.parse_args()
     models = [m for m in a.models.split(",") if m]
     run_id = a.run
@@ -57,13 +58,13 @@ def main():
     # small models first: early results arrive quickly; the 30B model runs last
     order = sorted(models, key=lambda m: ("30b" in m, m))
     jobs = [(t, mode, m) for m in order for t in targets for mode in ("ai", "ai_ontology")]
-    _log(log, f"reviews: {len(targets)} files x 2 modes x {len(order)} models = {len(jobs)} (existing ones skipped)")
+    _log(log, f"reviews (protocol {a.protocol}): {len(targets)} files x 2 modes x {len(order)} models = {len(jobs)} (existing ones skipped)")
     for n, (t, mode, m) in enumerate(jobs, 1):
-        if (mode, m) in done_reviews(t):
+        if (mode, m, a.protocol) in done_reviews(t):
             continue
         name = t.get("mutation") or f"{t['run']}:{t['mode']}"
         try:
-            r = review.run_review(t, mode, m)
+            r = review.run_review(t, mode, m, protocol=a.protocol)
             s = r["score"]
             _log(log, f"[{n}/{len(jobs)}] {name} {mode} {m}: recall {s['recall']} precision {s['precision']} "
                       f"false alarms {s['false_alarms']} fixed {s['corrections_fixed']}/{s['corrections_proposed']} ({r['seconds']} s)")
