@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, BookOpen, Check, CircleSlash, Clock, FileCode2, FileSearch, Trophy, Upload, Wrench, X } from "lucide-react";
+import { Bot, BookOpen, Check, CircleSlash, Clock, FileArchive, FileCode2, FileSearch, Trophy, Upload, Wrench, X } from "lucide-react";
 import { useAudience } from "../audience";
 import { message, waitJob, type Doc } from "../studio";
 import { baseOf, convert, keyLabel, MODE_ORDER, orderKeys, type LocalModel, type ModeId, type Report, type RunSummary } from "./api";
@@ -420,9 +420,14 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
                 </details>
               )}
               {r.main_file ? (
+                <>
                 <button className="lab-ghost" onClick={() => openUnderstand({ kind: "conversion", run: report.id, mode: m })}>
                   <FileSearch size={15} /> Review this file
                 </button>
+                <a className="sx-btn" href={`/api/convert/download?kind=conversion&run=${report.id}&mode=${encodeURIComponent(m)}&what=package`} download>
+                  <FileArchive size={14} /> Download (.zip for OMEdit / Dymola)
+                </a>
+                </>
               ) : (
                 <small className="sx-muted">
                   <FileCode2 size={13} /> No file to open

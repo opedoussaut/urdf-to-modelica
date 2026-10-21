@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, Bot, Check, CircleSlash, Eye, EyeOff, Network, Plus, Trash2, User, X } from "lucide-react";
+import { BookOpen, Bot, Check, CircleSlash, Download, Eye, EyeOff, FileArchive, Network, Plus, Trash2, User, X } from "lucide-react";
 import { useAudience } from "../audience";
 import { message, waitJob, type Doc } from "../studio";
 import { convert, keyLabel, orderKeys, type LocalModel, type RunSummary } from "./api";
@@ -195,6 +195,15 @@ export default function Review({ target, setTarget, toConvert, learn }: { target
           <h2>
             <span className="sx-n">2</span> Read it · {file.label}
           </h2>
+          <div className="sx-downloads">
+            <a className="sx-btn" href={`/api/convert/download?${query(target)}&what=package`} download>
+              <FileArchive size={15} /> Download package for OMEdit / Dymola (.zip)
+            </a>
+            <a className="sx-btn" href={`/api/convert/download?${query(target)}&what=file`} download>
+              <Download size={15} /> Download this file (.mo)
+            </a>
+            <small>The package opens as is: the README inside says which file to open and which model to simulate.</small>
+          </div>
           {target.kind !== "seeded" && findings.length > 0 && (
             <div className={"sx-findings" + (spoil ? "" : " hidden")}>
               <button className="sx-link" onClick={() => setSpoil(!spoil)}>

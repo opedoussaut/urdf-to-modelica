@@ -201,3 +201,7 @@
 .sx-rev ul { margin: 4px 0; padding-left: 18px; font-size: 12.5px; line-height: 1.5; }
 @media (max-width: 1000px) { .sx-issue { grid-template-columns: 1fr; } .sx-issue details { grid-column: auto; } }
 .sx-export a { color: var(--accent); font-weight: 600; }
+.sx-downloads { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -4px 0 12px; }
+.sx-downloads small { color: var(--muted); font-size: 12px; }
+.sx a.sx-btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-size: 13px; }
+.sx a.sx-btn:hover { border-color: var(--accent); color: var(--accent); }
