@@ -321,6 +321,9 @@ type LiveMode = {
   passed?: number;
   checks?: LiveCheck[];
   activity?: string | null;
+  tokens?: number;
+  chars?: number;
+  max_tokens?: number;
 };
 
 /** Overall completion: share of the 8 checks passed. Colour follows the number, never the rank. */
@@ -381,6 +384,8 @@ function LiveProgress({ live, polledAt, now }: { live: Live; polledAt: number; n
                 (PHASE[s.phase || ""] || s.phase) +
                   (baseOf(m) !== "urdfmodelica" && s.attempt ? ` · attempt ${s.attempt} of ${s.attempts} (stops early once the model runs)` : "") +
                   ` · ${fmt(inPhase)} in this step`}
+              {s.status === "running" && s.phase === "writing" && s.tokens != null &&
+                ` · ${s.tokens.toLocaleString()} tokens written so far (limit ${(s.max_tokens || 0).toLocaleString()})`}
               {s.status === "done" && `Finished · ${s.passed} of 8 checks passed (${Math.round(((s.passed || 0) * 100) / 8)} %)`}
               {s.status === "failed" && "Finished · no usable file"}
             </small>
@@ -399,6 +404,7 @@ function LiveProgress({ live, polledAt, now }: { live: Live; polledAt: number; n
                 {s.status === "running" && s.activity && <em>{s.activity}</em>}
               </div>
             )}
+            {baseOf(m) !== "urdfmodelica" && s.status !== "waiting" && <LiveText mode={m} active={s.status === "running"} />}
           </div>
         );
       })}
@@ -659,6 +665,56 @@ function RobotStage({ source }: { source: Source }) {
         </dl>
         {meshInfo && <small className="sx-muted">{meshInfo}</small>}
       </div>
+    </div>
+  );
+}
+
+/** The Modelica file an AI method is writing, streamed from the local model (toggle; polled while open). */
+function LiveText({ mode, active }: { mode: string; active: boolean }) {
+  const [open, setOpen] = useState(false),
+    [text, setText] = useState(""),
+    [follow, setFollow] = useState(true);
+  const box = useRef<HTMLPreElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    let stop = false;
+    const tick = () =>
+      convert<{ text: string }>("/active/text?mode=" + encodeURIComponent(mode))
+        .then((r) => !stop && setText(r.text))
+        .catch(() => {});
+    tick();
+    const t = active ? setInterval(tick, 1500) : undefined;
+    return () => {
+      stop = true;
+      if (t) clearInterval(t);
+    };
+  }, [open, mode, active]);
+  useEffect(() => {
+    if (follow && box.current) box.current.scrollTop = box.current.scrollHeight;
+  }, [text, follow]);
+  return (
+    <div className="sx-livetext">
+      <button className="sx-link" onClick={() => setOpen((o) => !o)}>
+        {open ? "Hide" : "Show"} what the AI is writing
+      </button>
+      {open && (
+        <>
+          <pre
+            ref={box}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              setFollow(el.scrollHeight - el.scrollTop - el.clientHeight < 40);
+            }}
+          >
+            {text || "Waiting for the first words from the local model…"}
+            {active && <span className="sx-caret" />}
+          </pre>
+          <small className="sx-muted">
+            Raw output of the local model, word by word, for the current attempt. It is not checked yet: OpenModelica tests it once the AI has
+            finished.
+          </small>
+        </>
+      )}
     </div>
   );
 }

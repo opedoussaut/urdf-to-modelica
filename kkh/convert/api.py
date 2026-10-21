@@ -90,6 +90,15 @@ def active():
     return runner.active() or {"running": False}
 
 
+@router.get("/active/text")
+def active_text(mode: str):
+    """The Modelica text an AI method is writing right now (streamed from the local model)."""
+    state = runner.active() or {}
+    if mode not in (state.get("modes") or {}):
+        raise HTTPException(404, "No such method in the current comparison")
+    return runner.live_text(mode)
+
+
 def _batch_running() -> bool:
     """True while a kkh.convert.batch process is alive (it writes its PID to runs/convert/batch.pid)."""
     import os

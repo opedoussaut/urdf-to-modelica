@@ -254,3 +254,8 @@
 @keyframes sx-spin { to { transform: rotate(360deg); } }
 .sx-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
 .sx-com-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #ea580c; margin-right: 3px; }
+/* live view of what the AI writes */
+.sx-livetext { grid-column: 1 / 4; }
+.sx-livetext pre { max-height: 300px; overflow: auto; background: #0f172a; color: #e2e8f0; font-size: 12px; line-height: 1.45; padding: 10px 12px; border-radius: 8px; margin: 6px 0 4px; white-space: pre-wrap; }
+.sx-caret { display: inline-block; width: 7px; height: 13px; background: #93c5fd; vertical-align: text-bottom; animation: sx-blink 1s steps(1) infinite; }
+@keyframes sx-blink { 50% { opacity: 0; } }

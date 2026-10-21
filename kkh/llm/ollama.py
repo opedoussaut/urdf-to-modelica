@@ -1,6 +1,7 @@
 """Local-only Ollama transport. No hosted model names, redirects or fallback."""
 from __future__ import annotations
 
+import json
 import os
 from urllib.parse import urlsplit
 
@@ -36,7 +37,10 @@ class Ollama:
         return "cloud" in model.lower() or "/" in model or "://" in model
 
     def chat(self, messages: list[dict], model: str | None = None, schema: dict | None = None,
-             seed: int = 42, max_tokens: int = 1200, num_ctx: int = 8192, allow_truncated: bool = False) -> dict:
+             seed: int = 42, max_tokens: int = 1200, num_ctx: int = 8192, allow_truncated: bool = False,
+             on_token=None) -> dict:
+        """One chat completion. With on_token(text_so_far, n_chunks) the reply is streamed (same model, options and
+        seed, so the same text) and reported as it is written."""
         model = model or DEFAULT_MODEL
         if self._cloud(model):
             raise ValueError("Only local Ollama models are allowed")
@@ -49,9 +53,29 @@ class Ollama:
                    "num_ctx": num_ctx, "num_predict": max_tokens}}
         if schema is not None:
             payload["format"] = schema
-        response = self.http.post(self.url + "/api/chat", json=payload)
-        response.raise_for_status()
-        out = response.json()
+        if on_token is None:
+            response = self.http.post(self.url + "/api/chat", json=payload)
+            response.raise_for_status()
+            out = response.json()
+        else:
+            payload["stream"] = True
+            parts, out = [], {}
+            with self.http.stream("POST", self.url + "/api/chat", json=payload) as response:
+                response.raise_for_status()
+                for line in response.iter_lines():
+                    if not line.strip():
+                        continue
+                    chunk = json.loads(line)
+                    if chunk.get("error"):
+                        raise RuntimeError(f"Ollama error: {chunk['error']}")
+                    piece = (chunk.get("message") or {}).get("content") or ""
+                    if piece:
+                        parts.append(piece)
+                        on_token("".join(parts) if len(parts) % 20 == 0 else None, len(parts))
+                    if chunk.get("done"):
+                        out = chunk
+            out["message"] = {"content": "".join(parts)}
+            on_token(out["message"]["content"], len(parts))
         truncated = out.get("done_reason") == "length"
         if not out.get("done") or (truncated and not allow_truncated):
             raise RuntimeError("Ollama response was incomplete; reduce context or increase token budget")

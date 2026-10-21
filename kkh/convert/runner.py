@@ -75,6 +75,7 @@ def verdict(name: str, s: dict, result: dict | None = None) -> str:
 
 
 ACTIVE = sources.RUNS / "active.json"
+LIVE_TEXT = sources.RUNS / "active_text"  # what each AI method is writing, for the page's live view
 
 
 class Progress:
@@ -82,6 +83,11 @@ class Progress:
     time it started. Phases are real events; the page's bar within a phase is an estimate from typical durations."""
 
     def __init__(self, identity: str, source_label: str, modes: list[str]):
+        self._text: dict[str, str] = {}
+        self._streamed: dict[str, float] = {}
+        if LIVE_TEXT.exists():
+            for f in LIVE_TEXT.glob("*.txt"):
+                f.unlink()
         self.state = {"id": identity, "source": source_label, "started": time.time(), "running": True,
                       "modes": {m: {"status": "waiting"} for m in modes}}
         self.write()
@@ -97,6 +103,27 @@ class Progress:
         if m["status"] == "waiting":
             m.update(status="running", started=time.time())
         m.update(phase=phase, phase_started=time.time(), attempt=attempt, attempts=attempts)
+        if phase == "writing":
+            m.update(tokens=0, chars=0, max_tokens=llm.SETTINGS["max_tokens"])
+            self._text[mode] = ""
+        elif mode in self._text:
+            self._flush(mode)  # the complete text of the attempt, before it is checked
+        self.write()
+
+    def stream(self, mode: str, text: str | None, tokens: int):
+        """Called for every token the local AI writes (text every few tokens); written at most ~1 per second."""
+        m = self.state["modes"][mode]
+        if text is not None:
+            self._text[mode] = text
+        m["tokens"] = tokens
+        if time.time() - self._streamed.get(mode, 0) >= 0.8:
+            self._flush(mode)
+
+    def _flush(self, mode: str):
+        self._streamed[mode] = time.time()
+        LIVE_TEXT.mkdir(parents=True, exist_ok=True)
+        (LIVE_TEXT / (safe_dir(mode) + ".txt")).write_text(self._text.get(mode, ""), encoding="utf-8")
+        self.state["modes"][mode]["chars"] = len(self._text.get(mode, ""))
         self.write()
 
     def checks(self, mode: str, items: list[dict], activity: str):
@@ -165,7 +192,8 @@ def run_comparison(source: str, modes: list[str] | None = None, log=print, model
                 else:
                     r = llm.convert(urdf, d, rag=(base(m) == "llm_rag"), model=m.split(":", 1)[1],
                                     score_fn=lambda f, model, w, live=live: score.score(urdf, f, model, w, on_step=live), log=log,
-                                    phase=lambda ph, a, n, m=m: progress.phase(m, ph, a, n))
+                                    phase=lambda ph, a, n, m=m: progress.phase(m, ph, a, n),
+                                    stream=lambda text, n, m=m: progress.stream(m, text, n))
                     r.setdefault("score", score.finish({"produced": False}))
             except Exception as exc:  # report the failure; never invent a result
                 r = {"mode": base(m), "error": f"{type(exc).__name__}: {exc}"[:1500], "score": score.finish({"produced": False})}
@@ -307,3 +335,10 @@ if __name__ == "__main__":
     rep = run_comparison(a.source, a.modes.split(","), models=[m for m in a.models.split(",") if m] or None)
     print(json.dumps({"id": rep["id"], "ranking": rep["ranking"],
                       "verdicts": {m: v["verdict"] for m, v in rep["modes"].items()}}, indent=1))
+
+
+def live_text(mode: str) -> dict:
+    """What an AI method of the running (or last) comparison has written so far (current attempt)."""
+    f = LIVE_TEXT / (safe_dir(mode) + ".txt")
+    text = f.read_text(encoding="utf-8") if f.exists() else ""
+    return {"mode": mode, "chars": len(text), "text": text[-40000:], "clipped": len(text) > 40000}

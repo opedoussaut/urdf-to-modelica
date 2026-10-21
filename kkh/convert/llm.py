@@ -72,7 +72,7 @@ def _library_context(robot) -> tuple[str, list[dict]]:
 
 
 def convert(urdf: Path, out_dir: Path, rag: bool, score_fn, model: str | None = None, log=print,
-            phase=lambda name, attempt, attempts: None) -> dict:
+            phase=lambda name, attempt, attempts: None, stream=None) -> dict:
     """Generate, then check with OpenModelica (via score_fn) and repair at most SETTINGS['repair_attempts'] times."""
     t0 = time.time()
     model = model or DEFAULT_MODEL
@@ -99,7 +99,7 @@ def convert(urdf: Path, out_dir: Path, rag: bool, score_fn, model: str | None = 
             phase("writing", attempt + 1, 1 + SETTINGS["repair_attempts"])
             try:
                 resp = client.chat(messages, model=model, seed=SETTINGS["seed"], max_tokens=SETTINGS["max_tokens"],
-                                   num_ctx=SETTINGS["num_ctx"], allow_truncated=True)
+                                   num_ctx=SETTINGS["num_ctx"], allow_truncated=True, on_token=stream)
             except Exception as exc:
                 a.update(error=f"LLM call failed: {exc}"[:500], seconds=round(time.time() - t, 1))
                 out["attempts"].append(a)
