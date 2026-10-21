@@ -89,6 +89,29 @@ def active():
     return runner.active() or {"running": False}
 
 
+def _batch_running() -> bool:
+    """True while a kkh.convert.batch process is alive (it writes its PID to runs/convert/batch.pid)."""
+    import os
+    f = sources.RUNS / "batch.pid"
+    if not f.exists():
+        return False
+    try:
+        pid = int(f.read_text().strip())
+        if os.name == "nt":
+            import ctypes
+            h = ctypes.windll.kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+            if not h:
+                return False
+            code = ctypes.c_ulong()
+            ctypes.windll.kernel32.GetExitCodeProcess(h, ctypes.byref(code))
+            ctypes.windll.kernel32.CloseHandle(h)
+            return code.value == 259  # STILL_ACTIVE
+        os.kill(pid, 0)
+        return True
+    except (ValueError, OSError):
+        return False
+
+
 class Reset(BaseModel):
     confirm: str = Field(max_length=10)
 
@@ -103,6 +126,8 @@ def reset(body: Reset):
     if body.confirm != "RESET":
         raise HTTPException(422, 'Type RESET to confirm')
     state = runner.active() or {}
+    if _batch_running():
+        raise HTTPException(409, "A measurement campaign (kkh.convert.batch) is running; reset after it finishes")
     if _run_lock.locked() or state.get("running"):
         raise HTTPException(409, "A comparison is running; wait for it to finish before resetting")
     removed = {"runs": 0, "uploads": 0, "conversations": 0}

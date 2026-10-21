@@ -40,6 +40,8 @@ def main():
     models = [m for m in a.models.split(",") if m]
     run_id = a.run
     sources.RUNS.mkdir(parents=True, exist_ok=True)
+    import os
+    (sources.RUNS / "batch.pid").write_text(str(os.getpid()))  # Reset refuses while this process lives
     log = open(sources.RUNS / f"batch_{run_id or dt.datetime.now().strftime('%Y%m%d-%H%M')}.log", "a", encoding="utf-8")
     t0 = time.time()
     if not run_id and not a.skip_convert and not a.seeded_only:
