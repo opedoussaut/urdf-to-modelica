@@ -687,6 +687,7 @@ function RobotStage({ source }: { source: Source }) {
 function LiveText({ mode, active }: { mode: string; active: boolean }) {
   const [open, setOpen] = useState(false),
     [text, setText] = useState(""),
+    [unavailable, setUnavailable] = useState(false),
     [follow, setFollow] = useState(true);
   const box = useRef<HTMLPreElement>(null);
   useEffect(() => {
@@ -694,8 +695,12 @@ function LiveText({ mode, active }: { mode: string; active: boolean }) {
     let stop = false;
     const tick = () =>
       convert<{ text: string }>("/active/text?mode=" + encodeURIComponent(mode))
-        .then((r) => !stop && setText(r.text))
-        .catch(() => {});
+        .then((r) => {
+          if (stop) return;
+          setText(r.text);
+          setUnavailable(false);
+        })
+        .catch(() => !stop && setUnavailable(true));
     tick();
     const t = active ? setInterval(tick, 1500) : undefined;
     return () => {
@@ -720,7 +725,10 @@ function LiveText({ mode, active }: { mode: string; active: boolean }) {
               setFollow(el.scrollHeight - el.scrollTop - el.clientHeight < 40);
             }}
           >
-            {text || "Waiting for the first words from the local model…"}
+            {text ||
+              (unavailable
+                ? "The live text is not available for this run (it was started before the studio was updated). The AI is still working: its result appears when it finishes."
+                : "Waiting for the first words from the local model…")}
             {active && <span className="sx-caret" />}
           </pre>
           <small className="sx-muted">
