@@ -66,3 +66,45 @@ M9 joint type (also right category), H1, H2, H3, H5 — almost all by qwen3-code
 Limits: one robot, one seed per review, ≤ 12 issues per review (schema cap), seeded errors from one generator's
 syntax; precision counts issues on other entities as false alarms even when partly justified. No manual reviews yet:
 the human baseline is still missing.
+
+## 4. Addendum — review protocol v2 "focused" (same 24 files, same 3 models)
+
+`python -m kkh.convert.batch --run 8941c0696368 --protocol v2` (log `runs/convert/batch_8941c0696368.log`, 100 min,
+0 failures). v2 = at most 3 issues, most important first, each quoting the Modelica value and the differing URDF value.
+
+### Seeded files (16 defects + M0 control)
+
+| Model · mode | Protocol | found | type | issues | false alarms | precision | fixed | control FA | s/review |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| qwen3-coder 30B · AI | v1 | 9/16 | 1 | 93 | 89 | 0.04 | 8 | 0 | 167 |
+| qwen3-coder 30B · AI | v2 | 9/16 | 1 | 47 | 44 | 0.06 | 6 | 3 | 49 |
+| qwen3-coder 30B · AI + ontologies | v1 | 9/16 | 1 | 111 | 108 | 0.03 | 6 | 0 | 169 |
+| qwen3-coder 30B · AI + ontologies | v2 | 9/16 | 1 | 44 | 41 | 0.07 | 6 | 3 | 50 |
+| qwen2.5-coder 7B · AI + ontologies | v1 | 3/16 | 0 | 144 | 144 | 0.00 | 1 | 12 | 158 |
+| qwen2.5-coder 7B · AI + ontologies | v2 | 5/16 | 2 | 43 | 41 | 0.05 | 2 | 2 | 115 |
+| nemotron 4B (both modes), qwen2.5 7B AI only | v1, v2 | 0/16 | 0 | 0 | 0 | – | 0 | 0 | 4–62 |
+
+With v2, the 30B model's correct, working corrections cover M1, M3, M8, H1, H2 and H3 (axis sign, degree/radian and
+millimetre/metre units, origin typo) in both modes.
+
+### Converted files (7)
+
+| Model · mode | v1 found / precision | v2 found / precision |
+| --- | --- | --- |
+| qwen3-coder 30B · AI | 4/7 · 0.06 | **5/7 · 0.26** |
+| qwen3-coder 30B · AI + ontologies | 4/7 · 0.08 | 1/7 · 0.05 |
+| qwen2.5-coder 7B · AI | 4/7 · 0.17 | **4/7 · 0.40** |
+| qwen2.5-coder 7B · AI + ontologies | 3/7 · 0.06 | 1/7 · 0.06 |
+| nemotron 4B · AI + ontologies | 2/7 · 0.05 | 0/7 · – |
+
+### Reading
+
+- **Focusing halves the noise at no loss of recall** on the seeded set (30B: 93 → 47 issues, same 9/16) and makes
+  reviews 3.4× faster (167 → 49 s). On converted files, AI-only precision rises from 0.06–0.17 to 0.26–0.40.
+- **Cost of focusing:** 3 false alarms on the clean control file (v1: 0) and slightly fewer working corrections for
+  the 30B AI-only mode (8 → 6).
+- **Ontology grounding still does not improve detection.** Under v2 it even hurts on converted files (30B: 5/7 → 1/7),
+  while on the seeded set it is neutral (9/16 both). Grounded claims stay more accurate under v1 (190/190), but v2
+  reviews quote fewer numbers, so faithfulness is less informative there.
+- Best configuration measured so far: **qwen3-coder 30B, AI only, protocol v2** — 9/16 seeded errors located, 6 fixed
+  automatically, 5/7 natural defects found at precision 0.26, ~50 s per review.
