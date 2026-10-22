@@ -56,6 +56,8 @@ def verdict(name: str, s: dict, result: dict | None = None) -> str:
             why = " " + str(result["error"])[:160]
         return f"{label} produced no usable model.{why}"
     scored = next((a for a in attempts if a.get("attempt") == (result or {}).get("best_attempt")), None)
+    if scored and scored.get("repeating") and not s.get("loads"):
+        return f"{label} started repeating the same lines over and over; it was stopped and its unfinished file cannot be read."
     if scored and scored.get("truncated") and not s.get("loads"):
         return f"{label} ran out of room: its file was cut off before the end, so OpenModelica cannot read it."
     if not s.get("loads"):
