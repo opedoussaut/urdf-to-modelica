@@ -35,3 +35,13 @@ def test_stream_matches_plain_reply_and_reports_progress():
     assert streamed["truncated"] is True and streamed["metrics"]["eval_count"] == 45
     assert [n for _, n in seen][:3] == [1, 2, 3] and seen[-1] == ("".join(chunks), 45)
     assert any(t is not None for t, _ in seen[:-1])  # partial text is reported before the end
+
+
+def test_loop_guard_stops_repetition_but_not_normal_modelica():
+    from kkh.convert.llm import repeating
+    head = "package P\n  model M\n    Modelica.Mechanics.MultiBody.Parts.Body b1(m=0.1);\n"
+    assert repeating(head + "    using Modelica.Components.Real.Real;\n" * 40)
+    assert repeating(head + "    w_0 = {0, 0, 0};\n    z_0 = {0, 0, 0};\n    angles_0 = {0, 0, 0};\n" * 20)
+    bodies = "".join(f"    Modelica.Mechanics.MultiBody.Parts.Body b{i}(m={0.1 + i / 100:.3f}, r_CM={{0, 0, {i / 50:.3f}}});\n"
+                     for i in range(60))
+    assert not repeating(head + bodies + "  end M;\nend P;\n")

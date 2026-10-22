@@ -54,6 +54,31 @@ REPAIR = """OpenModelica rejected the file. Fix it and return the complete corre
 Diagnostics from OpenModelica (real output):
 {diagnostics}"""
 
+REPEATING = """Your reply started repeating the same lines over and over and was stopped. Write the complete file
+again, once, without repeating any block: no comments, no annotations, only what the contract requires."""
+
+# Loop guard: small local models sometimes repeat one block until the output cap (seen on SO-101 and ALOHA: hundreds of
+# identical lines, minutes of GPU time). Stop when the end of the text is an exact repetition of one block covering at
+# least LOOP_MIN_CHARS (period 8-600 characters, at least 4 copies). Legitimate Modelica never repeats identical text
+# that long. The stopped text is scored as written, like a cut-off file.
+LOOP_MIN_CHARS, LOOP_MIN_COPIES, LOOP_MAX_PERIOD = 800, 4, 600
+
+
+def repeating(text: str) -> bool:
+    for period in range(8, LOOP_MAX_PERIOD + 1):
+        span = max(LOOP_MIN_CHARS, LOOP_MIN_COPIES * period)
+        if span > len(text):
+            break
+        tail = text[-span:]
+        if tail[period:] == tail[:-period]:
+            return True
+    return False
+
+
+class _Repeating(Exception):
+    pass
+
+
 TRUNCATED = """Your reply was cut off at the output limit ({limit} tokens) before the file was complete. Write the complete
 file again, more compactly: no comments, no annotations, one declaration per line, only what the contract requires."""
 
@@ -115,9 +140,24 @@ def convert(urdf: Path, out_dir: Path, rag: bool, score_fn, model: str | None = 
             a = {"attempt": attempt + 1}
             t = time.time()
             phase("writing", attempt + 1, 1 + SETTINGS["repair_attempts"], limit=plan["max_tokens"])
+            seen = {"text": "", "n": 0}
+
+            def watch(text, n):
+                if stream:
+                    stream(text, n)
+                seen["n"] = n
+                if text is not None:
+                    seen["text"] = text
+                    if repeating(text):
+                        raise _Repeating()
+
             try:
                 resp = client.chat(messages, model=model, seed=SETTINGS["seed"], max_tokens=plan["max_tokens"],
-                                   num_ctx=plan["num_ctx"], allow_truncated=True, on_token=stream)
+                                   num_ctx=plan["num_ctx"], allow_truncated=True, on_token=watch)
+            except _Repeating:  # the connection is closed, so Ollama stops generating
+                log(f"  {out['mode']} attempt {attempt + 1}: stopped, the model was repeating itself ({seen['n']} tokens)")
+                resp = {"content": seen["text"], "truncated": True, "repeating": True,
+                        "metrics": {"eval_count": seen["n"], "eval_duration": None, "prompt_eval_count": None}}
             except Exception as exc:
                 a.update(error=f"LLM call failed: {exc}"[:500], seconds=round(time.time() - t, 1))
                 out["attempts"].append(a)
@@ -130,7 +170,7 @@ def convert(urdf: Path, out_dir: Path, rag: bool, score_fn, model: str | None = 
             f.write_text(code, encoding="utf-8")
             target = model_names(code, pkg)
             a.update(file=f, model=target, llm_seconds=round(time.time() - t, 1), metrics=resp["metrics"],
-                     code_chars=len(code), truncated=resp.get("truncated", False))
+                     code_chars=len(code), truncated=resp.get("truncated", False), repeating=resp.get("repeating", False))
             log(f"  {out['mode']} attempt {attempt + 1}: {len(code)} chars{' (cut off)' if a['truncated'] else ''}, scoring")
             # a cut-off file is still scored as written: it is the method's real output
             phase("checking", attempt + 1, 1 + SETTINGS["repair_attempts"])
@@ -143,7 +183,8 @@ def convert(urdf: Path, out_dir: Path, rag: bool, score_fn, model: str | None = 
                 break
             if a["truncated"]:
                 # restart from the original prompt (the cut-off file would not fit in the context with a rewrite)
-                messages = [messages[0], {"role": "user", "content": user + "\n\n" + TRUNCATED.format(limit=plan["max_tokens"]) + "\n/no_think"}]
+                note = REPEATING if a.get("repeating") else TRUNCATED.format(limit=plan["max_tokens"])
+                messages = [messages[0], {"role": "user", "content": user + "\n\n" + note + "\n/no_think"}]
                 continue
             diag = s.get("simulate_messages") or s.get("check_messages") or s.get("load_messages") or "No Modelica model found in the reply."
             messages += [{"role": "assistant", "content": code},

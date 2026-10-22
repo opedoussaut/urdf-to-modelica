@@ -35,6 +35,10 @@ joints) — the ALOHA arms keep the campaign's 10 000, the G1 gets 14 500; conte
 1.6 characters per token (nemotron measured ~1.8 on URDF text). The campaign of 21 Oct 2026 never exceeded its fixed
 24 576-token window (largest attempt 18 951). A cut-off file is scored as written; the next attempt is asked to be
 more compact. The live view shows tokens written against this cap.
+**Loop guard** (`llm.repeating`): generation stops as soon as the end of the text is an exact repetition of one block
+(period 8–600 characters, at least 4 copies, at least 800 characters). Measured on the 40 earlier AI attempts: it
+fires on 9, all nemotron outputs that repeated one line hundreds of times up to the cap, and on none of the others or
+the reference ALOHA model. The stopped text is scored as written; the next attempt is told it was repeating.
 
 1. **AI only** (`llm`): local Ollama (`nemotron-3-nano:4b`), URDF text with visuals/collisions removed, a fixed
    output contract (package `<Robot>`, model `<Robot>Test`, one body per link, `j_<joint>` per joint, unactuated).
