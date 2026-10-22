@@ -87,6 +87,15 @@ model's own motion), read from the stored `.mat` file — nothing is re-simulate
 OpenModelica computed them (positions relative to the root link, as in the geometry check); a grey ghost shows the URDF
 at the same simulated joint angles; parts more than 1 mm from their ghost turn red. Play / pause, time slider, speed.
 
+**Downloads that simulate in OMEdit** (`kkh/convert/export.py`): the `.zip` holds the model, `KkhExcite.mo` (the exact
+4 s motion the studio scored, ready to simulate) and a README with step-by-step OMEdit instructions. For URDFModelica,
+the converter writes each mesh as a bare, mangled file name (first '/' becomes '_') that no tool can find; the export
+adds the robot's meshes under `URDFModelica/Resources/Meshes/<Robot>/` (URDF scale baked in, metres), points the
+visuals at them with `modelica://` URIs and sets the shape size factors to 1 — visualisation only, written into the
+zip, never into the run. Verified: both the SO-101 and ALOHA packages, unzipped, load and simulate `KkhExcite`, and
+every shape URI resolves to a file in the package. Not verified by the studio: the OMEdit animation window itself.
+Limit: URDFModelica keeps one shape per part (the SO-101 has 6 parts drawn from several shapes).
+
 ## Scoring a converted model (eight checks, all measured)
 
 `kkh/convert/score.py`, ranking lexicographic, every check shown. **Completion** = checks passed / 8, shown in %;
