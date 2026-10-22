@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Bot, BookOpen, Check, CircleSlash, Clock, Loader2, FileArchive, FileCode2, FileSearch, Move3d, Pause, Trophy, Upload, Wrench, X } from "lucide-react";
+import { AlertTriangle, Bot, Play, BookOpen, Check, CircleSlash, Clock, Loader2, FileArchive, FileCode2, FileSearch, Move3d, Pause, Trophy, Upload, Wrench, X } from "lucide-react";
 import { useAudience } from "../audience";
 import { message, waitJob, type Doc } from "../studio";
 import { baseOf, convert, keyLabel, MODE_ORDER, orderKeys, type LocalModel, type ModeId, type Report, type RunSummary } from "./api";
 import type { Target } from "./SimpleApp";
-import RobotView, { type Clash, type Hover } from "./RobotView";
+import RobotView, { type Clash, type Hover, type Replay, type ReplayFrame } from "./RobotView";
 
 type Source = {
   id: string;
@@ -436,6 +436,8 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
   const bestTie = best ? tiedWith(best) : [];
   const bestRes = best ? report.modes[best] : undefined;
   const ids = Object.keys(report.criteria);
+  const [watch, setWatch] = useState<string | null>(null);
+  useEffect(() => setWatch(null), [report.id]);
   return (
     <section className="sx-step sx-results">
       <h2>
@@ -544,6 +546,11 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
                   <pre>{(r.score.check_messages || r.score.load_messages || "").slice(-1500)}</pre>
                 </details>
               )}
+              {r.score.simulates && (
+                <button className={"lab-ghost" + (watch === m ? " on" : "")} onClick={() => setWatch(watch === m ? null : m)}>
+                  <Play size={15} /> {watch === m ? "Hide the simulation" : "Watch the simulation"}
+                </button>
+              )}
               {r.main_file ? (
                 <>
                 <button className="lab-ghost" onClick={() => openUnderstand({ kind: "conversion", run: report.id, mode: m })}>
@@ -562,6 +569,9 @@ function Results({ report, expert, openUnderstand }: { report: Report; expert: b
           );
         })}
       </div>
+      {watch && report.modes[watch] && (
+        <ReplayPanel key={report.id + watch} run={report.id} mode={watch} label={LABEL[watch]} source={report.source.id} />
+      )}
       <div className="sx-proves">
         <div>
           <b>What these checks show</b>
@@ -793,6 +803,96 @@ function LiveText({ mode, active }: { mode: string; active: boolean }) {
             finished.
           </small>
         </>
+      )}
+    </div>
+  );
+}
+
+/** Replay of the simulation OpenModelica ran while scoring: solid = the converted model, faint = the robot file. */
+function ReplayPanel({ run, mode, label, source }: { run: string; mode: string; label: string; source: string }) {
+  const [data, setData] = useState<Replay | null>(null),
+    [error, setError] = useState(""),
+    [playing, setPlaying] = useState(true),
+    [speed, setSpeed] = useState(0.5),
+    [ghost, setGhost] = useState(true),
+    [frame, setFrame] = useState<ReplayFrame | null>(null),
+    [seek, setSeek] = useState<{ t: number } | null>(null);
+  useEffect(() => {
+    convert<Replay>(`/runs/${run}/replay?mode=${encodeURIComponent(mode)}`)
+      .then(setData)
+      .catch((e) => setError(message(e)));
+  }, [run, mode]);
+  const duration = data ? data.times[data.times.length - 1] : 0;
+  return (
+    <div className="sx-replay">
+      <div className="sx-replay-head">
+        <b>Simulation of {label}</b>
+        <small className="sx-muted">
+          {data ? `${data.motion} · ${duration.toFixed(1)} s computed by OpenModelica (${data.result_file})` : "Loading the stored result…"}
+        </small>
+      </div>
+      {error && <p className="lab-error">{error}</p>}
+      {data && (
+        <div className="sx-stage">
+          <div className="sx-stage-view">
+            <RobotView source={source} interactive moving={playing} speed={speed} replay={data} ghost={ghost} seek={seek} onReplayFrame={setFrame} height={420} />
+            {frame && (
+              <div className="sx-stage-live">
+                <span>t = {frame.t.toFixed(2)} s</span>
+                {frame.off > 0 ? (
+                  <span className="sx-clash-now">
+                    {frame.off} part{frame.off > 1 ? "s" : ""} away from the robot file · largest gap {frame.worst!.mm.toFixed(1)} mm ({frame.worst!.link})
+                  </span>
+                ) : (
+                  <span>Every part where the robot file says (within {data.tolerance_mm} mm)</span>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="sx-stage-side">
+            <button className={"btn" + (playing ? "" : " primary")} onClick={() => setPlaying((p) => !p)}>
+              {playing ? <Pause size={15} /> : <Play size={15} />} {playing ? "Pause" : "Play"}
+            </button>
+            <input
+              type="range"
+              min={0}
+              max={duration}
+              step={0.01}
+              value={frame?.t ?? 0}
+              onChange={(e) => {
+                setPlaying(false);
+                setSeek({ t: Number(e.target.value) });
+              }}
+              aria-label="Time in the simulation"
+            />
+            <div className="sx-speed" role="group" aria-label="Replay speed">
+              <span>Speed</span>
+              {[
+                [0.25, "¼"],
+                [0.5, "½"],
+                [1, "1× real time"],
+              ].map(([v, l]) => (
+                <button key={v} className={speed === v ? "on" : ""} onClick={() => setSpeed(v as number)}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            <label className="sx-check">
+              <input type="checkbox" checked={ghost} onChange={(e) => setGhost(e.target.checked)} /> Show where the robot file puts each part (grey ghost)
+            </label>
+            <small className="sx-muted">
+              Solid parts are placed exactly where OpenModelica computed them while scoring this file; nothing is re-simulated or smoothed. The grey
+              ghost is the robot file at the same joint angles. A part turns red when it is more than {data.tolerance_mm} mm from its ghost: that
+              is the geometry check, frame by frame.
+            </small>
+            {data.missing_links.length > 0 && (
+              <small className="sx-clash">
+                <b>Not in the model:</b> {data.missing_links.join(", ")}. These parts of the robot file have no counterpart in the converted model, so
+                only their ghost is drawn.
+              </small>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

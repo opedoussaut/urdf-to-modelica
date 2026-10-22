@@ -56,3 +56,22 @@ def test_llm_budget_grows_with_the_robot():
     if g1.exists():
         big = llm.budget(load_urdf(g1), msgs)
         assert big["max_tokens"] > b["max_tokens"] and big["num_ctx"] > b["num_ctx"]
+
+
+def test_replay_matches_the_geometry_check():
+    """Replay positions come from the stored OpenModelica result; their largest gap agrees with the scored check."""
+    import numpy as np
+    from kkh.convert import replay, runner
+    runs = [r for r in runner.list_runs() if r.get("finished")] if hasattr(runner, "list_runs") else []
+    for r in runs:
+        for mode, m in r.get("modes", {}).items():
+            try:
+                d = replay.build(r["id"], mode)
+            except (ValueError, KeyError):
+                continue
+            worst = max(float(np.linalg.norm(np.array(a[:3]) - np.array(b[:3]))) for o in d["links"].values()
+                        for a, b in zip(o["model"], o["urdf"]) if a and b)
+            scored = d["max_position_error_mm"]
+            assert scored is None or abs(worst * 1000 - scored) <= max(1.0, 0.05 * scored)
+            return
+    pytest.skip("no stored simulation result on this machine")

@@ -269,3 +269,7 @@
 .sx-stage-live .sx-clash-now { color: var(--red); border-color: #f4c3bd; background: var(--red-soft); font-weight: 650; }
 .sx-clash { color: var(--ink); background: var(--red-soft); border: 1px solid #f4c3bd; border-radius: 8px; padding: 8px 10px; line-height: 1.45; }
 .sx-clash b { color: var(--red); }
+.sx-replay { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
+.sx-replay-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.sx-replay input[type=range] { width: 100%; }
+.sx .lab-ghost.on { border-color: var(--accent); color: var(--accent); }

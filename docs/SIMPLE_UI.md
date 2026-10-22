@@ -81,6 +81,12 @@ API: `GET /api/convert/sources`, `POST /api/convert/upload` (JSON `{filename, co
 (job, poll `/api/workbench/job/{id}`), `GET /api/convert/runs`, `GET /api/convert/runs/{id}`,
 `GET /api/convert/runs/{id}/file?mode=`, `GET /api/convert/runs/{id}/findings?mode=`, `GET /api/convert/scores?table=conversions|reviews&format=json|csv`.
 
+**Watch the simulation** (`kkh/convert/replay.py`, `GET /api/convert/runs/{id}/replay?mode=`): for every method whose
+model simulates, the result card replays the OpenModelica run made while scoring (the standard excitation, else the
+model's own motion), read from the stored `.mat` file — nothing is re-simulated. Solid parts are placed where
+OpenModelica computed them (positions relative to the root link, as in the geometry check); a grey ghost shows the URDF
+at the same simulated joint angles; parts more than 1 mm from their ghost turn red. Play / pause, time slider, speed.
+
 ## Scoring a converted model (eight checks, all measured)
 
 `kkh/convert/score.py`, ranking lexicographic, every check shown. **Completion** = checks passed / 8, shown in %;

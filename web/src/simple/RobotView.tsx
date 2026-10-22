@@ -24,6 +24,21 @@ type Joint = {
   mimic: { joint: string; multiplier: number; offset: number } | null;
 };
 export type Robot3D = { source: string; robot: string; root: string; links: Record<string, Link>; joints: Joint[]; meshes: number; mesh_bytes: number };
+/** Stored OpenModelica motion of a converted model (GET /runs/{id}/replay): per link and frame [x, y, z, R row-major]
+ * for the model, and the URDF pose at the same joint angles. A model value is null when the model lacks that part. */
+export type Replay = {
+  run: string;
+  mode: string;
+  source: string;
+  motion: string;
+  result_file: string;
+  times: number[];
+  links: Record<string, { model: (number | null)[][] | (null | number[])[]; urdf: (number[] | null)[] }>;
+  missing_links: string[];
+  tolerance_mm: number;
+  max_position_error_mm?: number;
+};
+export type ReplayFrame = { t: number; worst: { link: string; mm: number } | null; off: number };
 export type Clash = { now: string[]; seen: string[] };
 export type Hover = { link: string; mass: number | null; joint?: string; jointType?: string; shapeless?: boolean } | null;
 
@@ -109,6 +124,10 @@ export default function RobotView({
   onInfo,
   onClash,
   onActiveJoint,
+  replay,
+  ghost = true,
+  onReplayFrame,
+  seek,
 }: {
   source: string;
   lod?: "low" | "full";
@@ -122,6 +141,11 @@ export default function RobotView({
   height?: number;
   onClash?: (c: Clash) => void;
   onActiveJoint?: (name: string | null) => void;
+  replay?: Replay | null;
+  ghost?: boolean;
+  onReplayFrame?: (f: ReplayFrame) => void;
+  /** jump the replay to this test time (a new object each time) */
+  seek?: { t: number } | null;
   onHover?: (h: Hover) => void;
   onInfo?: (r: Robot3D, loaded: { meshes: number; total: number }) => void;
 }) {
@@ -138,6 +162,12 @@ export default function RobotView({
   onClashRef.current = onClash;
   const activeRef = useRef(onActiveJoint);
   activeRef.current = onActiveJoint;
+  const seekRef = useRef(seek);
+  seekRef.current = seek;
+  const ghostRef = useRef(ghost);
+  ghostRef.current = ghost;
+  const frameRef = useRef(onReplayFrame);
+  frameRef.current = onReplayFrame;
   const showComRef = useRef(showCom);
   showComRef.current = showCom;
   const hoverRef = useRef(onHover);
@@ -173,6 +203,7 @@ export default function RobotView({
     let raf = 0;
     let updateCom = () => {};
     let checkClashes = (_reset: boolean) => {};
+    let showReplay: ((t: number) => void) | null = null;
 
     const resize = () => {
       const w = el.clientWidth || 300;
@@ -366,6 +397,68 @@ export default function RobotView({
         frame();
         infoRef.current?.(r, { meshes: loadedMeshes, total });
 
+        // replay: every part placed where OpenModelica computed it (solid), the robot file's pose as a ghost (faint);
+        // parts further than the geometry tolerance from their ghost are tinted red
+        if (replay) {
+          const mat4 = (v: number[], fallbackR?: number[] | null) => {
+            const R = v[3] != null ? v.slice(3) : (fallbackR ?? [1, 0, 0, 0, 1, 0, 0, 0, 1]);
+            return new THREE.Matrix4().set(R[0], R[1], R[2], v[0], R[3], R[4], R[5], v[1], R[6], R[7], R[8], v[2], 0, 0, 0, 1);
+          };
+          const ghostMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.28, depthWrite: false });
+          const entries = Object.entries(replay.links).filter(([n]) => linkGroup.has(n));
+          const ghosts = new Map<string, THREE.Group>();
+          for (const [n] of entries) {
+            const g = linkGroup.get(n)!;
+            world.add(g); // flatten: each part is placed directly from the simulation, not through its joints
+            g.matrixAutoUpdate = false;
+            const gh = new THREE.Group();
+            gh.matrixAutoUpdate = false;
+            for (const m of g.children) if ((m as THREE.Mesh).isMesh && m.userData.link === n) {
+              const c = new THREE.Mesh((m as THREE.Mesh).geometry, ghostMat);
+              c.position.copy(m.position);
+              c.quaternion.copy(m.quaternion);
+              c.scale.copy(m.scale);
+              gh.add(c);
+            }
+            ghosts.set(n, gh);
+            world.add(gh);
+          }
+          const meshesOf = (n: string) => linkGroup.get(n)!.children.filter((m) => (m as THREE.Mesh).isMesh && m.userData.link === n) as THREE.Mesh[];
+          const tol = replay.tolerance_mm / 1000;
+          const n = replay.times.length,
+            duration = replay.times[n - 1] || 1;
+          showReplay = (t: number) => {
+            const tt = ((t % duration) + duration) % duration;
+            let i = Math.min(n - 1, Math.round((tt / duration) * (n - 1)));
+            while (i > 0 && replay.times[i] > tt) i--;
+            let worst: ReplayFrame["worst"] = null,
+              off = 0;
+            for (const [name, o] of entries) {
+              const g = linkGroup.get(name)!,
+                gh = ghosts.get(name)!;
+              const u = o.urdf[i],
+                m = o.model[i] as number[] | null;
+              gh.visible = ghostRef.current && !!u;
+              if (u) gh.matrix.copy(mat4(u));
+              g.visible = !!m;
+              if (!m) continue;
+              g.matrix.copy(mat4(m, u ? u.slice(3) : null));
+              const e = u ? Math.hypot(m[0] - u[0], m[1] - u[1], m[2] - u[2]) : 0;
+              const bad = e > tol;
+              if (bad) off++;
+              if (!worst || e * 1000 > worst.mm) worst = { link: name, mm: e * 1000 };
+              for (const me of meshesOf(name)) {
+                const mt = me.material as THREE.MeshStandardMaterial;
+                mt.emissive?.setHex(bad ? 0xdc2626 : 0x000000);
+                mt.emissiveIntensity = bad ? 0.6 : 1;
+              }
+            }
+            frameRef.current?.({ t: replay.times[i], worst, off });
+          };
+          showReplay(0);
+          frame();
+        }
+
         // clash detection between parts (exact triangle test on the light preview shapes). Parts joined by a fixed
         // joint count as one body; neighbours across a moving joint and pairs already touching at rest (in contact by
         // design in the CAD) are not reported.
@@ -463,15 +556,19 @@ export default function RobotView({
       lastMode = modeRef.current,
       lastActive: string | null = null,
       lastCheck = 0;
+    let lastSeek: { t: number } | null | undefined = null;
     const loop = () => {
       raf = requestAnimationFrame(loop);
       const nowMs = performance.now();
       const restart = (movingRef.current && !wasMoving) || modeRef.current !== lastMode;
-      if (restart) testTime = 0;
+      if (restart && !showReplay) testTime = 0;
+      if (seekRef.current && seekRef.current !== lastSeek) testTime = (lastSeek = seekRef.current).t;
       if (movingRef.current) testTime += ((nowMs - last) / 1000) * speedRef.current;
       last = nowMs;
       let active: string | null = null;
-      if (movingRef.current) {
+      if (showReplay) {
+        showReplay(testTime);
+      } else if (movingRef.current) {
         if (modeRef.current === "one") {
           const o = sweepOne(joints, testTime);
           pose(o.q);
@@ -503,7 +600,7 @@ export default function RobotView({
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [source, lod, interactive, autoRotate, height]);
+  }, [source, lod, interactive, autoRotate, height, replay]);
 
   return (
     <div className="sx-robot3d" ref={host} style={{ height }}>

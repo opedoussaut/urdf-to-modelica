@@ -431,3 +431,15 @@ def mesh(source: str, i: int, lod: str = "full"):
     if not 0 <= i < len(meshes):
         raise HTTPException(404, "Unknown mesh")
     return FileResponse(simplified(meshes[i]) if lod == "low" else meshes[i], media_type="model/stl", headers={"Cache-Control": "max-age=86400"})
+
+
+@router.get("/runs/{run_id}/replay")
+def run_replay(run_id: str, mode: str):
+    """Stored OpenModelica motion of one method's model, with the URDF pose at the same joint angles (3D replay)."""
+    from .replay import build
+    try:
+        return build(run_id, mode)
+    except KeyError as exc:
+        raise HTTPException(404, "Unknown run") from exc
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
