@@ -268,10 +268,14 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
           Fair comparison: both AI methods get the same robot file, the same model and settings, and the same two chances to repair their file using
           OpenModelica's error messages. They never see the expected answer.
         </p>
-        <button className="lab-primary sx-run" disabled={busy || !modes.length || !chosen || (modes.some((m) => m !== "urdfmodelica") && !models.length)} onClick={run}>
+        <button className="lab-primary sx-run" disabled={busy || !!live?.running || !modes.length || !chosen || (modes.some((m) => m !== "urdfmodelica") && !models.length)} onClick={run}>
           {busy ? (
             <>
               <Clock size={16} /> Running… {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, "0")}
+            </>
+          ) : live?.running ? (
+            <>
+              <Clock size={16} /> A comparison on {live.source} is running: wait for it to finish
             </>
           ) : (
             <>Run the comparison on {chosen ? chosen.label : "…"}</>
