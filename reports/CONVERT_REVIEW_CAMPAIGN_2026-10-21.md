@@ -108,3 +108,19 @@ millimetre/metre units, origin typo) in both modes.
   reviews quote fewer numbers, so faithfulness is less informative there.
 - Best configuration measured so far: **qwen3-coder 30B, AI only, protocol v2** — 9/16 seeded errors located, 6 fixed
   automatically, 5/7 natural defects found at precision 0.26, ~50 s per review.
+
+## 5. Addendum 22 Oct 2026: demo dry runs on the SO-101 arm (LeRobot, 6 joints)
+
+Runs `8bd00d604f3d` (before the loop guard), `167962dbccc2` (nemotron, after), `1077d2387548` (qwen3-coder:30b).
+
+| Method · model | Checks | Wall time | Notes |
+| --- | --- | --- | --- |
+| URDFModelica | **8/8** | 23 s | exact geometry, torques within 0.01 % |
+| AI only · nemotron 4B | 1/8 | 77 s (314 s before the loop guard) | unreadable file; attempts 2-3 stopped while repeating one line |
+| AI + library · nemotron 4B | 1/8 | 76 s (270 s before) | unreadable file |
+| AI only · qwen3-coder 30B | 2/8 | 489 s | readable but `within Modelica.Mechanics.MultiBody;` at the top, so the model is not found |
+| AI + library · qwen3-coder 30B | **6/8** | 244 s | **first AI file that runs**: complete (2401 equations = variables), every axis, mass, centre of mass and inertia right; joint origins left out (no FixedTranslation/FixedRotation), so parts are up to 596 mm off and 180° turned; suspect joint `shoulder_pan` (URDF origin 39 mm forward, 62 mm up, rotated 180°); torques 5/6 joints within 5 % (worst 5.63 %) |
+
+Reading: on a small arm, library retrieval plus the 30B model crosses the completeness and simulation gates for the
+first time; the remaining error is structural (frames), and the geometry check localises it to the first joint. The
+loop guard (stop on exact repetition) cut the nemotron demo from about 10 to under 3 minutes with identical scores.
