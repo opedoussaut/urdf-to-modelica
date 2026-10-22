@@ -160,7 +160,7 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
           <span className="sx-n">1</span> Choose a robot
         </h2>
         <p className="sx-muted sx-intro">
-          Four real robots described by public files from their makers, plus a two-joint teaching arm for quick demos. What you see is drawn from the very file that will be converted: every part, every
+          Five real robots described by public files from their makers. The SO-101 is small enough for a complete comparison in a few minutes. What you see is drawn from the very file that will be converted: every part, every
           joint, where it sits and how it turns. That is what the physics model has to reproduce.
         </p>
         <div className="sx-robots">
@@ -174,7 +174,7 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
                 {s.links} parts · {s.movable} moving joints · {s.mass_kg} kg
               </small>
               <small className="sx-tag">
-                {s.demo ? "Teaching robot defined in this project" : `${s.license} · ${s.graph ? "knowledge graph available" : "not yet in the knowledge graph"}`}
+                {s.license} · {s.graph ? "knowledge graph available" : "not yet in the knowledge graph"}
               </small>
               {expert && <code>{s.sha256.slice(0, 16)}…</code>}
             </button>

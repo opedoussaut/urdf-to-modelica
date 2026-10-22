@@ -96,7 +96,13 @@ class Progress:
         ACTIVE.parent.mkdir(parents=True, exist_ok=True)
         tmp = ACTIVE.with_suffix(".tmp")
         tmp.write_text(json.dumps({**self.state, "now": time.time()}), encoding="utf-8")
-        tmp.replace(ACTIVE)
+        for attempt in range(20):  # Windows: the page (or an antivirus) may hold the file open for a moment
+            try:
+                tmp.replace(ACTIVE)
+                return
+            except PermissionError:
+                time.sleep(0.05)
+        # progress display only: never fail the comparison because the status file was busy
 
     def phase(self, mode: str, phase: str, attempt: int | None = None, attempts: int | None = None, limit: int | None = None):
         m = self.state["modes"][mode]

@@ -150,6 +150,31 @@
         "data/robots/berkeley_humanoid/berkeley_humanoid_lite/meshes/leg_right_knee_pitch_visual.stl"
       ],
       "role": "Berkeley Humanoid Lite URDF (exported from CAD) and the meshes it references; studio robot choice"
+    },
+    {
+      "id": "so_arm100",
+      "url": "https://github.com/TheRobotStudio/SO-ARM100.git",
+      "ref": "main",
+      "commit": "a758567c3978dfeefe282ede0500085a48fe8f78",
+      "license": "Apache-2.0",
+      "dir": "so_arm100",
+      "sparse_files": [
+        "Simulation/SO101/so101_new_calib.urdf",
+        "Simulation/SO101/assets/base_motor_holder_so101_v1.stl",
+        "Simulation/SO101/assets/base_so101_v2.stl",
+        "Simulation/SO101/assets/motor_holder_so101_base_v1.stl",
+        "Simulation/SO101/assets/motor_holder_so101_wrist_v1.stl",
+        "Simulation/SO101/assets/moving_jaw_so101_v1.stl",
+        "Simulation/SO101/assets/rotation_pitch_so101_v1.stl",
+        "Simulation/SO101/assets/sts3215_03a_no_horn_v1.stl",
+        "Simulation/SO101/assets/sts3215_03a_v1.stl",
+        "Simulation/SO101/assets/under_arm_so101_v1.stl",
+        "Simulation/SO101/assets/upper_arm_so101_v1.stl",
+        "Simulation/SO101/assets/waveshare_mounting_plate_so101_v2.stl",
+        "Simulation/SO101/assets/wrist_roll_follower_so101_v1.stl",
+        "Simulation/SO101/assets/wrist_roll_pitch_so101_v2.stl"
+      ],
+      "role": "SO-101 arm (TheRobotStudio / Hugging Face LeRobot) URDF and the meshes it references; quick-demo robot"
     }
   ]
 }

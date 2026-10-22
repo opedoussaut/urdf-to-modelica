@@ -15,13 +15,15 @@ UPLOADS = RUNS / "uploads"
 MAX_UPLOAD = 300_000  # bytes
 
 PINNED = {
-    "demo_two_link_arm": {
-        "path": "data/urdf/demo_two_link_arm.urdf", "label": "Demo: two-link arm (quick)", "short": "Demo arm", "demo": True,
-        "what": "A small teaching robot for live demos: two joints, three boxes. A full comparison takes minutes, not a quarter hour",
-        "sources": ["Defined in this project (tools/make_demo_robot.py): uniform boxes, inertia I = m/12 (b² + c²)",
-                    "Not a real product: values chosen to be simple and checkable by hand"],
-        "license": "Project file", "repo": None,
-        "provenance": "tools/make_demo_robot.py (generated, not hand-edited)", "graph": False},
+    "so101": {
+        "path": "third_party/so_arm100/Simulation/SO101/so101_new_calib.urdf",
+        "label": "SO-101 arm (LeRobot)", "short": "SO-101", "demo": True,
+        "what": "Low-cost 6-joint arm used with Hugging Face LeRobot for learning robot skills; small enough for a demo in minutes",
+        "sources": ["TheRobotStudio SO-ARM100 repository (official SO-101 URDF exported from the CAD, so101_new_calib)",
+                    "Hugging Face LeRobot documentation (SO-101 setup and calibration)",
+                    "Note: the file gives every joint the same effort limit (10 N·m), a generic value rather than the servo rating"],
+        "license": "Apache-2.0", "repo": "https://github.com/TheRobotStudio/SO-ARM100",
+        "provenance": "SO-ARM100 @ a758567 (pinned, config/public_sources.json)", "graph": False},
     "unitree_g1": {
         "path": "third_party/unitree_ros/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf",
         "label": "Unitree G1 EDU with Dex3-1 hands", "short": "Unitree G1", "default": True,
