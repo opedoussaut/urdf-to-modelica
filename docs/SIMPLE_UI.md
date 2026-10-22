@@ -14,7 +14,7 @@ Simulation of the converted models beyond the 2 s check comes later.
 
 ## Convert & compare
 
-Inputs (`kkh/convert/sources.py`): four pinned robots — **Unitree G1 EDU with Dex3-1 hands** (default; unitree_ros
+Inputs (`kkh/convert/sources.py`): five pinned robots — the **SO-101 arm** (TheRobotStudio / LeRobot, Apache-2.0; 6 joints, the quick demo robot: URDFModelica 8/8 checks in 23 s), **Unitree G1 EDU with Dex3-1 hands** (default; unitree_ros
 `g1_29dof_with_hand_rev_1_0.urdf`, BSD-3), **Berkeley Humanoid Lite** (CC-BY-SA-4.0), the ALOHA 2 **follower**
 (`aloha_vx300s`) and **leader** (`aloha_wx250s`) — or an uploaded `.urdf` (≤ 300 kB, parsed before acceptance, stored by
 hash in `runs/convert/uploads/`). The humanoids are pinned sparse checkouts (URDF + the meshes it references, listed in
