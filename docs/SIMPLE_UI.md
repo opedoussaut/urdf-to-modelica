@@ -26,6 +26,12 @@ joint frames from URDF origins (rpy as Z·Y·X), motion about the URDF axis, mim
 only (paths resolved server-side, never outside the repository). Card previews use `lod=low` (vertex clustering, cached
 in `runs/convert/mesh_cache/`, ~10 % of the size). "Move the joints" plays the scorer's standard excitation. Uploads,
 which come without meshes, are drawn as a skeleton.
+**Clashes and motion modes:** the standard excitation moves each joint within its own URDF limits, so parts can pass
+through each other (a URDF has no self-collision limits; the converted models and the MuJoCo reference have no
+contacts either, so scores are unaffected). The 3D view shows it honestly: parts passing through each other turn red
+and are listed (exact triangle test with `three-mesh-bvh` 0.9.16 on the light preview meshes; parts joined by fixed
+joints count as one body; neighbours across a moving joint and pairs already touching at rest are ignored). "One joint
+at a time" moves each joint in turn (2 s of test time each) from the rest pose and back, which avoids most clashes.
 
 Modes (one isolated directory each, `runs/convert/<id>/<mode>/`):
 

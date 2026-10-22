@@ -4,7 +4,7 @@ import { useAudience } from "../audience";
 import { message, waitJob, type Doc } from "../studio";
 import { baseOf, convert, keyLabel, MODE_ORDER, orderKeys, type LocalModel, type ModeId, type Report, type RunSummary } from "./api";
 import type { Target } from "./SimpleApp";
-import RobotView, { type Hover } from "./RobotView";
+import RobotView, { type Clash, type Hover } from "./RobotView";
 
 type Source = {
   id: string;
@@ -584,11 +584,16 @@ function RobotStage({ source }: { source: Source }) {
   const [moving, setMoving] = useState(false),
     [showCom, setShowCom] = useState(false),
     [speed, setSpeed] = useState(0.25),
+    [mode, setMode] = useState<"all" | "one">("all"),
+    [clashOn, setClashOn] = useState(true),
+    [clash, setClash] = useState<Clash>({ now: [], seen: [] }),
+    [active, setActive] = useState<string | null>(null),
     [hover, setHover] = useState<Hover>(null),
     [meshInfo, setMeshInfo] = useState("");
   useEffect(() => {
     setMoving(false);
     setHover(null);
+    setClash({ now: [], seen: [] });
     setMeshInfo("");
   }, [source.id]);
   return (
@@ -600,6 +605,10 @@ function RobotStage({ source }: { source: Source }) {
           moving={moving}
           showCom={showCom}
           speed={speed}
+          mode={mode}
+          clashes={clashOn}
+          onClash={setClash}
+          onActiveJoint={setActive}
           height={420}
           onHover={setHover}
           onInfo={(r, l) =>
@@ -612,6 +621,16 @@ function RobotStage({ source }: { source: Source }) {
             )
           }
         />
+        {moving && (active || (clashOn && clash.now.length > 0)) && (
+          <div className="sx-stage-live">
+            {active && (
+              <span>
+                Moving now: <b>{active}</b>
+              </span>
+            )}
+            {clashOn && clash.now.length > 0 && <span className="sx-clash-now">Passing through each other: {clash.now.join(", ")}</span>}
+          </div>
+        )}
         <div className="sx-stage-hover">
           {hover ? (
             <>
@@ -647,6 +666,30 @@ function RobotStage({ source }: { source: Source }) {
             </button>
           ))}
         </div>
+        <div className="sx-speed" role="group" aria-label="Motion">
+          <span>Motion</span>
+          <button className={mode === "all" ? "on" : ""} onClick={() => setMode("all")}>
+            All joints together (the test)
+          </button>
+          <button className={mode === "one" ? "on" : ""} onClick={() => setMode("one")}>
+            One joint at a time
+          </button>
+        </div>
+        <label className="sx-check">
+          <input type="checkbox" checked={clashOn} onChange={(e) => setClashOn(e.target.checked)} /> Show parts passing through each other (red)
+        </label>
+        {clashOn && clash.seen.length > 0 && (
+          <small className="sx-clash">
+            <b>
+              {clash.seen.length} pair{clash.seen.length > 1 ? "s" : ""} of parts passed through each other since the motion started
+            </b>
+            {": "}
+            {clash.seen.slice(0, 8).join(", ")}
+            {clash.seen.length > 8 ? ", …" : ""}. The robot file limits each joint on its own; nothing in it stops one part from
+            reaching another. The converted models and the MuJoCo reference have no contacts either, so the comparison stays fair,
+            but this motion is a consistency test, not one the real robot could perform.
+          </small>
+        )}
         <label className="sx-check">
           <input type="checkbox" checked={showCom} onChange={(e) => setShowCom(e.target.checked)} /> Show the centre of mass
         </label>

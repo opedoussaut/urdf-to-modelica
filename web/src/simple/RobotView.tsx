@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
+import { MeshBVH } from "three-mesh-bvh";
 
 /** 3D view of a robot, built from the same URDF that is converted: each joint is a frame placed by its URDF origin
  * (xyz, then roll-pitch-yaw), turning or sliding along its URDF axis; each part carries its URDF meshes.
@@ -23,6 +24,7 @@ type Joint = {
   mimic: { joint: string; multiplier: number; offset: number } | null;
 };
 export type Robot3D = { source: string; robot: string; root: string; links: Record<string, Link>; joints: Joint[]; meshes: number; mesh_bytes: number };
+export type Clash = { now: string[]; seen: string[] };
 export type Hover = { link: string; mass: number | null; joint?: string; jointType?: string; shapeless?: boolean } | null;
 
 const describeCache = new Map<string, Promise<Robot3D>>();
@@ -66,6 +68,24 @@ function sweep(joints: Joint[], t: number): Record<string, number> {
   return q;
 }
 
+/** "One joint at a time": each independent joint in turn leaves the rest pose, swings through the same range as in
+ * the standard excitation, and comes back (smoothly, ONE_PERIOD seconds of test time each); the others stay at rest. */
+const ONE_PERIOD = 2;
+function sweepOne(joints: Joint[], t: number): { q: Record<string, number>; active?: string } {
+  const q = rest(joints);
+  const free = joints.filter((j) => movable(j) && !j.mimic);
+  if (!free.length) return { q };
+  const j = free[Math.floor(t / ONE_PERIOD) % free.length];
+  const local = t % ONE_PERIOD;
+  const limited = j.lower != null && j.upper != null && j.upper > j.lower && j.type !== "continuous";
+  const centre = limited ? (j.lower! + j.upper!) / 2 : 0,
+    amp = limited ? 0.4 * (j.upper! - j.lower!) : j.type === "prismatic" ? 0.05 : 1;
+  const w = Math.sin((Math.PI * local) / ONE_PERIOD) ** 2;
+  q[j.name] = q[j.name] + w * (centre + amp * Math.sin((2 * Math.PI * local) / ONE_PERIOD) - q[j.name]);
+  for (const m of joints) if (m.mimic && movable(m)) q[m.name] = m.mimic.multiplier * (q[m.mimic.joint] ?? 0) + m.mimic.offset;
+  return { q, active: j.name };
+}
+
 /** Rest pose: zero where zero is inside the limits, else the nearest limit (mimic joints follow their master). */
 function rest(joints: Joint[]): Record<string, number> {
   const q: Record<string, number> = {};
@@ -82,9 +102,13 @@ export default function RobotView({
   moving = false,
   showCom = false,
   speed = 0.25,
+  mode = "all",
+  clashes = false,
   height = 360,
   onHover,
   onInfo,
+  onClash,
+  onActiveJoint,
 }: {
   source: string;
   lod?: "low" | "full";
@@ -93,7 +117,11 @@ export default function RobotView({
   moving?: boolean;
   showCom?: boolean;
   speed?: number;
+  mode?: "all" | "one";
+  clashes?: boolean;
   height?: number;
+  onClash?: (c: Clash) => void;
+  onActiveJoint?: (name: string | null) => void;
   onHover?: (h: Hover) => void;
   onInfo?: (r: Robot3D, loaded: { meshes: number; total: number }) => void;
 }) {
@@ -102,6 +130,14 @@ export default function RobotView({
   movingRef.current = moving;
   const speedRef = useRef(speed);
   speedRef.current = speed;
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  const clashRef = useRef(clashes);
+  clashRef.current = clashes;
+  const onClashRef = useRef(onClash);
+  onClashRef.current = onClash;
+  const activeRef = useRef(onActiveJoint);
+  activeRef.current = onActiveJoint;
   const showComRef = useRef(showCom);
   showComRef.current = showCom;
   const hoverRef = useRef(onHover);
@@ -136,6 +172,7 @@ export default function RobotView({
     let joints: Joint[] = [];
     let raf = 0;
     let updateCom = () => {};
+    let checkClashes = (_reset: boolean) => {};
 
     const resize = () => {
       const w = el.clientWidth || 300;
@@ -235,6 +272,14 @@ export default function RobotView({
           if (hsl.l < 0.28) c.setHSL(hsl.h, hsl.s, 0.28);
           return c;
         };
+        type Collider = { link: string; geo: Promise<THREE.BufferGeometry>; local: THREE.Matrix4 };
+        const colliders: Collider[] = [];
+        const localMatrix = (v: Visual) =>
+          new THREE.Matrix4().compose(
+            new THREE.Vector3(v.xyz[0], v.xyz[1], v.xyz[2]),
+            new THREE.Quaternion().setFromEuler(euler(v.rpy)),
+            new THREE.Vector3(v.scale[0], v.scale[1], v.scale[2]),
+          );
         const place = (m: THREE.Mesh, v: Visual, name: string) => {
           m.position.set(v.xyz[0], v.xyz[1], v.xyz[2]);
           m.setRotationFromEuler(euler(v.rpy));
@@ -254,11 +299,14 @@ export default function RobotView({
                   ? new THREE.CylinderGeometry(sh.radius, sh.radius, sh.length, 32).rotateX(Math.PI / 2)
                   : new THREE.SphereGeometry(sh.radius, 24, 16);
             place(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: colour(v), roughness: 0.5, metalness: 0.1 })), v, name);
+            colliders.push({ link: name, geo: Promise.resolve(geo), local: localMatrix(v) });
           }
         for (const [name, link] of Object.entries(r.links)) {
           for (const v of link.visuals) {
             if (v.mesh === null) continue;
             const url = `/api/convert/mesh?source=${encodeURIComponent(source)}&i=${v.mesh}&lod=${lod}`;
+            if (interactive)
+              colliders.push({ link: name, geo: geometry(`/api/convert/mesh?source=${encodeURIComponent(source)}&i=${v.mesh}&lod=low`), local: localMatrix(v) });
             pending.push(
               geometry(url)
                 .then((geo) => {
@@ -318,6 +366,70 @@ export default function RobotView({
         frame();
         infoRef.current?.(r, { meshes: loadedMeshes, total });
 
+        // clash detection between parts (exact triangle test on the light preview shapes). Parts joined by a fixed
+        // joint count as one body; neighbours across a moving joint and pairs already touching at rest (in contact by
+        // design in the CAD) are not reported.
+        if (interactive && colliders.length) {
+          const ready = (await Promise.all(colliders.map((c) => c.geo.catch(() => null)))).map((geo, i) => ({ ...colliders[i], geo }));
+          if (disposed) return;
+          const cs = ready.filter((c) => c.geo) as { link: string; geo: THREE.BufferGeometry; local: THREE.Matrix4 }[];
+          for (const c of cs) {
+            const g = c.geo as THREE.BufferGeometry & { boundsTree?: MeshBVH };
+            if (!g.boundsTree) g.boundsTree = new MeshBVH(g);
+            if (!g.boundingBox) g.computeBoundingBox();
+          }
+          const body = new Map<string, string>(Object.keys(r.links).map((n) => [n, n]));
+          const find = (n: string): string => (body.get(n) === n ? n : find(body.get(n)!));
+          for (const j of r.joints) if (j.type === "fixed") body.set(find(j.child), find(j.parent));
+          const ignore = new Set<string>();
+          const key = (a: string, b: string) => (a < b ? a + "|" + b : b + "|" + a);
+          for (const j of r.joints) ignore.add(key(find(j.parent), find(j.child)));
+          const W = cs.map(() => new THREE.Matrix4()),
+            boxes = cs.map(() => new THREE.Box3()),
+            inv = new THREE.Matrix4(),
+            rel = new THREE.Matrix4();
+          const touching = () => {
+            world.updateMatrixWorld(true);
+            cs.forEach((c, i) => {
+              W[i].multiplyMatrices(linkGroup.get(c.link)!.matrixWorld, c.local);
+              boxes[i].copy(c.geo.boundingBox!).applyMatrix4(W[i]);
+            });
+            const out = new Set<string>();
+            for (let i = 0; i < cs.length; i++)
+              for (let k = i + 1; k < cs.length; k++) {
+                const a = find(cs[i].link),
+                  b = find(cs[k].link);
+                if (a === b || ignore.has(key(a, b)) || out.has(key(a, b)) || !boxes[i].intersectsBox(boxes[k])) continue;
+                rel.multiplyMatrices(inv.copy(W[i]).invert(), W[k]);
+                if ((cs[i].geo as THREE.BufferGeometry & { boundsTree: MeshBVH }).boundsTree.intersectsGeometry(cs[k].geo, rel)) out.add(key(a, b));
+              }
+            return out;
+          };
+          pose(rest(joints));
+          for (const k of touching()) ignore.add(k);
+          const meshesOf = (b: string) => pickable.filter((m) => find(m.userData.link) === b) as THREE.Mesh[];
+          let shown = new Set<string>();
+          const seen = new Set<string>();
+          const label = (k: string) => k.replace("|", " ↔ ");
+          checkClashes = (reset: boolean) => {
+            if (reset) seen.clear();
+            const now = clashRef.current && movingRef.current ? touching() : new Set<string>();
+            const red = new Set([...now].flatMap((k) => k.split("|")));
+            const was = new Set([...shown].flatMap((k) => k.split("|")));
+            for (const b of new Set([...red, ...was]))
+              for (const m of meshesOf(b)) {
+                const mat = m.material as THREE.MeshStandardMaterial;
+                mat.emissive?.setHex(red.has(b) ? 0xdc2626 : 0x000000);
+                mat.emissiveIntensity = red.has(b) ? 0.75 : 1;
+              }
+            const before = seen.size;
+            now.forEach((k) => seen.add(k));
+            const changed = now.size !== shown.size || [...now].some((k) => !shown.has(k)) || seen.size !== before || reset;
+            shown = now;
+            if (changed) onClashRef.current?.({ now: [...now].map(label), seen: [...seen].map(label) });
+          };
+        }
+
         // hover: name, mass and joint of the part under the pointer
         if (interactive) {
           const ray = new THREE.Raycaster(),
@@ -347,15 +459,32 @@ export default function RobotView({
     // test time advances at the chosen speed (1 = the real excitation, where the 43-joint G1 reaches ~2.4 Hz)
     let last = performance.now(),
       testTime = 0;
-    let wasMoving = false;
+    let wasMoving = false,
+      lastMode = modeRef.current,
+      lastActive: string | null = null,
+      lastCheck = 0;
     const loop = () => {
       raf = requestAnimationFrame(loop);
       const nowMs = performance.now();
+      const restart = (movingRef.current && !wasMoving) || modeRef.current !== lastMode;
+      if (restart) testTime = 0;
       if (movingRef.current) testTime += ((nowMs - last) / 1000) * speedRef.current;
       last = nowMs;
-      if (movingRef.current) pose(sweep(joints, testTime));
-      else if (wasMoving) pose(rest(joints));
+      let active: string | null = null;
+      if (movingRef.current) {
+        if (modeRef.current === "one") {
+          const o = sweepOne(joints, testTime);
+          pose(o.q);
+          active = o.active ?? null;
+        } else pose(sweep(joints, testTime));
+      } else if (wasMoving) pose(rest(joints));
+      if (active !== lastActive) activeRef.current?.((lastActive = active));
+      if (restart || (wasMoving && !movingRef.current) || (movingRef.current && nowMs - lastCheck > 150)) {
+        lastCheck = nowMs;
+        checkClashes(restart);
+      }
       wasMoving = movingRef.current;
+      lastMode = modeRef.current;
       updateCom();
       controls.update();
       renderer.render(scene, camera);

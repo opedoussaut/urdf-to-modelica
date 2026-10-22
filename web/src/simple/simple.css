@@ -264,3 +264,8 @@
 .sx .sx-speed button { border: 1px solid var(--line-2); background: var(--surface); border-radius: 999px; padding: 2px 9px; font-size: 12px; color: var(--ink); cursor: pointer; }
 .sx .sx-speed button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 650; }
 .sx-demo-tag { align-self: flex-start; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--green); background: var(--green-soft); border-radius: 999px; padding: 2px 8px; }
+.sx-stage-live { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; pointer-events: none; }
+.sx-stage-live span { background: rgba(255,255,255,0.9); border: 1px solid var(--line-2); border-radius: 999px; padding: 2px 10px; }
+.sx-stage-live .sx-clash-now { color: var(--red); border-color: #f4c3bd; background: var(--red-soft); font-weight: 650; }
+.sx-clash { color: var(--ink); background: var(--red-soft); border: 1px solid #f4c3bd; border-radius: 8px; padding: 8px 10px; line-height: 1.45; }
+.sx-clash b { color: var(--red); }
