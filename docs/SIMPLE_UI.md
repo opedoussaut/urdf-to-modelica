@@ -8,6 +8,7 @@ remembered per browser (`localStorage kkh.ui`).
 | --- | --- | --- |
 | **Convert & compare** | URDF → Modelica three ways, scored by the same seven real OpenModelica checks | `kkh/convert/`, `web/src/simple/Convert.tsx` |
 | **Review** | Review a generated (or seeded test) file: manually, AI-assisted, or AI + ontologies; each review scored against known defects | `kkh/convert/review.py`, `review_score.py`, `web/src/simple/Review.tsx` |
+| **Guide** | Documentation of the flow (5 steps: you do / what happens / you get / why), the design rationale, dated measured results, the revised workflow with build status, and a searchable glossary (48 terms). Engineering view adds code paths and sources. Deep link `?page=guide` | `web/src/simple/Guide.tsx`, `guideContent.ts` |
 | **Learn the ideas** | The Physical AI Atlas, incl. the concept "Three ways to build a model from a robot file" | `web/src/Atlas.tsx` |
 
 Simulation of the converted models beyond the 2 s check comes later.

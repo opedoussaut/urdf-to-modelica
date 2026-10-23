@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { BookOpen, FileSearch, LayoutGrid, RotateCcw, Workflow } from "lucide-react";
+import { BookOpen, FileSearch, FileText, LayoutGrid, RotateCcw, Workflow } from "lucide-react";
 import { convert } from "./api";
 import { AudienceContext, storeAudience, storedAudience, type Audience } from "../audience";
 import "../lab.css";
@@ -7,9 +7,10 @@ import "./simple.css";
 
 const Convert = lazy(() => import("./Convert")),
   Review = lazy(() => import("./Review")),
+  Guide = lazy(() => import("./Guide")),
   Atlas = lazy(() => import("../Atlas"));
 
-type Page = "convert" | "review" | "learn";
+type Page = "convert" | "review" | "guide" | "learn";
 // Full-studio page index (App tabs) → deep-link key, for the Atlas "See it in the studio" buttons.
 const STUDIO_WS = ["robot", "editor", "copilot", "knowledge", "journey", "lab", "pipeline", "reasoning", "home", "atlas"];
 export type Target = { kind?: "conversion" | "seeded"; run?: string; mode?: string; mutation?: string };
@@ -25,6 +26,7 @@ export function openFullStudio(ws = "home") {
 const PAGES: { id: Page; label: string; sub: string; Icon: typeof Workflow }[] = [
   { id: "convert", label: "Convert & compare", sub: "Robot file → physics model, three ways", Icon: Workflow },
   { id: "review", label: "Review", sub: "Manual, AI or AI + ontologies", Icon: FileSearch },
+  { id: "guide", label: "Guide", sub: "The flow, why, and the words", Icon: FileText },
   { id: "learn", label: "Learn the ideas", sub: "Physical AI Atlas", Icon: BookOpen },
 ];
 
@@ -33,7 +35,7 @@ export default function SimpleApp() {
   const params = new URLSearchParams(location.search);
   const [page, setPage] = useState<Page>(() => {
     const p = params.get("page") === "understand" ? "review" : params.get("page");
-    return ["convert", "review", "learn"].includes(p || "") ? (p as Page) : "convert";
+    return ["convert", "review", "guide", "learn"].includes(p || "") ? (p as Page) : "convert";
   });
   const [target, setTarget] = useState<Target | undefined>(() =>
     params.get("mutation")
@@ -109,6 +111,7 @@ export default function SimpleApp() {
           <Suspense fallback={<div className="lab">Loading…</div>}>
             {page === "convert" && <Convert openUnderstand={(t) => go("review", t)} learn={() => go("learn", undefined, "three-ways")} />}
             {page === "review" && <Review target={target} setTarget={(t) => go("review", t)} toConvert={() => go("convert")} learn={() => go("learn", undefined, "scoring")} />}
+            {page === "guide" && <Guide go={(p) => go(p)} learn={() => go("learn")} />}
             {page === "learn" && <Atlas open={(i) => openFullStudio(STUDIO_WS[i] || "home")} />}
           </Suspense>
         </main>

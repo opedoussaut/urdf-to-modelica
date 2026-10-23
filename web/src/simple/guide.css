@@ -1,0 +1,76 @@
+/* Guide page of the simplified studio. Scoped under .sx .gd (tokens from simple.css). */
+.sx .gd { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 28px; align-items: start; }
+.sx .gd-toc { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 2px; padding-top: 6px; }
+.sx .gd-toc-h { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); margin: 0 0 8px 10px; }
+.sx .gd-toc button { text-align: left; border: 0; background: transparent; padding: 7px 10px; border-radius: 8px; color: var(--ink-2); font-size: 13.5px; cursor: pointer; }
+.sx .gd-toc button:hover { background: var(--surface); color: var(--accent); }
+.sx .gd-toc .gd-toc-atlas { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--accent); font-weight: 600; }
+
+.sx .gd-main { min-width: 0; }
+.sx .gd-head h1 { font-size: 28px; letter-spacing: -0.4px; margin: 6px 0 8px; }
+.sx .gd-head .sx-lead { line-height: 1.6; }
+.sx .gd-strip { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.sx .gd-strip li { display: flex; align-items: center; gap: 6px; }
+.sx .gd-strip button { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px 6px 6px; font-size: 13.5px; font-weight: 600; color: var(--ink); cursor: pointer; }
+.sx .gd-strip button:hover { border-color: var(--accent); color: var(--accent); }
+.sx .gd-strip .sx-n { width: 22px; height: 22px; font-size: 12px; }
+.sx .gd-strip-arrow { color: var(--line-2); }
+
+.sx .gd-section { margin-top: 34px; scroll-margin-top: 90px; }
+.sx .gd-section > h2 { display: block; font-size: 20px; margin: 0 0 12px; letter-spacing: -0.2px; }
+.sx .gd-intro { color: var(--ink-2); line-height: 1.6; max-width: 860px; margin: 0 0 14px; }
+
+.sx .gd-step { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 22px; margin-top: 14px; scroll-margin-top: 90px; }
+.sx .gd-step > header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.sx .gd-step > header h3 { margin: 0; font-size: 17px; color: var(--ink); flex: 1; }
+.sx .gd-step dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 22px; margin: 0; align-items: start; }
+/* "What happens" (2nd) fills the right column beside "You do" and "You get" */
+.sx .gd-step dl > div:nth-child(2) { grid-column: 2; grid-row: 1 / span 2; }
+.sx .gd-step dl > div:nth-child(3) { grid-column: 1; grid-row: 2; }
+.sx .gd-step dt { font-size: 11.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+.sx .gd-step dd { margin: 0; color: var(--ink); line-height: 1.6; font-size: 14px; }
+.sx .gd-step .gd-why { grid-column: 1 / -1; background: var(--accent-soft); border-radius: 10px; padding: 10px 14px; }
+.sx .gd-step .gd-why dt { color: var(--accent); }
+.sx .gd-code { margin: 10px 0 0; font-family: "JetBrains Mono", Consolas, monospace; font-size: 12px; color: var(--muted); }
+
+.sx .gd-why-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.sx .gd-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.sx .gd-card b { display: block; font-size: 14.5px; margin-bottom: 4px; color: var(--ink); }
+.sx .gd-card p { margin: 0; color: var(--ink-2); line-height: 1.55; font-size: 13.5px; }
+
+.sx .gd-measured { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.sx .gd-measured li { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; line-height: 1.55; }
+.sx .gd-date { font-size: 12.5px; font-weight: 700; color: var(--muted); padding-top: 1px; }
+.sx .gd-measured small { display: block; margin-top: 3px; font-family: "JetBrains Mono", Consolas, monospace; font-size: 11.5px; color: var(--muted); }
+
+.sx .gd-stages { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.sx .gd-stage { position: relative; display: flex; flex-direction: column; gap: 5px; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--line-2); border-radius: 10px; padding: 12px; }
+.sx .gd-stage.built { border-top-color: var(--green); }
+.sx .gd-stage.in-progress { border-top-color: var(--accent); }
+.sx .gd-stage-n { font-size: 11px; font-weight: 700; color: var(--muted); }
+.sx .gd-stage b { font-size: 13.5px; color: var(--ink); }
+.sx .gd-stage p { margin: 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.5; flex: 1; }
+.sx .gd-badge { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--canvas); color: var(--muted); }
+.sx .gd-stage.built .gd-badge { background: var(--green-soft); color: var(--green); }
+.sx .gd-stage.in-progress .gd-badge { background: var(--accent-soft); color: var(--accent); }
+
+.sx .gd-search { display: flex; align-items: center; gap: 8px; max-width: 420px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 12px; color: var(--muted); margin-bottom: 8px; }
+.sx .gd-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12); }
+.sx .gd-search input { border: 0; outline: 0; background: transparent; font: inherit; width: 100%; color: var(--ink); }
+.sx .gd-group h3 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--accent); margin: 18px 0 8px; }
+.sx .gd-terms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.sx .gd-terms > div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.sx .gd-terms dt { font-weight: 700; color: var(--ink); font-size: 14px; margin-bottom: 2px; }
+.sx .gd-terms dd { margin: 0; color: var(--ink-2); font-size: 13.5px; line-height: 1.55; }
+
+@media (max-width: 1150px) {
+  .sx .gd { grid-template-columns: 1fr; }
+  .sx .gd-toc { position: static; flex-direction: row; flex-wrap: wrap; }
+  .sx .gd-stages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sx .gd-why-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+  .sx .gd-step dl, .sx .gd-terms, .sx .gd-why-grid { grid-template-columns: 1fr; }
+  .sx .gd-step dl > div:nth-child(2), .sx .gd-step dl > div:nth-child(3) { grid-column: auto; grid-row: auto; }
+  .sx .gd-measured li { grid-template-columns: 1fr; gap: 2px; }
+}
