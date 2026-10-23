@@ -1,0 +1,1055 @@
+{
+ "schema": "kkh.workflow.diagnostics/1",
+ "created": "2026-10-23T14:38:27",
+ "subject": {
+  "run": "dev-vx300s",
+  "package": "runs/workflow/dev-vx300s/stage1/convert/ws/URDFModelica/Examples/Aloha_vx300s",
+  "test_model": "URDFModelica.Examples.Aloha_vx300s.Aloha_vx300sTest",
+  "robot_class": "URDFModelica.Examples.Aloha_vx300s.Aloha_vx300s",
+  "urdf_sha256": "fddb756281501a12fa236e831034b2ea27e892a84b457a1d4bb16398afd58d68",
+  "generated_files": {
+   "Aloha_vx300s.mo": "88423a9e0b2baa4aadac988f3e1a59457c9748613169c408cf09b99d010af81c",
+   "Aloha_vx300sRun.mo": "acc84aff0718e2133f27588bfc48714119ef3ef3f941bbc3636de77f98b134cf",
+   "Aloha_vx300sTest.mo": "d57f2b0d003201b5e98263f37e6c62b2ce9170e666b21949baf393912bda63b5",
+   "Joints/Ee_arm.mo": "5508c17b8802e7c53648ea31c18e6d6605500ec352d259a2020747a612571ffc",
+   "Joints/Ee_armParams.mo": "87ccc9292f385f873969aab8856c4d8ca79f3bf419d17ec164759e2cf2495a13",
+   "Joints/Ee_bar.mo": "2f2d02e7268a0fc2f69e2d3dbdd9535d293548bd45db65b7acda41738809fe81",
+   "Joints/Ee_barParams.mo": "48e623bc3d2fe9772b471363bcbe2c1ff61872c74e204abbfb4433baf210bc65",
+   "Joints/Ee_gripper.mo": "fabe417a8372e5486be7cd8f3e6135d44e241aa9aca0c82dd92f51ec8ff58ec2",
+   "Joints/Ee_gripperParams.mo": "7c28d2c82e3b3bc748152a17279192b0da8210cd10016e0f08bf51eaa8af9346",
+   "Joints/Elbow.mo": "101822629dea16e00c42c5030e0bf58e06b0681cd4029e7c5fc58778592faaed",
+   "Joints/ElbowParams.mo": "3f5b5d3b663ba65bc234944262dce2de147abd1943a22e7e54f8b6617e24aaa8",
+   "Joints/Forearm_roll.mo": "f924819d53d129e281161f81b840730405dc58c56b3b0a174c7e209f1a1cfba3",
+   "Joints/Forearm_rollParams.mo": "be18900cca6a4d1745bd9284d9474c9d28aedb4ab53996f7ba63ed40818053bb",
+   "Joints/Gripper.mo": "20fd4935407ffd739b63141e89fc78a8e23f8b24f79dcc751f20267d90746a6c",
+   "Joints/Gripper_bar.mo": "fc8842dcb652271d454e9236c5dade1c011f79c5925f52177e2b150d7a692eb2",
+   "Joints/Gripper_barParams.mo": "fb4b847835ceade123293794f1b621124e095421aacf5cb04d947f1a49fda588",
+   "Joints/GripperParams.mo": "a617fd946cad4141423db9a1121dee995d7912c5fcf95aeb6df42b3d4a57c511",
+   "Joints/Left_finger.mo": "a638e6fe1ab8a81e4337ef415f158c2dfdeb3280e7a0a3d1693adaee9d48aa34",
+   "Joints/Left_fingerParams.mo": "6f8fc03b5b277c5d4e408a18e98495d98adea6dbbea66d594adc567ae5c4617c",
+   "Joints/package.mo": "15a6081509de8803a1f337a2c61570f0647235b806da176e1b5613129392084c",
+   "Joints/package.order": "12a9833f7ef321ede75ee66de1e362ce314471827b6116753909e5662f90b5b5",
+   "Joints/Right_finger.mo": "5ca00d251aa1d98cadabea4e894c6d34493d549e0fce814f288d0188955a871a",
+   "Joints/Right_fingerParams.mo": "cca3a3bb3100dfeab7c2901bdc08d7b98e9abe373c1492ff2993e5873ac0e50a",
+   "Joints/Shoulder.mo": "93101632077db368ce0f2e0e9fedcb1509dca396e68434805876ea0eb923bb61",
+   "Joints/ShoulderParams.mo": "9e37a12b88f1b06367a3d95330652110f1d0ccc707b92ded22974e3eafa675b4",
+   "Joints/Waist.mo": "aa9f7b92cee20c0bcba1f4d8d44c29a65ab0c55da72372a541ebb93a90ed37db",
+   "Joints/WaistParams.mo": "e03de043c708974625e2956ae0d1dc65917db193eca3b9be82d9ebb700247d15",
+   "Joints/Wrist_angle.mo": "0410014bd9f0221d2cb99a8c11de1c28f703b0eaeaed38328fc65ddbc1d06602",
+   "Joints/Wrist_angleParams.mo": "3167b224f6dafcb66f4bc65a8637994f7f8289ad703bbda26743b65c8b0700d0",
+   "Joints/Wrist_rotate.mo": "13465f71067df81223fc868275d97bc67f22ef5cde7fbd3a49d2cebc9234518e",
+   "Joints/Wrist_rotateParams.mo": "712930f278cad8df000b5b4c4463d6a64b55398672d667e4986d59672e26d96d",
+   "Links/Aloha_vx300s_base_link.mo": "8fca74366577f1a867e4fb62fc13f2ccba33d05cb5f74d1f8b60e9227fdd4401",
+   "Links/Aloha_vx300s_base_linkParams.mo": "772b3648675a4824d5e4e45937a179104f81ea4e5a0c93a55f1b7e12fb191461",
+   "Links/Aloha_vx300s_ee_arm_link.mo": "2e8825b51023ccc7c462854d042f4efd7b07f5c6e8176d838c0a910580fad2c9",
+   "Links/Aloha_vx300s_ee_arm_linkParams.mo": "acccc23925c8e047af4dca810ef2f8781d564fab29120276c733db4a7625e3bf",
+   "Links/Aloha_vx300s_ee_gripper_link.mo": "ed299f8b544fe0b2b4351a355470dbd98e1b63041b0864a6666248bcac8e6d7c",
+   "Links/Aloha_vx300s_ee_gripper_linkParams.mo": "9987bc63271b4f20196529d4f4b011b90267f58ff24120cb1f1acc41734eb7fb",
+   "Links/Aloha_vx300s_fingers_link.mo": "e93262290d86aa8c4db9351a5b7b9b4acb0ef266dcd74ccf86d563fbb599531a",
+   "Links/Aloha_vx300s_fingers_linkParams.mo": "d0ee0e0366eb30bec2cadf1b7c99910a4b1434dfb11c3c260df8a6662174e199",
+   "Links/Aloha_vx300s_gripper_bar_link.mo": "40047cdb4b2b43a8d3215f58e1a3e1c19c9b7371a04bf0aa10ac32a26682d1a2",
+   "Links/Aloha_vx300s_gripper_bar_linkParams.mo": "a09307d6f6c652e8e82c12066dd1900dc8dee8ee890edad4f811cb212545d9ee",
+   "Links/Aloha_vx300s_gripper_link.mo": "f5bc3934f8889763bfd4470af00f8046cee48220f7c47442237f85d49be25c0b",
+   "Links/Aloha_vx300s_gripper_linkParams.mo": "11bf3ddf78a95458661bf7c430463ecd0356a3eb64b5c095f9bbedaed2dbe1e4",
+   "Links/Aloha_vx300s_gripper_prop_link.mo": "a3a59823d9443b435060ae327410de9710a0322196237ff033ecbb4b683d86c4",
+   "Links/Aloha_vx300s_gripper_prop_linkParams.mo": "2060c61c78932021dc375d47816098d994b6c89bef03569bd89b21dd41721913",
+   "Links/Aloha_vx300s_left_finger_link.mo": "4f1f8f2d3deafda6be877c207247a2b05880f504c700de096eb0805668c71b42",
+   "Links/Aloha_vx300s_left_finger_linkParams.mo": "1927f553b30cf77e3da393b0902f478b6a912007c2e9effbe60080aa8ef92d4f",
+   "Links/Aloha_vx300s_lower_forearm_link.mo": "012ccb5528608e18ef1dec10b7001a8c15f687887536dfdcfb506cfb2285aaf5",
+   "Links/Aloha_vx300s_lower_forearm_linkParams.mo": "1ae78a0b92cf5cae27bc1f403ae0628c91a44faa28e51fd0697f380000f8e40c",
+   "Links/Aloha_vx300s_right_finger_link.mo": "90cd7a1cda394219e8af5532f373770558175d5d57731715c69914c44257224d",
+   "Links/Aloha_vx300s_right_finger_linkParams.mo": "47c46ec410a506069176327215e7c0eb2c08dc18d818815aa5dd3009b61fdaec",
+   "Links/Aloha_vx300s_shoulder_link.mo": "7841c054ad5103311d98e47a48bb9d8952729abf82dc359e0a1119511f6d6f17",
+   "Links/Aloha_vx300s_shoulder_linkParams.mo": "23806eb9c571ae801a0529cb7776000416af424dd71d963a53357144ec49b2b5",
+   "Links/Aloha_vx300s_upper_arm_link.mo": "9aead6fb7a87ce926797fa2f0be9a665e005c345b715e2a0515dd64d580ad577",
+   "Links/Aloha_vx300s_upper_arm_linkParams.mo": "954ce96ab1b49db52c407dd20484089dbf0756f0b0bfeba8043f9831c714b5b2",
+   "Links/Aloha_vx300s_upper_forearm_link.mo": "4c55629e6c72d9a0aa04568ea61e5949a303b80af1f70951c4b054e8cbec8b2f",
+   "Links/Aloha_vx300s_upper_forearm_linkParams.mo": "4abecaded0b1ad7f6ebc249f6bb831a3ef86e5bc7edc55c46ec2a0a1fb15694c",
+   "Links/Aloha_vx300s_wrist_link.mo": "1ee444849fa6b3c5af419b21aea6a5e6794c52d23ad40d385e9e70cec3f6e5b6",
+   "Links/Aloha_vx300s_wrist_linkParams.mo": "683d1a9382be4f80d11615cda90dd0e89652daac51316e1cc6a9d5a352d3b6b7",
+   "Links/package.mo": "4b446a04104e62474de1713506026d8340687031de705f1acf41db425e029a8d",
+   "Links/package.order": "5557c3ee8a99e483be1768b8f149a7ad8da7760af253700447ececd643da4b18",
+   "package.mo": "09895c6d48f20a87f24535cf2ba67bcdb0319b842697e9af50ff252cd00a05ae",
+   "package.order": "9906c7b047add396904aa1957a2a3cdc72cb7f6495e17417a2f678fec55d25e0"
+  }
+ },
+ "tools": {
+  "openmodelica": "OpenModelica v1.27.1 (64-bit)",
+  "msl": "4.1.0",
+  "seconds": 39.2
+ },
+ "steps": {
+  "load": {
+   "state": "pass",
+   "seconds": 0.16,
+   "package_file": "package.mo"
+  },
+  "structure": {
+   "state": "pass",
+   "seconds": 0.96,
+   "robot_class": {
+    "class": "URDFModelica.Examples.Aloha_vx300s.Aloha_vx300s",
+    "ok": true,
+    "equations": 7217,
+    "variables": 7217
+   },
+   "test_model": {
+    "class": "URDFModelica.Examples.Aloha_vx300s.Aloha_vx300sTest",
+    "ok": true,
+    "equations": 6814,
+    "variables": 6814
+   }
+  },
+  "balance_translation": {
+   "state": "pass",
+   "seconds": 6.67,
+   "equations": 6814,
+   "variables": 6814,
+   "translated": true
+  },
+  "simulation": {
+   "state": "pass",
+   "seconds": 11.03,
+   "stop_time_s": 2.0,
+   "result_file": "URDFModelica.Examples.Aloha_vx300s.Aloha_vx300sTest_res.mat",
+   "assert_warnings": 2,
+   "seconds_build_and_run": 11.0158195
+  },
+  "urdf_consistency": {
+   "state": "fail",
+   "seconds": 12.04,
+   "motion": "standard excitation (every joint through 80 % of its range)",
+   "criteria": [
+    {
+     "id": "coverage",
+     "ok": true,
+     "value": 1.0,
+     "detail": "14/14 links, 9/9 moving joints"
+    },
+    {
+     "id": "kinematics",
+     "ok": false,
+     "value": 52.8813,
+     "detail": "max 52.8813 mm, mean 2.8431 mm over 14 links; orientation max 0.0\u00b0; suspect joint(s): right_finger"
+    },
+    {
+     "id": "parameters",
+     "ok": true,
+     "detail": "axes 9/9, masses 14/14, centres of mass 11/11, inertias 11/11"
+    },
+    {
+     "id": "dynamics",
+     "ok": true,
+     "value": 0.01,
+     "detail": "8/8 joints within 5% of their effort limit (worst 0.01%)"
+    }
+   ]
+  },
+  "graphics": {
+   "state": "fail",
+   "seconds": 6.03,
+   "totals": {
+    "classes": 30,
+    "connections": 262,
+    "connections_without_line": 18,
+    "components_drawn": 234,
+    "components_without_placement": 0,
+    "overlapping_groups": 0,
+    "outside_extent": 2
+   },
+   "per_class": [
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_base_link",
+     "components_drawn": 6,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 6,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_shoulder_link",
+     "components_drawn": 6,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 6,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_upper_arm_link",
+     "components_drawn": 6,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 6,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_upper_forearm_link",
+     "components_drawn": 6,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 6,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_lower_forearm_link",
+     "components_drawn": 6,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 6,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_wrist_link",
+     "components_drawn": 6,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 6,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_gripper_link",
+     "components_drawn": 6,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 6,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_ee_arm_link",
+     "components_drawn": 2,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 2,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_gripper_prop_link",
+     "components_drawn": 6,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 6,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_gripper_bar_link",
+     "components_drawn": 6,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 6,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_fingers_link",
+     "components_drawn": 2,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 2,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_left_finger_link",
+     "components_drawn": 6,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 6,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_right_finger_link",
+     "components_drawn": 6,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 6,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Links.Aloha_vx300s_ee_gripper_link",
+     "components_drawn": 2,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 2,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Waist",
+     "components_drawn": 14,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 13,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Shoulder",
+     "components_drawn": 14,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 13,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Elbow",
+     "components_drawn": 14,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 13,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Forearm_roll",
+     "components_drawn": 14,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 13,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Wrist_angle",
+     "components_drawn": 14,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 13,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Wrist_rotate",
+     "components_drawn": 14,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 13,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Ee_arm",
+     "components_drawn": 1,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 2,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Gripper",
+     "components_drawn": 4,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 5,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Gripper_bar",
+     "components_drawn": 1,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 2,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Ee_bar",
+     "components_drawn": 1,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 2,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Left_finger",
+     "components_drawn": 14,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 13,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Right_finger",
+     "components_drawn": 14,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 13,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Joints.Ee_gripper",
+     "components_drawn": 1,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 2,
+     "connections_without_line": [],
+     "has_icon": true
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Aloha_vx300s",
+     "components_drawn": 32,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -120.0,
+      450.0,
+      100.0
+     ],
+     "connections": 49,
+     "connections_without_line": [
+      "waist.flange_a - rotational_flange_a[1]",
+      "waist.flange_b - rotational_flange_b[1]",
+      "shoulder.flange_a - rotational_flange_a[2]",
+      "shoulder.flange_b - rotational_flange_b[2]",
+      "elbow.flange_a - rotational_flange_a[3]",
+      "elbow.flange_b - rotational_flange_b[3]",
+      "forearm_roll.flange_a - rotational_flange_a[4]",
+      "forearm_roll.flange_b - rotational_flange_b[4]",
+      "wrist_angle.flange_a - rotational_flange_a[5]",
+      "wrist_angle.flange_b - rotational_flange_b[5]",
+      "wrist_rotate.flange_a - rotational_flange_a[6]",
+      "wrist_rotate.flange_b - rotational_flange_b[6]",
+      "gripper.flange_a - rotational_flange_a[7]",
+      "gripper.flange_b - rotational_flange_b[7]",
+      "left_finger.flange_a - translational_flange_a[1]",
+      "left_finger.flange_b - translational_flange_b[1]",
+      "right_finger.flange_a - translational_flange_a[2]",
+      "right_finger.flange_b - translational_flange_b[2]"
+     ],
+     "has_icon": false
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Aloha_vx300sRun",
+     "components_drawn": 7,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [
+      "rotationalPositionInput",
+      "translationalPositionInput"
+     ],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 22,
+     "connections_without_line": [],
+     "has_icon": false
+    },
+    {
+     "class": "URDFModelica.Examples.Aloha_vx300s.Aloha_vx300sTest",
+     "components_drawn": 3,
+     "components_without_placement": [],
+     "overlapping": [],
+     "outside_extent": [],
+     "diagram_extent": [
+      -100.0,
+      -100.0,
+      100.0,
+      100.0
+     ],
+     "connections": 2,
+     "connections_without_line": [],
+     "has_icon": false
+    }
+   ]
+  }
+ },
+ "verdict": "simulates, engineering checks fail",
+ "verdict_rule": "validated = load, structure, balance/translation, simulation and URDF consistency all pass; compiling alone is not validation; graphics are reported separately",
+ "graphics_verdict": "fail",
+ "counts": {
+  "total": 24,
+  "by_severity": {
+   "error": 1,
+   "info": 6,
+   "warning": 17
+  },
+  "by_category": {
+   "graphical annotation": 2,
+   "initialization and numerical": 3,
+   "mechanical or kinematic inconsistency": 2,
+   "other": 2,
+   "unsupported URDF element": 15
+  },
+  "by_step": {
+   "balance_translation": 1,
+   "conversion": 15,
+   "graphics": 2,
+   "simulation": 2,
+   "structure": 2,
+   "urdf_consistency": 2
+  },
+  "blocking": 0
+ },
+ "findings": [
+  {
+   "id": "D001",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": null,
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "ros2_control: ignored by the converter",
+   "evidence": "Unknown tag \"ros2_control\" in /robot[@name='aloha_vx300s']"
+  },
+  {
+   "id": "D002",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "info",
+   "blocking": false,
+   "entity": null,
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "T1: transformed before conversion",
+   "evidence": "'/' in link/joint names replaced by '_' before conversion"
+  },
+  {
+   "id": "D003",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "info",
+   "blocking": false,
+   "entity": null,
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "T2: transformed before conversion",
+   "evidence": "<texture> materials replaced by a flat colour before conversion (the converter crashes on textures)"
+  },
+  {
+   "id": "D004",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "right_finger",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "mimic: recorded in the parameter record but not used by the joint model",
+   "evidence": "Joints/Right_fingerParams.mo: mimic present; Joints/Right_finger.mo never references jointParams.mimic",
+   "related": [
+    "D020",
+    "D021",
+    "D022"
+   ]
+  },
+  {
+   "id": "D005",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300s/base_link",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "visual mesh URI: rewritten by the converter",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/base.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/base.stl'"
+  },
+  {
+   "id": "D006",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300s/shoulder_link",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "visual mesh URI: rewritten by the converter",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/shoulder.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/shoulder.stl'"
+  },
+  {
+   "id": "D007",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300s/upper_arm_link",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "visual mesh URI: rewritten by the converter",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_arm.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_arm.stl'"
+  },
+  {
+   "id": "D008",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300s/upper_forearm_link",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "visual mesh URI: rewritten by the converter",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_forearm.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_forearm.stl'"
+  },
+  {
+   "id": "D009",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300s/lower_forearm_link",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "visual mesh URI: rewritten by the converter",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/lower_forearm.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/lower_forearm.stl'"
+  },
+  {
+   "id": "D010",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300s/wrist_link",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "visual mesh URI: rewritten by the converter",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/wrist.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/wrist.stl'"
+  },
+  {
+   "id": "D011",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300s/gripper_link",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "visual mesh URI: rewritten by the converter",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper.stl'"
+  },
+  {
+   "id": "D012",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300s/gripper_prop_link",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "visual mesh URI: rewritten by the converter",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_prop.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_prop.stl'"
+  },
+  {
+   "id": "D013",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300s/gripper_bar_link",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "visual mesh URI: rewritten by the converter",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_bar.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_bar.stl'"
+  },
+  {
+   "id": "D014",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300s/left_finger_link",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "visual mesh URI: rewritten by the converter",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl'"
+  },
+  {
+   "id": "D015",
+   "step": "conversion",
+   "check": "stage1 conversion record",
+   "category": "unsupported URDF element",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300s/right_finger_link",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "visual mesh URI: rewritten by the converter",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl'"
+  },
+  {
+   "id": "D016",
+   "step": "structure",
+   "check": "structure",
+   "category": "other",
+   "severity": "info",
+   "blocking": false,
+   "entity": null,
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "The model can't be instantiated due to top-level outer element 'world', it may only be used as part of a simulation model.",
+   "evidence": "OpenModelica translation:warning:379; expected when a component class (the robot) is checked on its own: 'world' is provided by the test model"
+  },
+  {
+   "id": "D017",
+   "step": "structure",
+   "check": "structure",
+   "category": "other",
+   "severity": "info",
+   "blocking": false,
+   "entity": null,
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "An inner declaration for outer component world could not be found and was automatically generated.",
+   "evidence": "OpenModelica translation:warning:309; expected when a component class (the robot) is checked on its own: 'world' is provided by the test model"
+  },
+  {
+   "id": "D018",
+   "step": "balance_translation",
+   "check": "balance_translation",
+   "category": "initialization and numerical",
+   "severity": "warning",
+   "blocking": false,
+   "entity": null,
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").",
+   "evidence": "OpenModelica translation:warning:496",
+   "also_in": [
+    "simulation",
+    "urdf_consistency"
+   ]
+  },
+  {
+   "id": "D019",
+   "step": "simulation",
+   "check": "runtime assertions",
+   "category": "initialization and numerical",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300sRun.aloha_vx300s.left_finger",
+   "file": "Joints/Left_finger.mo",
+   "line": 36,
+   "col": 3,
+   "message": "assertion 'Joint position over low limit' violated during initialization",
+   "evidence": "aloha_vx300sRun.aloha_vx300s.left_finger.posLimitLow.y (OpenModelica simulation log)"
+  },
+  {
+   "id": "D020",
+   "step": "simulation",
+   "check": "runtime assertions",
+   "category": "initialization and numerical",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "aloha_vx300sRun.aloha_vx300s.right_finger",
+   "file": "Joints/Right_finger.mo",
+   "line": 35,
+   "col": 3,
+   "message": "assertion 'Joint position over high limit' violated during initialization",
+   "evidence": "aloha_vx300sRun.aloha_vx300s.right_finger.posLimitHigh.y (OpenModelica simulation log)",
+   "related": [
+    "D004",
+    "D021",
+    "D022"
+   ]
+  },
+  {
+   "id": "D021",
+   "step": "urdf_consistency",
+   "check": "kinematics",
+   "category": "mechanical or kinematic inconsistency",
+   "severity": "error",
+   "blocking": false,
+   "entity": "right_finger",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "link positions differ from URDF forward kinematics by up to 52.8813 mm (tolerance 1.0 mm); orientation up to 0.0 deg",
+   "evidence": "{\"worst_link\": [\"aloha_vx300s/right_finger_link\", 3.4], \"misplaced_links\": [\"aloha_vx300s/right_finger_link\"], \"suspect_joints\": [\"right_finger\"], \"motion\": \"standard excitation (every joint through 80 % of its range)\"}",
+   "related": [
+    "D004",
+    "D020",
+    "D022"
+   ]
+  },
+  {
+   "id": "D022",
+   "step": "urdf_consistency",
+   "check": "dynamics",
+   "category": "mechanical or kinematic inconsistency",
+   "severity": "info",
+   "blocking": false,
+   "entity": "right_finger",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "mimic joint, torque reported but not scored",
+   "evidence": "RMS 7e-05 N.m",
+   "related": [
+    "D004",
+    "D020",
+    "D021"
+   ]
+  },
+  {
+   "id": "D023",
+   "step": "graphics",
+   "check": "connection lines",
+   "category": "graphical annotation",
+   "severity": "warning",
+   "blocking": false,
+   "entity": "Aloha_vx300s",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "18 of 49 connections have no Line annotation (not drawn in OMEdit)",
+   "evidence": "waist.flange_a - rotational_flange_a[1]; waist.flange_b - rotational_flange_b[1]; shoulder.flange_a - rotational_flange_a[2]; shoulder.flange_b - rotational_flange_b[2]; elbow.flange_a - rotational_flange_a[3]; elbow.flange_b - rotational_flange_b[3]; forearm_roll.flange_a - rotational_flange_a[4]; forearm_roll.flange_b - rotational_flange_b[4]; wrist_angle.flange_a - rotational_flange_a[5]; wrist_angle.flange_b - rotational_flange_b[5]; wrist_rotate.flange_a - rotational_flange_a[6]; wrist_rotate.flange_b - rotational_flange_b[6]"
+  },
+  {
+   "id": "D024",
+   "step": "graphics",
+   "check": "diagram extent",
+   "category": "graphical annotation",
+   "severity": "info",
+   "blocking": false,
+   "entity": "Aloha_vx300sRun",
+   "file": null,
+   "line": null,
+   "col": null,
+   "message": "2 components outside the diagram extent [-100.0, -100.0, 100.0, 100.0]",
+   "evidence": "rotationalPositionInput, translationalPositionInput"
+  }
+ ]
+}
