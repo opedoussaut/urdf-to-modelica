@@ -1,0 +1,293 @@
+{
+ "manifest_hash": "a1bab194bf848394",
+ "code_sha256": "02e8f7d0ee47d198bc4c0c20889a619bab799e0942b0d6f4dc06ab697091b776",
+ "chunks": 1730,
+ "assets": [
+  {
+   "id": "msl-4.1.0",
+   "library": "Modelica",
+   "version": "4.1.0",
+   "title": "Modelica Standard Library 4.1.0 (Modelica Association)",
+   "scope": [
+    "Mechanics/MultiBody",
+    "Mechanics/Rotational",
+    "Mechanics/Translational",
+    "Blocks",
+    "Units.mo",
+    "UsersGuide"
+   ],
+   "root": "%APPDATA%/.openmodelica/libraries/Modelica 4.1.0+maint.om",
+   "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+   "file_count": 582
+  },
+  {
+   "id": "modelicareference-4.1.0",
+   "library": "ModelicaReference",
+   "version": "4.1.0",
+   "title": "ModelicaReference 4.1.0: Modelica language and annotation reference (Modelica Association)",
+   "scope": [
+    "package.mo"
+   ],
+   "root": "%APPDATA%/.openmodelica/libraries/ModelicaReference 4.1.0+maint.om",
+   "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+   "file_count": 1
+  },
+  {
+   "id": "project-patterns",
+   "library": null,
+   "version": null,
+   "title": "Validated project Modelica patterns (kkh/workflow/patterns)",
+   "scope": [
+    "*.md"
+   ],
+   "root": "kkh/workflow/patterns",
+   "licence": "project-internal (authored in this repository; the repository has no licence file)",
+   "file_count": 5
+  }
+ ],
+ "by_asset_kind": {
+  "modelicareference-4.1.0/class": 40,
+  "modelicareference-4.1.0/package": 5,
+  "msl-4.1.0/block": 271,
+  "msl-4.1.0/class": 72,
+  "msl-4.1.0/connector": 27,
+  "msl-4.1.0/function": 221,
+  "msl-4.1.0/model": 399,
+  "msl-4.1.0/package": 101,
+  "msl-4.1.0/record": 24,
+  "msl-4.1.0/type": 565,
+  "project-patterns/pattern": 5
+ },
+ "line_annotation_examples": 123,
+ "retrievals": [
+  {
+   "finding": "D004",
+   "check": "stage1 conversion record",
+   "message": "mimic: recorded in the parameter record but not used by the joint model",
+   "query": "unsupported URDF element stage1 conversion record mimic: recorded in the parameter record but not used by the joint model right finger",
+   "chunks": [
+    {
+     "id": "project-patterns:urdf-mimic",
+     "score": 42.663834,
+     "source_path": "urdf-mimic.md",
+     "line_start": 1,
+     "line_end": 26,
+     "licence": "project-internal (authored in this repository; the repository has no licence file)",
+     "version": "9e867d1"
+    },
+    {
+     "id": "project-patterns:urdf-rpy-rotation",
+     "score": 17.937987,
+     "source_path": "urdf-rpy-rotation.md",
+     "line_start": 1,
+     "line_end": 25,
+     "licence": "project-internal (authored in this repository; the repository has no licence file)",
+     "version": "9e867d1"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Mechanics.Translational.Examples.Utilities.SpringDamperNoRelativeStates",
+     "score": 17.289834,
+     "source_path": "Mechanics/Translational/Examples/Utilities/SpringDamperNoRelativeStates.mo",
+     "line_start": 2,
+     "line_end": 107,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Mechanics.Rotational.Examples.Utilities.SpringDamperNoRelativeStates",
+     "score": 16.727664,
+     "source_path": "Mechanics/Rotational/Examples/Utilities/SpringDamperNoRelativeStates.mo",
+     "line_start": 2,
+     "line_end": 107,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Mechanics.Rotational.Components.Fixed",
+     "score": 14.5594,
+     "source_path": "Mechanics/Rotational/Components/Fixed.mo",
+     "line_start": 2,
+     "line_end": 35,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    }
+   ]
+  },
+  {
+   "finding": "D019",
+   "check": "runtime assertions",
+   "message": "assertion 'Joint position over low limit' violated during initialization",
+   "query": "initialization and numerical runtime assertions assertion 'Joint position over low limit' violated during initialization aloha vx300sRun aloha vx300s left finger initial start value initialization fixed assert",
+   "chunks": [
+    {
+     "id": "msl-4.1.0:Modelica.Blocks.Logical.AssertCondition",
+     "score": 21.691524,
+     "source_path": "Blocks/Logical.mo",
+     "line_start": 932,
+     "line_end": 964,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Mechanics.MultiBody.Examples.Elementary.InitSpringConstant",
+     "score": 21.542391,
+     "source_path": "Mechanics/MultiBody/Examples/Elementary/InitSpringConstant.mo",
+     "line_start": 2,
+     "line_end": 86,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Blocks.Types.Init",
+     "score": 20.463614,
+     "source_path": "Blocks/Types.mo",
+     "line_start": 35,
+     "line_end": 56,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Blocks.Continuous.LimIntegrator",
+     "score": 18.949519,
+     "source_path": "Blocks/Continuous.mo",
+     "line_start": 127,
+     "line_end": 264,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    }
+   ]
+  },
+  {
+   "finding": "D020",
+   "check": "runtime assertions",
+   "message": "assertion 'Joint position over high limit' violated during initialization",
+   "query": "initialization and numerical runtime assertions assertion 'Joint position over high limit' violated during initialization aloha vx300sRun aloha vx300s right finger initial start value initialization fixed assert",
+   "chunks": [
+    {
+     "id": "msl-4.1.0:Modelica.Blocks.Logical.AssertCondition",
+     "score": 21.691524,
+     "source_path": "Blocks/Logical.mo",
+     "line_start": 932,
+     "line_end": 964,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Mechanics.MultiBody.Examples.Elementary.InitSpringConstant",
+     "score": 21.542391,
+     "source_path": "Mechanics/MultiBody/Examples/Elementary/InitSpringConstant.mo",
+     "line_start": 2,
+     "line_end": 86,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Blocks.Types.Init",
+     "score": 20.463614,
+     "source_path": "Blocks/Types.mo",
+     "line_start": 35,
+     "line_end": 56,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Blocks.Logical.Hysteresis",
+     "score": 19.830167,
+     "source_path": "Blocks/Logical.mo",
+     "line_start": 508,
+     "line_end": 630,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Blocks.Math.Mean",
+     "score": 18.849155,
+     "source_path": "Blocks/Math.mo",
+     "line_start": 2253,
+     "line_end": 2301,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    }
+   ]
+  },
+  {
+   "finding": "D021",
+   "check": "kinematics",
+   "message": "link positions differ from URDF forward kinematics by up to 52.8813 mm (tolerance 1.0 mm); orientation up to 0.0 deg",
+   "query": "mechanical or kinematic inconsistency kinematics link positions differ from URDF forward kinematics by up to 52.8813 mm (tolerance 1.0 mm); orientation up to 0.0 deg right finger MultiBody joint frame kinematics mimic coupling relative position",
+   "chunks": [
+    {
+     "id": "project-patterns:urdf-mimic",
+     "score": 43.540617,
+     "source_path": "urdf-mimic.md",
+     "line_start": 1,
+     "line_end": 26,
+     "licence": "project-internal (authored in this repository; the repository has no licence file)",
+     "version": "9e867d1"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Mechanics.MultiBody.Joints.Assemblies.JointRRR",
+     "score": 26.142835,
+     "source_path": "Mechanics/MultiBody/Joints/Assemblies/JointRRR.mo",
+     "line_start": 2,
+     "line_end": 313,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Mechanics.MultiBody.Joints.Constraints.Spherical",
+     "score": 24.115894,
+     "source_path": "Mechanics/MultiBody/Joints/Constraints/Spherical.mo",
+     "line_start": 2,
+     "line_end": 164,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    }
+   ]
+  },
+  {
+   "finding": "D023",
+   "check": "connection lines",
+   "message": "18 of 49 connections have no Line annotation (not drawn in OMEdit)",
+   "query": "graphical annotation connection lines 18 of 49 connections have no Line annotation (not drawn in OMEdit) Aloha vx300s Line connect annotation Diagram Placement Icon graphics",
+   "chunks": [
+    {
+     "id": "msl-4.1.0:Modelica.Blocks.Examples.RealNetwork1",
+     "score": 21.687469,
+     "source_path": "Blocks/package.mo",
+     "line_start": 639,
+     "line_end": 723,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "modelicareference-4.1.0:ModelicaReference.Annotations.DynamicSelect",
+     "score": 20.442521,
+     "source_path": "package.mo",
+     "line_start": 887,
+     "line_end": 920,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.UsersGuide.ReleaseNotes.Version_3_0",
+     "score": 19.918853,
+     "source_path": "UsersGuide/ReleaseNotes.mo",
+     "line_start": 3838,
+     "line_end": 4589,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    },
+    {
+     "id": "msl-4.1.0:Modelica.Blocks.MathBoolean.Nand",
+     "score": 18.960363,
+     "source_path": "Blocks/MathBoolean.mo",
+     "line_start": 202,
+     "line_end": 236,
+     "licence": "Modelica 3-Clause BSD (https://modelica.org/licenses/modelica-3-clause-bsd)",
+     "version": "4.1.0"
+    }
+   ]
+  }
+ ]
+}
