@@ -1,0 +1,77 @@
+/* Repair workflow page (simple UI). Scoped under .sx .wf; tokens from simple.css. AI only = slate, AI + assets = violet. */
+.sx .wf h1 { font-size: 26px; margin: 6px 0 12px; }
+.sx .wf-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; }
+.sx .wf-bar select, .sx .wf-bar input, .sx .wf textarea, .sx .wf-amend select { font: inherit; padding: 7px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.sx .wf textarea { width: 100%; font-family: "JetBrains Mono", Consolas, monospace; font-size: 12.5px; margin: 6px 0; }
+.sx .sx-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); font-weight: 600; cursor: pointer; }
+.sx .sx-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.sx .sx-btn:disabled { opacity: 0.5; cursor: default; }
+
+.sx .wf-rail { list-style: none; padding: 0; margin: 14px 0 6px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.sx .wf-rail button { width: 100%; display: flex; align-items: center; gap: 8px; text-align: left; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.sx .wf-rail button.done { border-color: #bfe3cf; }
+.sx .wf-rail button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.sx .wf-n { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--canvas); color: var(--ink-2); font-size: 12px; flex: none; }
+.sx .wf-rail button.done .wf-n { color: var(--green); background: var(--green-soft); }
+.sx .wf-rail button.on .wf-n { background: rgba(255, 255, 255, 0.2); color: #fff; }
+.sx .wf-stage-plain { color: var(--ink-2); margin: 4px 0 12px; }
+
+.sx .wf-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-top: 14px; }
+.sx .wf-card h2 { display: flex; align-items: center; gap: 10px; font-size: 17px; margin: 0 0 10px; }
+.sx .wf-card h3 { font-size: 14px; margin: 14px 0 8px; display: flex; align-items: center; gap: 8px; }
+.sx .wf-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 8px 0; }
+.sx .wf-stats.small { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+.sx .wf-stat { background: var(--canvas); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; }
+.sx .wf-stat b { font-size: 18px; color: var(--ink); }
+.sx .wf-stat span { font-size: 12px; color: var(--muted); }
+.sx .wf-stat.ok b { color: var(--green); }
+.sx .wf-stat.bad b { color: var(--red); }
+.sx .wf-stat.mid b { color: var(--amber); }
+.sx .wf-mono, .sx .wf small, .sx .wf pre { font-family: "JetBrains Mono", Consolas, monospace; }
+.sx .wf-mono { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.sx .wf-list { margin: 0; padding-left: 18px; line-height: 1.7; }
+.sx .wf-list small { display: block; color: var(--muted); font-size: 11.5px; }
+
+.sx .wf-verdict { padding: 2px 10px; border-radius: 999px; font-size: 14px; }
+.sx .wf-verdict.ok, .sx .wf-pill.ok { background: var(--green-soft); color: var(--green); }
+.sx .wf-verdict.bad, .sx .wf-pill.bad { background: var(--red-soft); color: var(--red); }
+.sx .wf-pill { font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--canvas); color: var(--muted); font-weight: 600; }
+.sx .wf-pill.mid { background: var(--amber-soft); color: var(--amber); }
+.sx .wf-steps { list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 4px; }
+.sx .wf-steps li { display: grid; grid-template-columns: 20px 1fr 90px; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; background: var(--canvas); }
+.sx .wf-steps li small { grid-column: 2 / -1; color: var(--muted); font-size: 12px; }
+.sx .wf-steps li.pass svg { color: var(--green); }
+.sx .wf-steps li.fail svg { color: var(--red); }
+.sx .wf-steps li span { font-size: 12.5px; color: var(--muted); text-align: right; }
+
+.sx .wf-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+.sx .wf-chips button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 11px; font-size: 12.5px; cursor: pointer; color: var(--ink-2); }
+.sx .wf-chips button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.sx .wf-chips small { margin-left: 4px; opacity: 0.75; }
+.sx .wf-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sx .wf-table th { text-align: left; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); padding: 6px; }
+.sx .wf-table td { border-bottom: 1px solid var(--line); padding: 6px; vertical-align: top; }
+.sx .wf-table tr.error td:first-child { color: var(--red); font-weight: 700; }
+.sx .wf-table tr.warning td:first-child { color: var(--amber); font-weight: 700; }
+.sx .wf-ev { display: block; color: var(--muted); font-size: 11.5px; margin-top: 3px; overflow-wrap: anywhere; }
+
+.sx .wf-arms { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sx .wf-arm { border: 1px solid var(--line); border-top: 4px solid #64748b; border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.sx .wf-arm.ai_assets { border-top-color: #7c3aed; }
+.sx .wf-arm h3 { margin-top: 0; }
+.sx .wf-flags { background: var(--red-soft); color: var(--red); border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+.sx .wf-flags ul { margin: 4px 0 0; padding-left: 18px; }
+.sx .wf-edit { display: block; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
+.sx .wf-edit.pick { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.sx .wf-edit p { margin: 4px 0; }
+.sx .wf-edit pre, .sx .wf-diff { background: #0f1d33; color: #e2e8f0; border-radius: 8px; padding: 10px; font-size: 12px; overflow: auto; max-height: 320px; white-space: pre-wrap; }
+.sx .wf-cites { margin: 4px 0; padding-left: 18px; font-size: 12px; color: #6d28d9; }
+.sx .wf-cites li.bad { color: var(--red); }
+.sx .wf-ok { color: var(--green); display: flex; align-items: center; gap: 6px; }
+.sx .wf-bad { color: var(--red); display: flex; align-items: center; gap: 6px; }
+.sx .wf-check { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+
+@media (max-width: 1100px) {
+  .sx .wf-rail { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .sx .wf-arms { grid-template-columns: 1fr; }
+}

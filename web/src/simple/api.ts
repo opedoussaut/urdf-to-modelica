@@ -76,3 +76,15 @@ export type Report = {
   criteria: Record<string, string>;
 };
 export type RunSummary = { id: string; source: string; started: string; finished?: string; ranking?: string[]; modes: Record<string, { passed: number; verdict: string }> };
+
+/** Client for the engineering workflow API (/api/workflow). */
+export async function wf<T = any>(path: string, method = "GET", data?: unknown): Promise<T> {
+  const response = await fetch("/api/workflow" + path, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: data === undefined ? undefined : JSON.stringify(data),
+  });
+  const body = await response.json();
+  if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail));
+  return body;
+}

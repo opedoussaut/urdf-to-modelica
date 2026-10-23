@@ -122,7 +122,7 @@ export default function Guide({ go, learn }: { go: (page: "convert" | "review") 
         </section>
 
         <section id="gd-next" className="gd-section">
-          <h2>Where it is going: AI that repairs, not AI that writes</h2>
+          <h2>The repair workflow: AI that repairs, not AI that writes</h2>
           <p className="gd-intro">
             The next version changes the order of the work. The deterministic converter writes the model, OpenModelica lists its problems, and two
             AI methods then try to repair it under identical conditions: AI only, and AI with a governed collection of Modelica knowledge. The

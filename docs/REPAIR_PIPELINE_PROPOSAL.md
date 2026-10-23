@@ -222,6 +222,33 @@ without your approval.
 **Tests:** unit tests for the schema, classifier, edit application, integrity guard and retrieval determinism.
 The `omc`-marked integration tests reuse the existing markers.
 
+## 3b. Status (2026-10-23, end of day)
+
+All eight increments are implemented on `feat/urdf-repair-pipeline`:
+
+| # | Done | Where |
+|---|---|---|
+| 1 | Stage 1 manifest, mapping, physical table, unsupported items; reproducible | `kkh/workflow/stage1_convert.py` |
+| 2 | Stage 2 ordered checks + `diagnostics.json`; later also a `records` step (every record value vs URDF) and candidate checking | `kkh/workflow/stage2_check.py` |
+| 3 | Modelica asset collection v1 (MSL 4.1.0, ModelicaReference 4.1.0, 5 project patterns) | `kkh/workflow/assets.py` |
+| 4 | Fault set v1 (F01–F10, F08–F10 held out), pinned and **frozen at `7c8d735` before any repair run**; all 10 caught by Stage 2 | `kkh/workflow/faults.py` |
+| 5 | Two-arm repair loop + Stage 4 independent validation, integrity guard, campaign runner | `stage3_repair.py`, `stage4_validate.py`, `campaign.py` |
+| 6 | Review (keep/reject each edit, manual amend as a new version, re-check), justified approval, promotion, OMEdit, simulation; API `/api/workflow` | `review.py`, `api.py` |
+| 7 | Deterministic layout pass, annotations only, on approved copies: 18 → 0 unrouted connections | `layout.py` |
+| 8 | "Repair workflow" tab with the 7-stage rail; Guide updated | `web/src/simple/Workflow.tsx` |
+
+**Deviations from the plan, stated plainly:**
+- **Candidates are separate workspaces.** Review candidates live under `runs/workflow/<run>/` with their own keys. They
+  are not imported into the full studio's Model editor revisions (`kkh/studio/models.py` is unchanged).
+- **The generator was not changed.** The Line annotations were not added to `modelica_gen`; the layout pass
+  covers the converter's package, which is what this workflow repairs.
+- **Measured runs are a subset.** qwen3-coder:30b runs on the natural case plus F04, F05 and F07. nemotron-3-nano:4b
+  runs on all 11 cases as a dry run. Results are in `reports/workflow/REPAIR_CAMPAIGN_*.md` when the runs finish.
+- **Graphics stays red after the layout pass.** Two inputs of the converter's `…Run` model lie outside its diagram
+  extent (info level), so the separate graphics check still reports a failure.
+- **Edits must be exact.** A small model (nemotron 4B) mostly proposes edits whose search text is not in the file.
+  They are recorded as not applied, never fixed up.
+
 ## 4. Decisions needed from you
 
 1. **Base branch:** build on `feat/simple-ui` (recommended, where the convert layer lives) or on `feat/aloha-baseline`?

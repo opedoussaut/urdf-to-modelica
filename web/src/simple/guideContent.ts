@@ -130,13 +130,13 @@ export type Stage = { title: string; text: string; status: "built" | "in progres
 
 /** The revised workflow (docs/REPAIR_PIPELINE_PROPOSAL.md): AI repairs the converter's output instead of writing it. */
 export const NEXT: Stage[] = [
-  { title: "URDF input", text: "The robot file and its meshes, pinned and hashed.", status: "built" },
+  { title: "URDF input", text: "The robot file and its meshes, pinned and hashed. Open the “Repair workflow” tab to follow every stage.", status: "built" },
   { title: "Convert", text: "DLR URDFModelica only, no AI, no corrections. Reproducibility, mapping and a field-by-field value table recorded.", status: "built" },
   { title: "OpenModelica check", text: "Ordered checks (load → structure → balance → simulation → URDF consistency, graphics apart) and a machine-readable list of findings.", status: "built" },
-  { title: "AI repair comparison", text: "Two arms with identical inputs and settings: AI only, and AI + a governed collection of Modelica documentation and examples (with source, version and licence).", status: "in progress" },
-  { title: "Independent validation", text: "The same checks on both candidates, plus a guard that rejects “fixes” that delete parts or change robot values.", status: "planned" },
-  { title: "Engineer review", text: "Side-by-side diffs, the evidence behind each change, accept or reject edit by edit, open in OMEdit.", status: "planned" },
-  { title: "Approved model & simulation", text: "Only a person promotes a model; then it is simulated from the studio or OMEdit.", status: "planned" },
+  { title: "AI repair comparison", text: "Two arms with identical inputs and settings: AI only, and AI + a governed collection of Modelica documentation and examples (with source, version and licence). Ten seeded faults were frozen before any run.", status: "built" },
+  { title: "Independent validation", text: "The same checks on both candidates, plus a guard that rejects “fixes” that delete parts or change robot values.", status: "built" },
+  { title: "Engineer review", text: "Side-by-side diffs, the evidence behind each change, accept or reject edit by edit, open in OMEdit.", status: "built" },
+  { title: "Approved model & simulation", text: "Only a person promotes a model; the missing connection lines are then drawn separately, and it is simulated from the studio or OMEdit.", status: "built" },
 ];
 
 export const GLOSSARY: { group: string; terms: [string, string][] }[] = [
