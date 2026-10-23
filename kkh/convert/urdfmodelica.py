@@ -48,12 +48,13 @@ def convert(urdf: Path, out_dir: Path) -> dict:
     shutil.copytree(UMO, ws / "URDFModelica", ignore=shutil.ignore_patterns("Reference", "*.PNG", "*.png", "*.stl", "*.STL", "*.dae"))
     text, applied = preprocess(urdf.read_text(encoding="utf-8"))
     (ws / "robot.urdf").write_text(text, encoding="utf-8")
-    p = subprocess.run([sys.executable, "URDFModelica/Resources/urdf_to_package.py", "-i", "robot.urdf",
-                        "-o", "robot_record.mo", "-r", ".", "-p", "URDFModelica/Examples", "-s"],
-                       cwd=ws, capture_output=True, text=True, timeout=300)
+    args = ["URDFModelica/Resources/urdf_to_package.py", "-i", "robot.urdf", "-o", "robot_record.mo", "-r", ".",
+            "-p", "URDFModelica/Examples", "-s"]
+    p = subprocess.run([sys.executable, *args], cwd=ws, capture_output=True, text=True, timeout=300)
     out = {"mode": "urdfmodelica", "converter_commit": CONVERTER_COMMIT, "preprocessing": applied + ["relative-root"],
            "converter_ok": p.returncode == 0, "llm_calls": 0, "repair_attempts": 0, "human_interventions": 0,
-           "converter_log": (p.stdout + p.stderr)[-3000:]}
+           "converter_log": (p.stdout + p.stderr)[-3000:], "converter_args": args, "returncode": p.returncode}
+    (out_dir / "converter.log").write_text(p.stdout + p.stderr, encoding="utf-8")  # full log; the dict keeps the tail
     name = re.search(r'<robot[^>]*\bname="([^"]+)"', text)
     pkg = title(name.group(1)) if name else None
     gen = ws / "URDFModelica" / "Examples" / pkg if pkg else None

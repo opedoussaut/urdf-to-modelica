@@ -1,0 +1,707 @@
+{
+ "manifest": {
+  "schema": "kkh.workflow.stage1/1",
+  "created": "2026-10-23T14:26:30",
+  "ok": true,
+  "source": {
+   "id": "aloha_vx300s",
+   "label": "ALOHA 2 follower arm (ViperX 300 S)",
+   "provenance": "Interbotix xacro, pinned commit, expanded by tools/expand_xacro.py",
+   "license": "BSD-3-Clause",
+   "urdf": "data/urdf/aloha_vx300s.urdf",
+   "urdf_sha256": "fddb756281501a12fa236e831034b2ea27e892a84b457a1d4bb16398afd58d68",
+   "robot": "aloha_vx300s",
+   "links": 14,
+   "joints": 13,
+   "movable_joints": 9
+  },
+  "assets": {
+   "count": 11,
+   "resolved": 11,
+   "files": [
+    {
+     "uri": "package://interbotix_xsarm_descriptions/meshes/interbotix_black.png",
+     "kind": "texture",
+     "path": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/meshes/interbotix_black.png",
+     "sha256": "4cd224156bbaab1ddf1b92b90d46c54835a8b41f61bc258b2f216c2618e062cf",
+     "bytes": 1994,
+     "resolved": true
+    },
+    {
+     "uri": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/base.stl",
+     "kind": "mesh",
+     "path": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/base.stl",
+     "sha256": "d100cafe656671ca8fde98fb6a4cf2d1b746995c51c61c25ad9ea2715635d146",
+     "bytes": 99984,
+     "resolved": true
+    },
+    {
+     "uri": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/shoulder.stl",
+     "kind": "mesh",
+     "path": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/shoulder.stl",
+     "sha256": "139745a74055cb0b23430bb5bc032bf68cf7bea5e4975c8f4c04107ae005f7f0",
+     "bytes": 63884,
+     "resolved": true
+    },
+    {
+     "uri": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_arm.stl",
+     "kind": "mesh",
+     "path": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_arm.stl",
+     "sha256": "900f236320dd3d500870c5fde763b2d47502d51e043a5c377875e70237108729",
+     "bytes": 102984,
+     "resolved": true
+    },
+    {
+     "uri": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_forearm.stl",
+     "kind": "mesh",
+     "path": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_forearm.stl",
+     "sha256": "4104fc54bbfb8a9b533029f1e7e3ade3d54d638372b3195daa0c98f57e0295b5",
+     "bytes": 49584,
+     "resolved": true
+    },
+    {
+     "uri": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/lower_forearm.stl",
+     "kind": "mesh",
+     "path": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/lower_forearm.stl",
+     "sha256": "66814e27fa728056416e25e02e89eb7d34c51d51c51e7c3df873829037ddc6b8",
+     "bytes": 99884,
+     "resolved": true
+    },
+    {
+     "uri": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/wrist.stl",
+     "kind": "mesh",
+     "path": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/wrist.stl",
+     "sha256": "90eb145c85627968c3776ae6de23ccff7e112c9dd713c46bc9acdfdaa859a048",
+     "bytes": 70784,
+     "resolved": true
+    },
+    {
+     "uri": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper.stl",
+     "kind": "mesh",
+     "path": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper.stl",
+     "sha256": "786c1077bfd226f14219581b11d5f19464ca95b17132e0bb7532503568f5af90",
+     "bytes": 450084,
+     "resolved": true
+    },
+    {
+     "uri": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_prop.stl",
+     "kind": "mesh",
+     "path": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_prop.stl",
+     "sha256": "d1275a93fe2157c83dbc095617fb7e672888bdd48ec070a35ef4ab9ebd9755b0",
+     "bytes": 31684,
+     "resolved": true
+    },
+    {
+     "uri": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_bar.stl",
+     "kind": "mesh",
+     "path": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_bar.stl",
+     "sha256": "a4de62c9a2ed2c78433010e4c05530a1254b1774a7651967f406120c9bf8973e",
+     "bytes": 379484,
+     "resolved": true
+    },
+    {
+     "uri": "package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl",
+     "kind": "mesh",
+     "path": "E:/users/opt2.ai/NOVA/ai-kkh-physicalai/third_party/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl",
+     "sha256": "a4baacd9a64df1be60ea5e98f50f3c660e1b7a1fe9684aace6004c5058c09483",
+     "bytes": 42884,
+     "resolved": true
+    }
+   ]
+  },
+  "urdf_features": {
+   "robot": 1,
+   "robot/joint": 13,
+   "robot/joint/axis": 13,
+   "robot/joint/child": 13,
+   "robot/joint/dynamics": 9,
+   "robot/joint/limit": 9,
+   "robot/joint/mimic": 1,
+   "robot/joint/origin": 13,
+   "robot/joint/parent": 13,
+   "robot/link": 14,
+   "robot/link/collision": 11,
+   "robot/link/collision/geometry": 11,
+   "robot/link/collision/geometry/mesh": 11,
+   "robot/link/collision/origin": 11,
+   "robot/link/inertial": 14,
+   "robot/link/inertial/inertia": 14,
+   "robot/link/inertial/mass": 14,
+   "robot/link/inertial/origin": 11,
+   "robot/link/visual": 11,
+   "robot/link/visual/geometry": 11,
+   "robot/link/visual/geometry/mesh": 11,
+   "robot/link/visual/material": 11,
+   "robot/link/visual/origin": 11,
+   "robot/material": 1,
+   "robot/material/texture": 1,
+   "robot/ros2_control": 1,
+   "robot/ros2_control/hardware": 1,
+   "robot/ros2_control/hardware/param": 4,
+   "robot/ros2_control/hardware/plugin": 1,
+   "robot/ros2_control/joint": 7,
+   "robot/ros2_control/joint/command_interface": 7,
+   "robot/ros2_control/joint/command_interface/param": 14,
+   "robot/ros2_control/joint/state_interface": 7
+  },
+  "converter": {
+   "name": "DLR URDFModelica",
+   "repo": "https://github.com/DLR-RM/urdfmodelica",
+   "commit": "92541b6f6aa76fd510983a25afd3082377b4028f",
+   "args": [
+    "URDFModelica/Resources/urdf_to_package.py",
+    "-i",
+    "robot.urdf",
+    "-o",
+    "robot_record.mo",
+    "-r",
+    ".",
+    "-p",
+    "URDFModelica/Examples",
+    "-s"
+   ],
+   "preprocessing": [
+    "T1",
+    "T2",
+    "relative-root"
+   ],
+   "returncode": 0,
+   "seconds": 0.77,
+   "log_file": "runs/workflow/dev-vx300s/stage1/convert/converter.log",
+   "warnings": [
+    "Unknown tag \"ros2_control\" in /robot[@name='aloha_vx300s']"
+   ]
+  },
+  "versions": {
+   "python": "3.12.10",
+   "urdf_parser_py": "0.0.4",
+   "openmodelica": "OpenModelica v1.27.1 (64-bit)",
+   "converter_checkout_head": "92541b6f6aa76fd510983a25afd3082377b4028f",
+   "converter_pinned": "92541b6f6aa76fd510983a25afd3082377b4028f",
+   "converter_head_matches_pin": true,
+   "converter_uses": "Modelica(version = \"4.0.0\")"
+  },
+  "generated": {
+   "package_dir": "runs/workflow/dev-vx300s/stage1/convert/ws/URDFModelica/Examples/Aloha_vx300s",
+   "package_file": "runs/workflow/dev-vx300s/stage1/convert/ws/URDFModelica/package.mo",
+   "test_model": "URDFModelica.Examples.Aloha_vx300s.Aloha_vx300sTest",
+   "files": {
+    "Aloha_vx300s.mo": "88423a9e0b2baa4aadac988f3e1a59457c9748613169c408cf09b99d010af81c",
+    "Aloha_vx300sRun.mo": "acc84aff0718e2133f27588bfc48714119ef3ef3f941bbc3636de77f98b134cf",
+    "Aloha_vx300sTest.mo": "d57f2b0d003201b5e98263f37e6c62b2ce9170e666b21949baf393912bda63b5",
+    "Joints/Ee_arm.mo": "5508c17b8802e7c53648ea31c18e6d6605500ec352d259a2020747a612571ffc",
+    "Joints/Ee_armParams.mo": "87ccc9292f385f873969aab8856c4d8ca79f3bf419d17ec164759e2cf2495a13",
+    "Joints/Ee_bar.mo": "2f2d02e7268a0fc2f69e2d3dbdd9535d293548bd45db65b7acda41738809fe81",
+    "Joints/Ee_barParams.mo": "48e623bc3d2fe9772b471363bcbe2c1ff61872c74e204abbfb4433baf210bc65",
+    "Joints/Ee_gripper.mo": "fabe417a8372e5486be7cd8f3e6135d44e241aa9aca0c82dd92f51ec8ff58ec2",
+    "Joints/Ee_gripperParams.mo": "7c28d2c82e3b3bc748152a17279192b0da8210cd10016e0f08bf51eaa8af9346",
+    "Joints/Elbow.mo": "101822629dea16e00c42c5030e0bf58e06b0681cd4029e7c5fc58778592faaed",
+    "Joints/ElbowParams.mo": "3f5b5d3b663ba65bc234944262dce2de147abd1943a22e7e54f8b6617e24aaa8",
+    "Joints/Forearm_roll.mo": "f924819d53d129e281161f81b840730405dc58c56b3b0a174c7e209f1a1cfba3",
+    "Joints/Forearm_rollParams.mo": "be18900cca6a4d1745bd9284d9474c9d28aedb4ab53996f7ba63ed40818053bb",
+    "Joints/Gripper.mo": "20fd4935407ffd739b63141e89fc78a8e23f8b24f79dcc751f20267d90746a6c",
+    "Joints/Gripper_bar.mo": "fc8842dcb652271d454e9236c5dade1c011f79c5925f52177e2b150d7a692eb2",
+    "Joints/Gripper_barParams.mo": "fb4b847835ceade123293794f1b621124e095421aacf5cb04d947f1a49fda588",
+    "Joints/GripperParams.mo": "a617fd946cad4141423db9a1121dee995d7912c5fcf95aeb6df42b3d4a57c511",
+    "Joints/Left_finger.mo": "a638e6fe1ab8a81e4337ef415f158c2dfdeb3280e7a0a3d1693adaee9d48aa34",
+    "Joints/Left_fingerParams.mo": "6f8fc03b5b277c5d4e408a18e98495d98adea6dbbea66d594adc567ae5c4617c",
+    "Joints/package.mo": "15a6081509de8803a1f337a2c61570f0647235b806da176e1b5613129392084c",
+    "Joints/package.order": "12a9833f7ef321ede75ee66de1e362ce314471827b6116753909e5662f90b5b5",
+    "Joints/Right_finger.mo": "5ca00d251aa1d98cadabea4e894c6d34493d549e0fce814f288d0188955a871a",
+    "Joints/Right_fingerParams.mo": "cca3a3bb3100dfeab7c2901bdc08d7b98e9abe373c1492ff2993e5873ac0e50a",
+    "Joints/Shoulder.mo": "93101632077db368ce0f2e0e9fedcb1509dca396e68434805876ea0eb923bb61",
+    "Joints/ShoulderParams.mo": "9e37a12b88f1b06367a3d95330652110f1d0ccc707b92ded22974e3eafa675b4",
+    "Joints/Waist.mo": "aa9f7b92cee20c0bcba1f4d8d44c29a65ab0c55da72372a541ebb93a90ed37db",
+    "Joints/WaistParams.mo": "e03de043c708974625e2956ae0d1dc65917db193eca3b9be82d9ebb700247d15",
+    "Joints/Wrist_angle.mo": "0410014bd9f0221d2cb99a8c11de1c28f703b0eaeaed38328fc65ddbc1d06602",
+    "Joints/Wrist_angleParams.mo": "3167b224f6dafcb66f4bc65a8637994f7f8289ad703bbda26743b65c8b0700d0",
+    "Joints/Wrist_rotate.mo": "13465f71067df81223fc868275d97bc67f22ef5cde7fbd3a49d2cebc9234518e",
+    "Joints/Wrist_rotateParams.mo": "712930f278cad8df000b5b4c4463d6a64b55398672d667e4986d59672e26d96d",
+    "Links/Aloha_vx300s_base_link.mo": "8fca74366577f1a867e4fb62fc13f2ccba33d05cb5f74d1f8b60e9227fdd4401",
+    "Links/Aloha_vx300s_base_linkParams.mo": "772b3648675a4824d5e4e45937a179104f81ea4e5a0c93a55f1b7e12fb191461",
+    "Links/Aloha_vx300s_ee_arm_link.mo": "2e8825b51023ccc7c462854d042f4efd7b07f5c6e8176d838c0a910580fad2c9",
+    "Links/Aloha_vx300s_ee_arm_linkParams.mo": "acccc23925c8e047af4dca810ef2f8781d564fab29120276c733db4a7625e3bf",
+    "Links/Aloha_vx300s_ee_gripper_link.mo": "ed299f8b544fe0b2b4351a355470dbd98e1b63041b0864a6666248bcac8e6d7c",
+    "Links/Aloha_vx300s_ee_gripper_linkParams.mo": "9987bc63271b4f20196529d4f4b011b90267f58ff24120cb1f1acc41734eb7fb",
+    "Links/Aloha_vx300s_fingers_link.mo": "e93262290d86aa8c4db9351a5b7b9b4acb0ef266dcd74ccf86d563fbb599531a",
+    "Links/Aloha_vx300s_fingers_linkParams.mo": "d0ee0e0366eb30bec2cadf1b7c99910a4b1434dfb11c3c260df8a6662174e199",
+    "Links/Aloha_vx300s_gripper_bar_link.mo": "40047cdb4b2b43a8d3215f58e1a3e1c19c9b7371a04bf0aa10ac32a26682d1a2",
+    "Links/Aloha_vx300s_gripper_bar_linkParams.mo": "a09307d6f6c652e8e82c12066dd1900dc8dee8ee890edad4f811cb212545d9ee",
+    "Links/Aloha_vx300s_gripper_link.mo": "f5bc3934f8889763bfd4470af00f8046cee48220f7c47442237f85d49be25c0b",
+    "Links/Aloha_vx300s_gripper_linkParams.mo": "11bf3ddf78a95458661bf7c430463ecd0356a3eb64b5c095f9bbedaed2dbe1e4",
+    "Links/Aloha_vx300s_gripper_prop_link.mo": "a3a59823d9443b435060ae327410de9710a0322196237ff033ecbb4b683d86c4",
+    "Links/Aloha_vx300s_gripper_prop_linkParams.mo": "2060c61c78932021dc375d47816098d994b6c89bef03569bd89b21dd41721913",
+    "Links/Aloha_vx300s_left_finger_link.mo": "4f1f8f2d3deafda6be877c207247a2b05880f504c700de096eb0805668c71b42",
+    "Links/Aloha_vx300s_left_finger_linkParams.mo": "1927f553b30cf77e3da393b0902f478b6a912007c2e9effbe60080aa8ef92d4f",
+    "Links/Aloha_vx300s_lower_forearm_link.mo": "012ccb5528608e18ef1dec10b7001a8c15f687887536dfdcfb506cfb2285aaf5",
+    "Links/Aloha_vx300s_lower_forearm_linkParams.mo": "1ae78a0b92cf5cae27bc1f403ae0628c91a44faa28e51fd0697f380000f8e40c",
+    "Links/Aloha_vx300s_right_finger_link.mo": "90cd7a1cda394219e8af5532f373770558175d5d57731715c69914c44257224d",
+    "Links/Aloha_vx300s_right_finger_linkParams.mo": "47c46ec410a506069176327215e7c0eb2c08dc18d818815aa5dd3009b61fdaec",
+    "Links/Aloha_vx300s_shoulder_link.mo": "7841c054ad5103311d98e47a48bb9d8952729abf82dc359e0a1119511f6d6f17",
+    "Links/Aloha_vx300s_shoulder_linkParams.mo": "23806eb9c571ae801a0529cb7776000416af424dd71d963a53357144ec49b2b5",
+    "Links/Aloha_vx300s_upper_arm_link.mo": "9aead6fb7a87ce926797fa2f0be9a665e005c345b715e2a0515dd64d580ad577",
+    "Links/Aloha_vx300s_upper_arm_linkParams.mo": "954ce96ab1b49db52c407dd20484089dbf0756f0b0bfeba8043f9831c714b5b2",
+    "Links/Aloha_vx300s_upper_forearm_link.mo": "4c55629e6c72d9a0aa04568ea61e5949a303b80af1f70951c4b054e8cbec8b2f",
+    "Links/Aloha_vx300s_upper_forearm_linkParams.mo": "4abecaded0b1ad7f6ebc249f6bb831a3ef86e5bc7edc55c46ec2a0a1fb15694c",
+    "Links/Aloha_vx300s_wrist_link.mo": "1ee444849fa6b3c5af419b21aea6a5e6794c52d23ad40d385e9e70cec3f6e5b6",
+    "Links/Aloha_vx300s_wrist_linkParams.mo": "683d1a9382be4f80d11615cda90dd0e89652daac51316e1cc6a9d5a352d3b6b7",
+    "Links/package.mo": "4b446a04104e62474de1713506026d8340687031de705f1acf41db425e029a8d",
+    "Links/package.order": "5557c3ee8a99e483be1768b8f149a7ad8da7760af253700447ececd643da4b18",
+    "package.mo": "09895c6d48f20a87f24535cf2ba67bcdb0319b842697e9af50ff252cd00a05ae",
+    "package.order": "9906c7b047add396904aa1957a2a3cdc72cb7f6495e17417a2f678fec55d25e0"
+   }
+  },
+  "reproducibility": {
+   "identical": true,
+   "files_compared": 63,
+   "differing_files": []
+  },
+  "summary": {
+   "mapped_links": 14,
+   "mapped_joints": 13,
+   "unmapped": [],
+   "physical_values_compared": 255,
+   "physical_mismatches": 0,
+   "unsupported_items": 15
+  },
+  "notes": [
+   "No AI and no correction is applied at this stage; the package is exactly the converter's output.",
+   "A matching record value means the converter copied the URDF value; whether the model uses it correctly is tested by stage 2 (OpenModelica check, simulation, kinematics)."
+  ]
+ },
+ "unsupported": [
+  {
+   "feature": "ros2_control",
+   "effect": "ignored by the converter",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "Unknown tag \"ros2_control\" in /robot[@name='aloha_vx300s']"
+  },
+  {
+   "feature": "T1",
+   "effect": "transformed before conversion",
+   "severity": "info",
+   "category": "unsupported URDF element",
+   "evidence": "'/' in link/joint names replaced by '_' before conversion"
+  },
+  {
+   "feature": "T2",
+   "effect": "transformed before conversion",
+   "severity": "info",
+   "category": "unsupported URDF element",
+   "evidence": "<texture> materials replaced by a flat colour before conversion (the converter crashes on textures)"
+  },
+  {
+   "feature": "mimic",
+   "entity": "right_finger",
+   "effect": "recorded in the parameter record but not used by the joint model",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "Joints/Right_fingerParams.mo: mimic present; Joints/Right_finger.mo never references jointParams.mimic"
+  },
+  {
+   "feature": "visual mesh URI",
+   "entity": "aloha_vx300s/base_link",
+   "effect": "rewritten by the converter",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/base.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/base.stl'"
+  },
+  {
+   "feature": "visual mesh URI",
+   "entity": "aloha_vx300s/shoulder_link",
+   "effect": "rewritten by the converter",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/shoulder.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/shoulder.stl'"
+  },
+  {
+   "feature": "visual mesh URI",
+   "entity": "aloha_vx300s/upper_arm_link",
+   "effect": "rewritten by the converter",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_arm.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_arm.stl'"
+  },
+  {
+   "feature": "visual mesh URI",
+   "entity": "aloha_vx300s/upper_forearm_link",
+   "effect": "rewritten by the converter",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_forearm.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/upper_forearm.stl'"
+  },
+  {
+   "feature": "visual mesh URI",
+   "entity": "aloha_vx300s/lower_forearm_link",
+   "effect": "rewritten by the converter",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/lower_forearm.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/lower_forearm.stl'"
+  },
+  {
+   "feature": "visual mesh URI",
+   "entity": "aloha_vx300s/wrist_link",
+   "effect": "rewritten by the converter",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/wrist.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/wrist.stl'"
+  },
+  {
+   "feature": "visual mesh URI",
+   "entity": "aloha_vx300s/gripper_link",
+   "effect": "rewritten by the converter",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper.stl'"
+  },
+  {
+   "feature": "visual mesh URI",
+   "entity": "aloha_vx300s/gripper_prop_link",
+   "effect": "rewritten by the converter",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_prop.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_prop.stl'"
+  },
+  {
+   "feature": "visual mesh URI",
+   "entity": "aloha_vx300s/gripper_bar_link",
+   "effect": "rewritten by the converter",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_bar.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_bar.stl'"
+  },
+  {
+   "feature": "visual mesh URI",
+   "entity": "aloha_vx300s/left_finger_link",
+   "effect": "rewritten by the converter",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl'"
+  },
+  {
+   "feature": "visual mesh URI",
+   "entity": "aloha_vx300s/right_finger_link",
+   "effect": "rewritten by the converter",
+   "severity": "warning",
+   "category": "unsupported URDF element",
+   "evidence": "URDF 'package://interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl' -> record 'package:_/interbotix_xsarm_descriptions/meshes/aloha_vx300s_meshes/gripper_finger.stl'"
+  }
+ ],
+ "mapping": [
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/base_link",
+   "converted_name": "aloha_vx300s_base_link",
+   "class": "Links.Aloha_vx300s_base_link",
+   "instance": "aloha_vx300s_base_link",
+   "model_file": "Links/Aloha_vx300s_base_link.mo",
+   "params_file": "Links/Aloha_vx300s_base_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/shoulder_link",
+   "converted_name": "aloha_vx300s_shoulder_link",
+   "class": "Links.Aloha_vx300s_shoulder_link",
+   "instance": "aloha_vx300s_shoulder_link",
+   "model_file": "Links/Aloha_vx300s_shoulder_link.mo",
+   "params_file": "Links/Aloha_vx300s_shoulder_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/upper_arm_link",
+   "converted_name": "aloha_vx300s_upper_arm_link",
+   "class": "Links.Aloha_vx300s_upper_arm_link",
+   "instance": "aloha_vx300s_upper_arm_link",
+   "model_file": "Links/Aloha_vx300s_upper_arm_link.mo",
+   "params_file": "Links/Aloha_vx300s_upper_arm_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/upper_forearm_link",
+   "converted_name": "aloha_vx300s_upper_forearm_link",
+   "class": "Links.Aloha_vx300s_upper_forearm_link",
+   "instance": "aloha_vx300s_upper_forearm_link",
+   "model_file": "Links/Aloha_vx300s_upper_forearm_link.mo",
+   "params_file": "Links/Aloha_vx300s_upper_forearm_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/lower_forearm_link",
+   "converted_name": "aloha_vx300s_lower_forearm_link",
+   "class": "Links.Aloha_vx300s_lower_forearm_link",
+   "instance": "aloha_vx300s_lower_forearm_link",
+   "model_file": "Links/Aloha_vx300s_lower_forearm_link.mo",
+   "params_file": "Links/Aloha_vx300s_lower_forearm_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/wrist_link",
+   "converted_name": "aloha_vx300s_wrist_link",
+   "class": "Links.Aloha_vx300s_wrist_link",
+   "instance": "aloha_vx300s_wrist_link",
+   "model_file": "Links/Aloha_vx300s_wrist_link.mo",
+   "params_file": "Links/Aloha_vx300s_wrist_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/gripper_link",
+   "converted_name": "aloha_vx300s_gripper_link",
+   "class": "Links.Aloha_vx300s_gripper_link",
+   "instance": "aloha_vx300s_gripper_link",
+   "model_file": "Links/Aloha_vx300s_gripper_link.mo",
+   "params_file": "Links/Aloha_vx300s_gripper_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/ee_arm_link",
+   "converted_name": "aloha_vx300s_ee_arm_link",
+   "class": "Links.Aloha_vx300s_ee_arm_link",
+   "instance": "aloha_vx300s_ee_arm_link",
+   "model_file": "Links/Aloha_vx300s_ee_arm_link.mo",
+   "params_file": "Links/Aloha_vx300s_ee_arm_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/gripper_prop_link",
+   "converted_name": "aloha_vx300s_gripper_prop_link",
+   "class": "Links.Aloha_vx300s_gripper_prop_link",
+   "instance": "aloha_vx300s_gripper_prop_link",
+   "model_file": "Links/Aloha_vx300s_gripper_prop_link.mo",
+   "params_file": "Links/Aloha_vx300s_gripper_prop_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/gripper_bar_link",
+   "converted_name": "aloha_vx300s_gripper_bar_link",
+   "class": "Links.Aloha_vx300s_gripper_bar_link",
+   "instance": "aloha_vx300s_gripper_bar_link",
+   "model_file": "Links/Aloha_vx300s_gripper_bar_link.mo",
+   "params_file": "Links/Aloha_vx300s_gripper_bar_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/fingers_link",
+   "converted_name": "aloha_vx300s_fingers_link",
+   "class": "Links.Aloha_vx300s_fingers_link",
+   "instance": "aloha_vx300s_fingers_link",
+   "model_file": "Links/Aloha_vx300s_fingers_link.mo",
+   "params_file": "Links/Aloha_vx300s_fingers_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/left_finger_link",
+   "converted_name": "aloha_vx300s_left_finger_link",
+   "class": "Links.Aloha_vx300s_left_finger_link",
+   "instance": "aloha_vx300s_left_finger_link",
+   "model_file": "Links/Aloha_vx300s_left_finger_link.mo",
+   "params_file": "Links/Aloha_vx300s_left_finger_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/right_finger_link",
+   "converted_name": "aloha_vx300s_right_finger_link",
+   "class": "Links.Aloha_vx300s_right_finger_link",
+   "instance": "aloha_vx300s_right_finger_link",
+   "model_file": "Links/Aloha_vx300s_right_finger_link.mo",
+   "params_file": "Links/Aloha_vx300s_right_finger_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "link",
+   "urdf_name": "aloha_vx300s/ee_gripper_link",
+   "converted_name": "aloha_vx300s_ee_gripper_link",
+   "class": "Links.Aloha_vx300s_ee_gripper_link",
+   "instance": "aloha_vx300s_ee_gripper_link",
+   "model_file": "Links/Aloha_vx300s_ee_gripper_link.mo",
+   "params_file": "Links/Aloha_vx300s_ee_gripper_linkParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "waist",
+   "converted_name": "waist",
+   "class": "Joints.Waist",
+   "instance": "waist",
+   "model_file": "Joints/Waist.mo",
+   "params_file": "Joints/WaistParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "shoulder",
+   "converted_name": "shoulder",
+   "class": "Joints.Shoulder",
+   "instance": "shoulder",
+   "model_file": "Joints/Shoulder.mo",
+   "params_file": "Joints/ShoulderParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "elbow",
+   "converted_name": "elbow",
+   "class": "Joints.Elbow",
+   "instance": "elbow",
+   "model_file": "Joints/Elbow.mo",
+   "params_file": "Joints/ElbowParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "forearm_roll",
+   "converted_name": "forearm_roll",
+   "class": "Joints.Forearm_roll",
+   "instance": "forearm_roll",
+   "model_file": "Joints/Forearm_roll.mo",
+   "params_file": "Joints/Forearm_rollParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "wrist_angle",
+   "converted_name": "wrist_angle",
+   "class": "Joints.Wrist_angle",
+   "instance": "wrist_angle",
+   "model_file": "Joints/Wrist_angle.mo",
+   "params_file": "Joints/Wrist_angleParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "wrist_rotate",
+   "converted_name": "wrist_rotate",
+   "class": "Joints.Wrist_rotate",
+   "instance": "wrist_rotate",
+   "model_file": "Joints/Wrist_rotate.mo",
+   "params_file": "Joints/Wrist_rotateParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "ee_arm",
+   "converted_name": "ee_arm",
+   "class": "Joints.Ee_arm",
+   "instance": null,
+   "model_file": "Joints/Ee_arm.mo",
+   "params_file": "Joints/Ee_armParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "gripper",
+   "converted_name": "gripper",
+   "class": "Joints.Gripper",
+   "instance": "gripper",
+   "model_file": "Joints/Gripper.mo",
+   "params_file": "Joints/GripperParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "gripper_bar",
+   "converted_name": "gripper_bar",
+   "class": "Joints.Gripper_bar",
+   "instance": null,
+   "model_file": "Joints/Gripper_bar.mo",
+   "params_file": "Joints/Gripper_barParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "ee_bar",
+   "converted_name": "ee_bar",
+   "class": "Joints.Ee_bar",
+   "instance": null,
+   "model_file": "Joints/Ee_bar.mo",
+   "params_file": "Joints/Ee_barParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "left_finger",
+   "converted_name": "left_finger",
+   "class": "Joints.Left_finger",
+   "instance": "left_finger",
+   "model_file": "Joints/Left_finger.mo",
+   "params_file": "Joints/Left_fingerParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "right_finger",
+   "converted_name": "right_finger",
+   "class": "Joints.Right_finger",
+   "instance": "right_finger",
+   "model_file": "Joints/Right_finger.mo",
+   "params_file": "Joints/Right_fingerParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  },
+  {
+   "kind": "joint",
+   "urdf_name": "ee_gripper",
+   "converted_name": "ee_gripper",
+   "class": "Joints.Ee_gripper",
+   "instance": null,
+   "model_file": "Joints/Ee_gripper.mo",
+   "params_file": "Joints/Ee_gripperParams.mo",
+   "rule": "converter naming: '/' and '-' -> '_', class = title case",
+   "verified_by": "stage 2 kinematic comparison (pending)"
+  }
+ ],
+ "physical_table_summary": {
+  "compared": 255,
+  "mismatches": [],
+  "by_field": {
+   "mass": 14,
+   "com": 28,
+   "inertia": 84,
+   "type": 13,
+   "parent": 13,
+   "child": 13,
+   "origin": 26,
+   "axis": 9,
+   "limit": 34,
+   "dynamics": 18,
+   "mimic": 3
+  }
+ }
+}
