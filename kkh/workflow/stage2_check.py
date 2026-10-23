@@ -35,7 +35,8 @@ from kkh.engineering.omc import MatResult, OMCService, classify, parse_messages
 from kkh.engineering.urdf_model import load_urdf
 
 SCHEMA = "kkh.workflow.diagnostics/1"
-STEPS = ["load", "structure", "balance_translation", "simulation", "urdf_consistency", "graphics"]
+STEPS = ["load", "structure", "balance_translation", "simulation", "urdf_consistency", "records", "graphics"]
+ENGINEERING_STEPS = STEPS[:6]  # everything except graphics decides "validated"
 BLOCKING_STEPS = ("load", "structure", "balance_translation", "simulation")
 
 # Mission taxonomy. Mapping from kkh.engineering.omc.classify classes is explicit and tested.
@@ -218,24 +219,35 @@ def graphics(omc: OMCService, classes: list[str]) -> list[dict]:
 
 # ---------------------------------------------------------------- run
 
-def run(run_dir: Path, log=print) -> dict:
+def run(run_dir: Path, log=print, ws_dir: Path | None = None, out_dir: Path | None = None) -> dict:
+    """Check the Stage 1 package, or (ws_dir) a candidate: a copy of the Stage 1 workspace with edits. Every subject
+    goes through exactly the same steps, so original and candidates are comparable."""
     run_dir = Path(run_dir).resolve()  # OpenModelica runs in its own working directory
     st1 = json.loads((run_dir / "stage1" / "manifest.json").read_text(encoding="utf-8"))
     if not st1.get("ok"):
         raise ValueError("stage 1 did not produce a package")
-    from kkh.workflow.stage1_convert import ROOT
+    from kkh.workflow import stage1_convert as s1
+    ROOT = s1.ROOT
     package_file = ROOT / st1["generated"]["package_file"]
     pkg_dir = ROOT / st1["generated"]["package_dir"]
+    if ws_dir is not None:
+        ws_dir = Path(ws_dir).resolve()
+        package_file = ws_dir / "URDFModelica" / "package.mo"
+        pkg_dir = ws_dir / "URDFModelica" / "Examples" / pkg_dir.name
     test_model = st1["generated"]["test_model"]
     robot_class = test_model.rsplit(".", 1)[0] + "." + pkg_dir.name
     urdf_path = run_dir / "stage1" / "input" / Path(st1["source"]["urdf"]).name
     robot = load_urdf(urdf_path)
-    out_dir = run_dir / "stage2"
+    out_dir = Path(out_dir).resolve() if out_dir else run_dir / "stage2"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     d = Diagnostics()
-    for u in json.loads((run_dir / "stage1" / "unsupported.json").read_text(encoding="utf-8")):
-        d.add("conversion", "stage1 conversion record", u["category"], u["severity"], f"{u['feature']}: {u['effect']}",
+    # Unsupported / unused URDF content is re-evaluated on the package being checked (a repair may have fixed it).
+    conv_log = (run_dir / "stage1" / "convert" / "converter.log")
+    mapping = s1.build_mapping(robot, pkg_dir, pkg_dir / f"{pkg_dir.name}.mo") if (pkg_dir / f"{pkg_dir.name}.mo").exists() else []
+    for u in s1.unsupported(urdf_path, robot, mapping, pkg_dir, st1["converter"]["preprocessing"],
+                            conv_log.read_text(encoding="utf-8") if conv_log.exists() else ""):
+        d.add("conversion", "conversion record", u["category"], u["severity"], f"{u['feature']}: {u['effect']}",
               entity=u.get("entity"), evidence=u.get("evidence"))
     steps: dict[str, dict] = {}
     blocked_at = None
@@ -327,6 +339,30 @@ def run(run_dir: Path, log=print) -> dict:
                          ("simulation", simulation), ("urdf_consistency", urdf_consistency)):
             step(name, fn)
 
+        # records: static comparison of every parameter-record value with the URDF (no OpenModelica needed, so it
+        # runs even when an earlier step failed): catches e.g. a limit written in degrees or a replaced mass
+        t = time.time()
+        try:
+            table = s1.physical_table(robot, mapping, pkg_dir) if mapping else []
+            missing = [m["urdf_name"] for m in mapping if not m["params_file"]]
+            for r in table:
+                if not r["match"]:
+                    d.add("records", f"record.{r['field']}", "type and unit" if r["field"].startswith("limit") else
+                          "mechanical or kinematic inconsistency", "error",
+                          f"{r['field']} in the parameter record differs from the URDF", entity=r["entity"],
+                          evidence=json.dumps({"urdf": r["urdf"], "record": r["generated"], "unit": r["unit"]}, default=str))
+            for name in missing:
+                d.add("records", "record present", "mechanical or kinematic inconsistency", "error",
+                      "no parameter record found for this URDF element", entity=name)
+            ok_rec = bool(table) and not missing and all(r["match"] for r in table)
+            steps["records"] = {"state": "pass" if ok_rec else "fail", "seconds": round(time.time() - t, 2),
+                                "values_compared": len(table), "mismatches": sum(not r["match"] for r in table),
+                                "missing_records": missing}
+        except Exception as exc:  # unreadable records are themselves a finding
+            d.add("records", "records", "syntax and translation", "error", f"parameter records could not be read: {exc}"[:300])
+            steps["records"] = {"state": "fail", "error": str(exc)[:300]}
+        log(f"[stage2] records: {steps['records']['state']}")
+
         # graphics: independent of the engineering verdict, needs only a loaded package
         if s.get("loads"):
             t = time.time()
@@ -349,19 +385,19 @@ def run(run_dir: Path, log=print) -> dict:
         omc.close()
 
     _relate(d.items)
-    eng = [steps.get(k, {}).get("state") for k in STEPS[:5]]
+    eng = [steps.get(k, {}).get("state") for k in ENGINEERING_STEPS]
     verdict = ("validated" if all(x == "pass" for x in eng) else
                "simulates, engineering checks fail" if steps.get("simulation", {}).get("state") == "pass" else
                "compiles, does not simulate" if steps.get("balance_translation", {}).get("state") == "pass" else
                f"fails at {blocked_at}")
     report = {"schema": SCHEMA, "created": dt.datetime.now().isoformat(timespec="seconds"),
-              "subject": {"run": run_dir.name, "package": st1["generated"]["package_dir"], "test_model": test_model,
+              "subject": {"run": run_dir.name, "package": s1._rel(pkg_dir), "test_model": test_model,
                           "robot_class": robot_class, "urdf_sha256": st1["source"]["urdf_sha256"],
-                          "generated_files": st1["generated"]["files"]},
+                          "candidate": ws_dir is not None, "files": s1._generated_hashes(pkg_dir)},
               "tools": {"openmodelica": omc_version, "msl": "4.1.0", "seconds": round(time.time() - t0, 1)},
               "steps": steps, "verdict": verdict,
-              "verdict_rule": "validated = load, structure, balance/translation, simulation and URDF consistency all "
-                              "pass; compiling alone is not validation; graphics are reported separately",
+              "verdict_rule": "validated = load, structure, balance/translation, simulation, URDF consistency and "
+                              "record values all pass; compiling alone is not validation; graphics are reported separately",
               "graphics_verdict": steps["graphics"]["state"],
               "counts": _counts(d.items), "findings": d.items}
     (out_dir / "diagnostics.json").write_text(json.dumps(report, indent=1, default=str), encoding="utf-8")
