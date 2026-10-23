@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { BookOpen, FileSearch, FileText, GitPullRequestArrow, LayoutGrid, RotateCcw, Workflow } from "lucide-react";
+import { BookOpen, FileText, GitPullRequestArrow, LayoutGrid, RotateCcw } from "lucide-react";
 import { convert } from "./api";
 import { AudienceContext, storeAudience, storedAudience, type Audience } from "../audience";
 import "../lab.css";
@@ -24,10 +24,10 @@ export function openFullStudio(ws = "home") {
   location.href = "/?ui=studio&ws=" + ws;
 }
 
-const PAGES: { id: Page; label: string; sub: string; Icon: typeof Workflow }[] = [
-  { id: "convert", label: "Convert & compare", sub: "Robot file → physics model, three ways", Icon: Workflow },
-  { id: "repair", label: "Repair workflow", sub: "Check → AI repair → engineer decides", Icon: GitPullRequestArrow },
-  { id: "review", label: "Review", sub: "Manual, AI or AI + ontologies", Icon: FileSearch },
+const PAGES: { id: Page; label: string; sub: string; Icon: typeof FileText }[] = [
+  { id: "repair", label: "Engineering pipeline", sub: "Convert → check → AI repair → engineer decides", Icon: GitPullRequestArrow },
+// The earlier comparison (AI writes the model) and its reviews are kept in the code and reachable by their old
+// ?page= links, but are no longer in the navigation: the studio focuses on the engineering pipeline.
   { id: "guide", label: "Guide", sub: "The flow, why, and the words", Icon: FileText },
   { id: "learn", label: "Learn the ideas", sub: "Physical AI Atlas", Icon: BookOpen },
 ];
@@ -37,7 +37,7 @@ export default function SimpleApp() {
   const params = new URLSearchParams(location.search);
   const [page, setPage] = useState<Page>(() => {
     const p = params.get("page") === "understand" ? "review" : params.get("page");
-    return ["convert", "repair", "review", "guide", "learn"].includes(p || "") ? (p as Page) : "convert";
+    return ["convert", "repair", "review", "guide", "learn"].includes(p || "") ? (p as Page) : "repair";
   });
   const [target, setTarget] = useState<Target | undefined>(() =>
     params.get("mutation")
@@ -101,9 +101,11 @@ export default function SimpleApp() {
                 Engineering
               </button>
             </div>
-            <button className="sx-full" onClick={() => setResetOpen(true)} title="Delete uploaded robots, comparisons and reviews, and start again">
-              <RotateCcw size={14} /> Reset
-            </button>
+            {(page === "convert" || page === "review") && (
+              <button className="sx-full" onClick={() => setResetOpen(true)} title="Delete uploaded robots, comparisons and reviews, and start again">
+                <RotateCcw size={14} /> Reset
+              </button>
+            )}
             <button className="sx-full" onClick={() => openFullStudio()} title="Open the complete studio with all pages (robot, knowledge graph, simulation…)">
               <LayoutGrid size={14} /> Full studio
             </button>
@@ -114,7 +116,7 @@ export default function SimpleApp() {
             {page === "convert" && <Convert openUnderstand={(t) => go("review", t)} learn={() => go("learn", undefined, "three-ways")} />}
             {page === "review" && <Review target={target} setTarget={(t) => go("review", t)} toConvert={() => go("convert")} learn={() => go("learn", undefined, "scoring")} />}
             {page === "repair" && <RepairWorkflow />}
-            {page === "guide" && <Guide go={(p) => go(p)} learn={() => go("learn")} />}
+            {page === "guide" && <Guide go={() => go("repair")} learn={() => go("learn")} />}
             {page === "learn" && <Atlas open={(i) => openFullStudio(STUDIO_WS[i] || "home")} />}
           </Suspense>
         </main>

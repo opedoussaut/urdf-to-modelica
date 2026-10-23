@@ -55,7 +55,8 @@ def resolve_mesh(urdf: Path, filename: str | None) -> Path | None:
         p = (urdf.parent / filename).resolve()
     if p is None or not p.is_file() or p.suffix.lower() not in MESH_TYPES:
         return None
-    if sources.ROOT.resolve() not in p.parents:
+    # inside the repository, or inside its pinned third_party tree (which may be a link to a shared checkout)
+    if not any(r in p.parents for r in (sources.ROOT.resolve(), (sources.ROOT / "third_party").resolve())):
         return None
     return p
 

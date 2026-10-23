@@ -1,14 +1,14 @@
 /**
- * Guide (simplified studio): the flow, the reasons behind it, and the words used.
- * Every fact is taken from the code and committed reports (docs/SIMPLE_UI.md, docs/HANDOVER_2026-10-22.md,
- * reports/CONVERT_REVIEW_CAMPAIGN_2026-10-21.md, reports/workflow/STAGE1_/STAGE2_ALOHA_VX300S.md). Measured results
- * are dated; nothing here is a prediction.
+ * Guide (simplified studio): the engineering pipeline, the reasons behind it, and the words used.
+ * Every fact is taken from the code and committed reports (docs/REPAIR_PIPELINE_PROPOSAL.md,
+ * reports/workflow/STAGE1_/STAGE2_ALOHA_VX300S.md, ASSETS_V1.md, reports/CONVERT_REVIEW_CAMPAIGN_2026-10-21.md).
+ * Measured results are dated; nothing here is a prediction.
  */
 export type Step = {
   id: string;
   n: number;
   title: string;
-  page: "convert" | "review";
+  page: "repair";
   doWhat: string;
   happens: string;
   get: string;
@@ -18,125 +18,108 @@ export type Step = {
 
 export const FLOW: Step[] = [
   {
-    id: "robot",
+    id: "input",
     n: 1,
-    title: "Choose a robot",
-    page: "convert",
-    doWhat: "Pick one of the pinned robots (SO-101 arm, Unitree G1, Berkeley Humanoid Lite, ALOHA 2 follower and leader) or upload your own URDF file.",
-    happens: "The studio reads the robot description (URDF) and draws it in 3D from the maker's own mesh files. You can move the joints, see the centre of mass, and hover a part for its name, mass and joint.",
-    get: "A robot whose every link, joint, mass and limit comes from a pinned, public source file, with its licence and commit.",
-    why: "Everything that follows is compared against this one file. Pinning it (a fixed version, with a checksum) makes every later result reproducible and traceable.",
-    code: "kkh/convert/sources.py · robot3d.py · RobotView.tsx",
+    title: "URDF input",
+    page: "repair",
+    doWhat: "Start from the robot maker's own description file (URDF) and its 3D mesh files. The first robot is the ALOHA 2 follower arm.",
+    happens: "The file and every mesh it uses are fixed at a known version and fingerprinted (SHA-256), with their licence and source.",
+    get: "One reference that every later step is compared against.",
+    why: "If the input could change, no result could be reproduced or traced. Robots enter only as a URDF and its meshes, so the pipeline works for other robots too.",
+    code: "kkh/workflow/stage1_convert.py",
   },
   {
     id: "convert",
     n: 2,
-    title: "Convert it three ways",
-    page: "convert",
-    doWhat: "Choose the conversion methods and, for the AI methods, which local language models to use. Press Run.",
+    title: "Convert (no AI)",
+    page: "repair",
+    doWhat: "Nothing: the conversion is automatic.",
     happens:
-      "The same URDF becomes a Modelica physics model in three ways, each in its own isolated folder: (1) AI only - a local model writes the model from the URDF; (2) AI + library search - the same, plus relevant Modelica Standard Library classes found by keyword search; (3) URDFModelica - the deterministic converter published by DLR, no AI.",
-    get: "Up to three Modelica packages for the same robot, each with its attempts, tokens and timings recorded.",
-    why: "A deterministic converter is the reference: it gives the same output every time. Running the AI methods under identical conditions (same model, seed 42, temperature 0, same budgets, same two repair rounds fed only by real OpenModelica messages) makes the comparison fair.",
-    code: "kkh/convert/runner.py · llm.py · library_index.py · urdfmodelica.py",
+      "The DLR URDFModelica converter, pinned at a fixed version, writes the Modelica package. The studio converts twice to prove the output is identical, maps every URDF link and joint to its Modelica component, compares every copied value with the URDF, and lists what the converter ignores or does not use.",
+    get: "A reproducible Modelica package, a URDF → Modelica map, and a table of 255 values (ALOHA arm: all copied unchanged).",
+    why: "A deterministic converter gives the same answer every time, so it is a fair, auditable starting point. In our earlier tests, no model written from scratch by a local AI passed the completeness check.",
+    code: "kkh/workflow/stage1_convert.py · kkh/convert/urdfmodelica.py",
   },
   {
-    id: "checks",
+    id: "check",
     n: 3,
-    title: "Eight measured checks",
-    page: "convert",
-    doWhat: "Watch each check turn green or red as OpenModelica and MuJoCo work, then read the result cards.",
+    title: "OpenModelica check",
+    page: "repair",
+    doWhat: "Read the findings: what is wrong, where, and how serious.",
     happens:
-      "Each model goes through the same eight checks: produced → loads → checks (equations = unknowns) → simulates (2 s) → coverage (every URDF link and moving joint present) → geometry under motion (every joint driven through 80 % of its range; parts must stay within 1 mm and 0.1° of the URDF) → parameters (axes, masses, centres of mass, inertias) → dynamics (joint torques within 5 % of the effort limit against an independent MuJoCo reference).",
-    get: "A completion score per method, with every check explained. Colours follow the score, not the rank: green only at 100 %.",
-    why: "A model that compiles is not necessarily a correct robot. The four validity gates show that it runs; the four engineering checks show that it behaves like the URDF. Each number comes from a real run, never from an estimate.",
-    code: "kkh/convert/score.py · excite.py · dynamics.py",
+      "The unmodified package goes through ordered checks: load → structure → equation balance and translation → a 2 s simulation → agreement with the URDF (geometry under motion within 1 mm, axes, masses, inertias, joint torques against an independent MuJoCo reference) → every parameter value against the URDF. Diagram graphics are checked separately.",
+    get: "A machine-readable list of findings, each with its step, category, severity, location and evidence, and a verdict.",
+    why: "A model that compiles is not necessarily a correct robot. The ALOHA package compiles and simulates, yet the right finger ends up 52.9 mm from where the URDF puts it, because the converter drops the finger coupling (mimic).",
+    code: "kkh/workflow/stage2_check.py",
   },
   {
-    id: "watch",
+    id: "repair",
     n: 4,
-    title: "Watch and download",
-    page: "convert",
-    doWhat: "Open “Watch the simulation” on a result, or download the package.",
+    title: "AI repair comparison",
+    page: "repair",
+    doWhat: "Choose a case (the natural findings or one of ten seeded faults) and compare the two AI methods side by side.",
     happens:
-      "The stored OpenModelica run is replayed in 3D: solid parts where OpenModelica computed them, a grey ghost of the URDF at the same joint angles, and parts more than 1 mm off shown in red. The download includes the meshes and the exact test motion, ready for OMEdit.",
-    get: "A visual explanation of what the numbers say, and a model you can open in OMEdit yourself.",
-    why: "A score says that something is wrong; the replay shows where. Nothing is re-simulated for the replay: what you see is what was scored.",
-    code: "kkh/convert/replay.py · export.py",
+      "Two AI methods receive exactly the same package, findings and rules, with the same local model, settings and three attempts. AI only works from that alone. AI + Modelica assets also receives passages from the Modelica Standard Library, the language reference and project patterns, chosen for each finding, each with its source, version and licence, and must cite what it used. Every proposed edit is applied to an isolated copy.",
+    get: "For each method: the edits, their explanations and cited sources, and the result after each attempt.",
+    why: "The question is whether engineering knowledge measurably helps an AI repair a model. Identical conditions make the answer meaningful, and the experiment stays valid whichever method does better. The ten faults were frozen before any AI run.",
+    code: "kkh/workflow/stage3_repair.py · faults.py · assets.py",
+  },
+  {
+    id: "validate",
+    n: 5,
+    title: "Independent validation",
+    page: "repair",
+    doWhat: "Read each method's verdict: validated, improved, regressed, unchanged or rejected.",
+    happens:
+      "Each final candidate is checked again from scratch with the same OpenModelica checks. Findings resolved, remaining and new are counted. An integrity guard rejects “repairs” that delete parts, connections or assertions, change values taken from the URDF, or only touch the drawing.",
+    get: "A comparison of the two methods per case and in total.",
+    why: "An AI can make errors disappear by changing the problem. Only changes that keep the robot intact, and pass the same checks as everything else, count.",
+    code: "kkh/workflow/stage4_validate.py",
   },
   {
     id: "review",
-    n: 5,
-    title: "Review a model",
-    page: "review",
-    doWhat: "Choose a converted file, or a test file with one known error, and review it by hand, with AI, or with AI + ontologies.",
+    n: 6,
+    title: "Engineer review",
+    page: "repair",
+    doWhat: "Keep or reject each proposed change, amend a file by hand if needed, re-check, and open the model in OMEdit.",
+    happens: "Kept changes are applied to a fresh copy of the original, so nothing unreviewed slips in. Every hand edit becomes a new version. Every action records who did it and why.",
+    get: "A reviewed candidate with its own independent check result.",
+    why: "AI explains, finds and proposes; a person decides. No AI can overwrite an approved model.",
+    code: "kkh/workflow/review.py",
+  },
+  {
+    id: "approve",
+    n: 7,
+    title: "Approved model & simulation",
+    page: "repair",
+    doWhat: "Approve (or reject) the candidate, then simulate it here or open it in OMEdit.",
     happens:
-      "Reviewers see the Modelica file, the cleaned URDF and OpenModelica's own messages, never the answer. The AI reviews return structured issues (entity, category, evidence, confidence, a proposed correction). The ontology mode adds facts from the knowledge graph (ALOHA arms only).",
-    get: "A scored review: recall, precision, corrections that actually work when applied to a copy, claims checked against the URDF, and the Brier score of the stated confidence.",
-    why: "To compare people and AI fairly, each review is scored against errors that are known in advance: either real conversion defects or a single seeded error. Corrections are tested by applying them to an isolated copy, never to the original.",
-    code: "kkh/convert/review.py · review_score.py · Review.tsx",
+      "Approval normally requires a validated model; approving with open findings needs a written justification, which is recorded with them. The approved copy then gets a separate drawing pass that adds the missing connection lines, without changing anything else.",
+    get: "An approved, traceable Modelica package that is readable in OMEdit, from the URDF fingerprint to the approver.",
+    why: "Approval is an engineering decision with a record, not a side effect of a green check. Drawing quality is improved only after approval, so it never influences the comparison.",
+    code: "kkh/workflow/review.py · layout.py",
   },
 ];
 
 export const RATIONALE: { title: string; text: string }[] = [
-  {
-    title: "An engineering model, not an animation",
-    text: "An animation replays positions. A Modelica model computes them from masses, axes, motors and gravity, so it can answer “what if?” and reveal errors that a picture hides.",
-  },
-  {
-    title: "A deterministic baseline first",
-    text: "The DLR URDFModelica converter gives the same output every time. It is the reference that any AI method has to beat, and the starting point for AI repair in the new workflow.",
-  },
-  {
-    title: "Compiling is not validating",
-    text: "OpenModelica accepting a model only proves it is well formed. The studio also checks it against the URDF: geometry under motion, physical parameters and joint torques. A model can compile and still put a finger 5 cm in the wrong place.",
-  },
-  {
-    title: "Independent references",
-    text: "Geometry is compared with forward kinematics computed by the studio's own URDF reader, and torques with MuJoCo inverse dynamics. Neither depends on the model being tested.",
-  },
-  {
-    title: "Fair comparisons",
-    text: "The AI methods share the same model, seed, temperature, budgets and repair rounds. The only difference between them is the extra knowledge the augmented method receives.",
-  },
-  {
-    title: "Known answers for scoring",
-    text: "Reviews are scored against defects known in advance (seeded errors, some held out until the rules were frozen), so recall and precision mean something.",
-  },
-  {
-    title: "Honest signals",
-    text: "Green only at 100 %. The best result of a run can still be red. Every result card says what the checks show and what they do not.",
-  },
-  {
-    title: "Local and private",
-    text: "Language models run on this computer through Ollama, and OpenModelica, MuJoCo and GraphDB run locally. No robot data leaves the machine.",
-  },
-  {
-    title: "People decide",
-    text: "AI explains, finds and proposes. Nothing it writes replaces an approved model without a person's review.",
-  },
+  { title: "Converter first, AI second", text: "A deterministic converter writes the model; AI only repairs what the checks find. That keeps the starting point reproducible and the AI's contribution measurable." },
+  { title: "Compiling is not validating", text: "OpenModelica accepting a model proves it is well formed. The pipeline also checks it against the robot file: geometry under motion, parameters and joint torques." },
+  { title: "Independent references", text: "Geometry is compared with forward kinematics from the studio's own URDF reader, torques with MuJoCo inverse dynamics. Neither depends on the model being tested." },
+  { title: "One difference only", text: "Both AI methods share the model, settings, inputs, rules and attempts. The only difference is the Modelica knowledge the second one receives." },
+  { title: "Faults frozen in advance", text: "Ten known errors were written and committed before any AI run, so they could not be tuned to favour either method. Three are held out." },
+  { title: "Provenance everywhere", text: "Every retrieved passage carries its source, version and licence; every finding its evidence; every approval its author and reason." },
+  { title: "Honest outcomes", text: "A repair that makes the model fail earlier is “regressed”; one that changes the robot is “rejected”. A null result is still a result." },
+  { title: "Local and private", text: "The language models run on this computer through Ollama; OpenModelica and MuJoCo run locally. No robot data leaves the machine." },
+  { title: "People decide", text: "Every change is reviewed and every promotion approved by a person, with a record. Nothing is accepted automatically." },
 ];
 
 /** Measured so far: dated, sourced, quoted from committed reports. */
 export const MEASURED: { date: string; text: string; source: string }[] = [
-  { date: "21 Oct 2026", text: "ALOHA leader arm: URDFModelica is the best of the three methods. Its only defect is the unenforced finger mimic (right finger 34 mm off under motion). No AI-written file passed the completeness check.", source: "reports/CONVERT_REVIEW_CAMPAIGN_2026-10-21.md" },
-  { date: "21 Oct 2026", text: "Reviews: qwen3-coder 30B located 9 of 16 seeded errors. Ontology grounding made the stated numbers more accurate but did not improve detection. The focused protocol (v2) halved the noise at the same recall and was 3.4× faster.", source: "reports/CONVERT_REVIEW_CAMPAIGN_2026-10-21.md" },
-  { date: "22 Oct 2026", text: "SO-101 arm: URDFModelica passes 8/8 checks in 23 s.", source: "docs/HANDOVER_2026-10-22.md" },
-  { date: "23 Oct 2026", text: "ALOHA follower, new workflow Stage 1: conversion reproducible (63 files byte-identical), 255 URDF values copied unchanged, 15 items flagged (mimic recorded but not used, ros2_control ignored, mesh paths rewritten).", source: "reports/workflow/STAGE1_ALOHA_VX300S.md" },
-  { date: "23 Oct 2026", text: "Stage 2: the package loads, is balanced (6 814 equations = unknowns) and simulates, but is not validated: right finger up to 52.9 mm off; both fingers start outside their URDF limits; 18 of 49 robot connections have no drawn line.", source: "reports/workflow/STAGE2_ALOHA_VX300S.md" },
-];
-
-export type Stage = { title: string; text: string; status: "built" | "in progress" | "planned" };
-
-/** The revised workflow (docs/REPAIR_PIPELINE_PROPOSAL.md): AI repairs the converter's output instead of writing it. */
-export const NEXT: Stage[] = [
-  { title: "URDF input", text: "The robot file and its meshes, pinned and hashed. Open the “Repair workflow” tab to follow every stage.", status: "built" },
-  { title: "Convert", text: "DLR URDFModelica only, no AI, no corrections. Reproducibility, mapping and a field-by-field value table recorded.", status: "built" },
-  { title: "OpenModelica check", text: "Ordered checks (load → structure → balance → simulation → URDF consistency, graphics apart) and a machine-readable list of findings.", status: "built" },
-  { title: "AI repair comparison", text: "Two arms with identical inputs and settings: AI only, and AI + a governed collection of Modelica documentation and examples (with source, version and licence). Ten seeded faults were frozen before any run.", status: "built" },
-  { title: "Independent validation", text: "The same checks on both candidates, plus a guard that rejects “fixes” that delete parts or change robot values.", status: "built" },
-  { title: "Engineer review", text: "Side-by-side diffs, the evidence behind each change, accept or reject edit by edit, open in OMEdit.", status: "built" },
-  { title: "Approved model & simulation", text: "Only a person promotes a model; the missing connection lines are then drawn separately, and it is simulated from the studio or OMEdit.", status: "built" },
+  { date: "21 Oct 2026", text: "Earlier comparison on the ALOHA leader arm: the DLR converter was best; no model written from scratch by a local AI passed the completeness check. This is why AI now repairs instead of writing.", source: "reports/CONVERT_REVIEW_CAMPAIGN_2026-10-21.md" },
+  { date: "23 Oct 2026", text: "ALOHA follower, conversion: reproducible (63 files byte-identical), 255 URDF values copied unchanged, 15 items flagged (finger mimic recorded but not used, ros2_control ignored, mesh paths rewritten).", source: "reports/workflow/STAGE1_ALOHA_VX300S.md" },
+  { date: "23 Oct 2026", text: "OpenModelica check: loads, balanced (6 814 equations = unknowns), simulates, but not validated: right finger up to 52.9 mm off; both fingers start outside their limits; 18 of 49 robot connections have no drawn line.", source: "reports/workflow/STAGE2_ALOHA_VX300S.md" },
+  { date: "23 Oct 2026", text: "Modelica knowledge collection: 1 730 passages from the Modelica Standard Library 4.1.0, ModelicaReference 4.1.0 and 5 project patterns, each with source, version and licence; nothing downloaded.", source: "reports/workflow/ASSETS_V1.md" },
+  { date: "23 Oct 2026", text: "Ten seeded faults frozen before any AI run; all ten are caught by the OpenModelica checks. The AI repair comparison is running; its results will be reported as measured.", source: "kkh/workflow/faults.py (commit 7c8d735)" },
 ];
 
 export const GLOSSARY: { group: string; terms: [string, string][] }[] = [

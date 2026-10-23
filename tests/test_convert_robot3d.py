@@ -12,8 +12,8 @@ def test_pinned_robots_resolve_every_mesh(source):
     d, meshes = robot3d.describe(source)
     visuals = [v for link in d["links"].values() for v in link["visuals"]]
     assert visuals and all(v["mesh"] is not None or v["shape"] for v in visuals)  # a mesh file or a URDF primitive
-    root = sources.ROOT.resolve()
-    assert all(root in p.parents for p in meshes)
+    roots = (sources.ROOT.resolve(), (sources.ROOT / "third_party").resolve())  # third_party may be a linked checkout
+    assert all(any(r in p.parents for r in roots) for p in meshes)
     assert len(d["joints"]) == len(d["links"]) - 1
 
 
