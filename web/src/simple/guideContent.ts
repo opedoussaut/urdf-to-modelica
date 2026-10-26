@@ -22,7 +22,7 @@ export const FLOW: Step[] = [
     n: 1,
     title: "URDF input",
     page: "repair",
-    doWhat: "Start from the robot maker's own description file (URDF) and its 3D mesh files. The first robot is the ALOHA 2 follower arm.",
+    doWhat: "On the start screen, choose the Unitree G1 humanoid, the Berkeley Humanoid Lite or the ALOHA 2 follower arm (each from its maker's own URDF and 3D mesh files), or upload your own URDF, then press Launch.",
     happens: "The file and every mesh it uses are fixed at a known version and fingerprinted (SHA-256), with their licence and source.",
     get: "One reference that every later step is compared against.",
     why: "If the input could change, no result could be reproduced or traced. Robots enter only as a URDF and its meshes, so the pipeline works for other robots too.",
