@@ -4,6 +4,16 @@ import { useAudience } from "../audience";
 import { message, waitJob } from "../studio";
 import { convert, wf } from "./api";
 import RobotView from "./RobotView";
+import { COMPLIANCE_WHY, FLAG_WHY, messageWhy, STATE_WHY, STEP_WHY, VERDICT_WHY, type Why } from "./explain";
+
+const PROGRESS_WHY: Record<string, string> = {
+  compliance: "The robot file was checked against the URDF specification and refused: converting a file with errors would only move the problems into the physics model.",
+  convert: "The DLR converter could not produce a Modelica package from this robot file.",
+  check: "OpenModelica stopped while checking the converted model.",
+  ai_only: "The AI only method stopped before it finished (for example the local model was not reachable).",
+  ai_assets: "The AI + Modelica knowledge method stopped before it finished (for example the local model or the knowledge collection was not available).",
+  validate: "The independent check of the repaired models stopped with an error.",
+};
 import "./workflow.css";
 
 type Stage = "input" | "compliance" | "convert" | "check" | "repair" | "review" | "approved" | "simulate";
@@ -12,7 +22,7 @@ const STAGES: { id: Stage; label: string; plain: string }[] = [
   { id: "compliance", label: "URDF compliance", plain: "Before anything is converted, the file is checked against the official URDF specification (ROS wiki), its tree structure and basic physics. A file with errors is refused." },
   { id: "convert", label: "Convert", plain: "The DLR converter turns the file into a Modelica model. No AI, no corrections." },
   { id: "check", label: "OpenModelica check", plain: "OpenModelica and an independent comparison with the robot file list every problem, in order." },
-  { id: "repair", label: "AI repair comparison", plain: "Two AI methods try to fix those problems under identical conditions: AI alone, and AI with Modelica knowledge." },
+  { id: "repair", label: "AI Repair Comparison", plain: "Two AI methods try to fix those problems under identical conditions: AI alone, and AI with Modelica knowledge." },
   { id: "review", label: "Engineer review", plain: "A person inspects every proposed change, keeps or rejects each one, and re-checks the result." },
   { id: "approved", label: "Approved model", plain: "Only a person promotes a model. Then, separately, the missing connection lines are drawn." },
   { id: "simulate", label: "Simulation", plain: "The approved model is simulated from here or opened in OMEdit." },
@@ -182,7 +192,7 @@ function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?
   const chosen = robots.find((r) => r.id === pick);
   const studio = robots.filter((r) => r.kind === "pinned"),
     uploads = robots.filter((r) => r.kind !== "pinned");
-  const showProgress = busy || (active.running && !(active.label || "").startsWith("AI repair"));
+  const showProgress = busy || (active.running && !(active.label || "").startsWith("AI Repair"));
 
   return (
     <>
@@ -238,12 +248,16 @@ function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?
 
         {showProgress && <ProgressList active={active} serverNow={serverNow} />}
         {!showProgress && active.error && active.run && (
-          <p className="lab-error">
-            Last launch stopped: {active.error.slice(0, 300)}{" "}
+          <div className="lab-error">
+            Last launch stopped.{" "}
             <button className="sx-link" onClick={() => open(active.run!, "compliance")}>
               Open it
             </button>
-          </p>
+            <WhyNote open>
+              <p>{/Stage 0 refused/.test(active.error) ? COMPLIANCE_WHY["not compliant"] : "One step of the pipeline stopped with an error. The detail below is the system's own message."}</p>
+              <p className="wf-mono">{active.error.slice(0, 400)}</p>
+            </WhyNote>
+          </div>
         )}
         {err && <p className="lab-error">{err}</p>}
       </section>
@@ -267,6 +281,31 @@ function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?
   );
 }
 
+/** Collapsible plain-language explanation shown next to every failure. */
+function WhyNote({ title = "What went wrong, in simple terms", children, open = false }: { title?: string; children: React.ReactNode; open?: boolean }) {
+  return (
+    <details className="wf-why" open={open}>
+      <summary>
+        <CircleAlert size={15} /> {title}
+      </summary>
+      <div className="wf-why-body">{children}</div>
+    </details>
+  );
+}
+
+function WhyBlock({ w }: { w: Why }) {
+  return (
+    <dl className="wf-why-dl">
+      <dt>What happened</dt>
+      <dd>{w.what}</dd>
+      <dt>Why it matters</dt>
+      <dd>{w.matters}</dd>
+      <dt>What usually fixes it</dt>
+      <dd>{w.fix}</dd>
+    </dl>
+  );
+}
+
 function Stat({ k, v, tone }: { k: string; v: any; tone?: string }) {
   return (
     <div className={"wf-stat " + (tone || "")}>
@@ -283,6 +322,10 @@ function Input({ run, expert }: { run: any; expert: boolean }) {
       <section className="wf-card">
         <h2>Conversion refused</h2>
         <p className="lab-error">{run.stage1.error || "Stage 0 found blocking errors in the URDF."}</p>
+        <WhyNote open>
+          <p>{COMPLIANCE_WHY["not compliant"]}</p>
+          <p>Open the URDF compliance step to see each problem with its line in the file.</p>
+        </WhyNote>
       </section>
     );
   return (
@@ -367,6 +410,19 @@ function Check({ run, expert }: { run: any; expert: boolean }) {
         Verdict: <span className={"wf-verdict " + (d.verdict === "validated" ? "ok" : "bad")}>{d.verdict}</span>
       </h2>
       <p className="sx-note">{d.verdict_rule}</p>
+      {d.verdict !== "validated" && (
+        <WhyNote>
+          <p>{VERDICT_WHY[d.verdict] || d.verdict}</p>
+          {Object.entries(STEP_LABEL)
+            .filter(([k]) => d.steps[k]?.state === "fail" && STEP_WHY[k])
+            .map(([k, label]) => (
+              <div key={k} className="wf-why-step">
+                <b>{label}</b>
+                <WhyBlock w={STEP_WHY[k]} />
+              </div>
+            ))}
+        </WhyNote>
+      )}
       <ol className="wf-steps">
         {Object.entries(STEP_LABEL).map(([k, label]) => {
           const s = d.steps[k] || {};
@@ -410,6 +466,12 @@ function Check({ run, expert }: { run: any; expert: boolean }) {
                 {f.message}
                 {expert && f.evidence && <small className="wf-ev">{String(f.evidence).slice(0, 300)}</small>}
                 {f.related && <small className="wf-ev">related: {f.related.join(", ")}</small>}
+                {f.severity !== "info" && messageWhy(f.message, f.category) && (
+                  <details className="wf-why-inline">
+                    <summary>In simple terms</summary>
+                    {messageWhy(f.message, f.category)}
+                  </details>
+                )}
               </td>
             </tr>
           ))}
@@ -431,7 +493,7 @@ function Repair({ run, expert, open, reloadRuns }: { run: any; expert: boolean; 
       ),
     ).then((pairs) => setDetail(Object.fromEntries(pairs)));
   }, [sel, run.id]);
-  if (!cases.length && !Object.keys(run.repairs || {}).length) return <Battle run={run} open={open} reloadRuns={reloadRuns} />;
+  if (!cases.length && !Object.keys(run.repairs || {}).length) return <RepairStart run={run} open={open} reloadRuns={reloadRuns} />;
   const summ = run.validation?.summary || {};
   const c = cases.find((x: any) => x.case === sel);
   const ch = (run.faults.characterisation || []).find((r: any) => r.id === sel);
@@ -511,6 +573,30 @@ function Repair({ run, expert, open, reloadRuns }: { run: any; expert: boolean; 
                       </div>
                     )}
                     {a.citation_flags > 0 && <p className="wf-bad">{a.citation_flags} edit(s) cited sources that were not supplied</p>}
+                    {a.state !== "validated" && STATE_WHY[a.state] && (
+                      <WhyNote title={a.state === "improved" ? "Why it is not validated yet, in simple terms" : undefined}>
+                        <p>
+                          {a.state === "unchanged" && a.edits_proposed === 0
+                            ? "The AI did not propose any edit for these findings, so the model is exactly as before."
+                            : a.state === "unchanged"
+                              ? `The AI proposed ${a.edits_proposed} edit(s), but none could be applied: each edit must replace an exact piece of text that appears once in the file, and these did not match the file. The model is exactly as before.`
+                              : STATE_WHY[a.state]}
+                        </p>
+                        {VERDICT_WHY[a.verdict_after] && (
+                          <p>
+                            <b>After the repair:</b> {VERDICT_WHY[a.verdict_after]}
+                          </p>
+                        )}
+                        {a.integrity_flags?.length > 0 && (
+                          <ul>
+                            {a.integrity_flags.map((f: any, i: number) => (
+                              <li key={i}>{FLAG_WHY[f.flag] || f.flag}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {a.findings?.new > 0 && <p>The repair also created {a.findings.new} new problem(s) that were not there before.</p>}
+                      </WhyNote>
+                    )}
                   </>
                 )}
                 {det?.edits?.length > 0 && (
@@ -841,6 +927,11 @@ function Compliance({ run, expert }: { run: any; expert: boolean }) {
         <h2>
           {tone === "ok" ? <CheckCircle2 size={18} /> : tone === "warn" ? <CircleAlert size={18} /> : <XCircle size={18} />} {c.file}: {c.verdict}
         </h2>
+        {COMPLIANCE_WHY[c.verdict] && (
+          <WhyNote title={c.verdict === "compliant with warnings" ? "What the warnings mean, in simple terms" : undefined} open={c.blocking}>
+            <p>{COMPLIANCE_WHY[c.verdict]}</p>
+          </WhyNote>
+        )}
         <div className="wf-stats">
           <Stat k="links · joints" v={`${c.structure.links} · ${c.structure.joints}`} />
           <Stat k="root link" v={(c.structure.roots || []).join(", ") || "none"} tone={(c.structure.roots || []).length === 1 ? "" : "bad"} />
@@ -1003,6 +1094,14 @@ function ProgressList({ active, serverNow }: { active: Active; serverNow: number
             <b>{s.label}</b>
             <span className="wf-progress-note">{s.note || (s.status === "running" ? "in progress" : s.status)}</span>
             <span className="wf-progress-time">{s.started ? fmtTime(t) : ""}</span>
+            {s.status === "failed" && (
+              <div className="wf-progress-why">
+                <WhyNote open>
+                  <p>{PROGRESS_WHY[s.id] || "This step stopped with an error; the message above is the system's own."}</p>
+                  {s.note && <p className="wf-mono">{s.note}</p>}
+                </WhyNote>
+              </div>
+            )}
           </li>
         );
       })}
@@ -1010,8 +1109,8 @@ function ProgressList({ active, serverNow }: { active: Active; serverNow: number
   );
 }
 
-/** Start the AI repair battle on this run's own findings: both methods, one local model, then independent validation. */
-function Battle({ run, open, reloadRuns }: { run: any; open: (id: string, at?: Stage) => void; reloadRuns: () => void }) {
+/** Start the AI Repair Comparison on this run's own findings: both methods, one local model, then independent validation. */
+function RepairStart({ run, open, reloadRuns }: { run: any; open: (id: string, at?: Stage) => void; reloadRuns: () => void }) {
   const [models, setModels] = useState<{ name: string; parameters?: string; size_gb?: number }[]>([]);
   const [model, setModel] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1025,7 +1124,7 @@ function Battle({ run, open, reloadRuns }: { run: any; open: (id: string, at?: S
       })
       .catch((e) => setErr(message(e)));
   }, []);
-  const running = busy || (active.running && (active.label || "").startsWith("AI repair"));
+  const running = busy || (active.running && (active.label || "").startsWith("AI Repair"));
   const findings = (run.stage2?.findings || []).filter((f: any) => f.severity !== "info" && f.step !== "graphics").length;
   const start = async () => {
     setBusy(true);
@@ -1043,7 +1142,7 @@ function Battle({ run, open, reloadRuns }: { run: any; open: (id: string, at?: S
   };
   return (
     <section className="wf-card wf-battle">
-      <h2>Start the AI repair battle</h2>
+      <h2>AI Repair Comparison</h2>
       <p>
         Two methods get the same {findings} findings from the OpenModelica check of this run, the same robot file, the same model files and the
         same rules. <b>AI only</b> repairs from what it knows; <b>AI + Modelica knowledge</b> also reads passages from the Modelica Standard
@@ -1062,7 +1161,7 @@ function Battle({ run, open, reloadRuns }: { run: any; open: (id: string, at?: S
           </select>
         </label>
         <button className="wf-go" onClick={start} disabled={!model || running || !run.stage2}>
-          {running ? <Loader2 size={18} className="sx-spin" /> : <Play size={18} />} {running ? "Battle in progress…" : "Start the battle"}
+          {running ? <Loader2 size={18} className="sx-spin" /> : <Play size={18} />} {running ? "Repair in progress…" : "Start the repair"}
         </button>
       </div>
       <small className="sx-muted">

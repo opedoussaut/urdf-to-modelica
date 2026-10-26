@@ -175,3 +175,22 @@
 .sx .wf-chips button.on { background: var(--ink); border-color: var(--ink); }
 .sx .wf-table th { font-size: 12px; text-transform: none; }
 .sx .wf-steps li { border-radius: 10px; padding: 9px 12px; }
+
+/* ---- "What went wrong, in simple terms" ---- */
+.sx .wf-why { margin: 10px 0 12px; border-radius: 14px; background: #fff8ec; border: 1px solid #f6dfb5; }
+.sx .wf-why > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-weight: 600; color: var(--amber); font-size: 14px; }
+.sx .wf-why > summary::-webkit-details-marker { display: none; }
+.sx .wf-why > summary::after { content: "Show"; margin-left: auto; font-weight: 500; font-size: 12.5px; color: var(--muted); }
+.sx .wf-why[open] > summary::after { content: "Hide"; }
+.sx .wf-why-body { padding: 0 16px 14px 37px; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+.sx .wf-why-body p { margin: 0 0 8px; }
+.sx .wf-why-body ul { margin: 4px 0 8px; padding-left: 18px; }
+.sx .wf-why-step { margin-top: 10px; }
+.sx .wf-why-dl { display: grid; grid-template-columns: 160px 1fr; gap: 4px 12px; margin: 6px 0 0; }
+.sx .wf-why-dl dt { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.sx .wf-why-dl dd { margin: 0; }
+.sx .wf-why-inline { margin-top: 4px; font-size: 13px; color: var(--ink-2); }
+.sx .wf-why-inline > summary { cursor: pointer; color: var(--amber); font-weight: 600; font-size: 12.5px; }
+.sx .wf-progress-why { grid-column: 1 / -1; }
+.sx .lab-error .wf-why { background: rgba(255, 255, 255, 0.6); }
+@media (max-width: 800px) { .sx .wf-why-dl { grid-template-columns: 1fr; } }

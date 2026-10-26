@@ -110,7 +110,7 @@ REPAIR_STEPS = [("ai_only", "AI only"), ("ai_assets", "AI + Modelica knowledge")
 
 
 def launch_repair(base_run: str, model: str, log=print) -> dict:
-    """The AI repair battle on a run's own (natural) findings: both arms with the same local model, then independent
+    """The AI Repair Comparison on a run's own (natural) findings: both arms with the same local model, then independent
     validation. Runs in a copy of the base run named <run>--<model>, like the measured campaigns."""
     from . import campaign
     from . import stage3_repair as s3
@@ -119,7 +119,7 @@ def launch_repair(base_run: str, model: str, log=print) -> dict:
     if not (base / "stage2" / "diagnostics.json").exists():
         raise ValueError("This run has no OpenModelica check yet; launch the pipeline first")
     d = campaign.model_run(base, model)
-    p = Progress(d.name, base_run, f"AI repair battle · {model}")
+    p = Progress(d.name, base_run, f"AI Repair Comparison · {model}")
     p.state["steps"] = [{"id": i, "label": l, "status": "pending"} for i, l in REPAIR_STEPS]
     p.write()
     try:

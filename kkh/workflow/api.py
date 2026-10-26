@@ -232,7 +232,7 @@ class RepairLaunch(BaseModel):
 
 @router.get("/models")
 def models():
-    """Local Ollama models available for the repair battle."""
+    """Local Ollama models available for the AI Repair Comparison."""
     from kkh.convert.api import installed_models
     return installed_models()
 
@@ -245,4 +245,4 @@ def repair_launch(rid: str, body: RepairLaunch):
     d = _run(rid)
     if body.model not in {m["name"] for m in installed_models()}:
         raise HTTPException(422, "Not an installed local model")
-    return _job("AI repair battle", lambda: launch_repair(d.name, body.model))
+    return _job("AI Repair Comparison", lambda: launch_repair(d.name, body.model))

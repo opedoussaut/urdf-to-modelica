@@ -67,7 +67,7 @@ export const FLOW: Step[] = [
   {
     id: "repair",
     n: 5,
-    title: "AI repair comparison",
+    title: "AI Repair Comparison",
     page: "repair",
     doWhat: "Choose a case (the natural findings or one of ten seeded faults) and compare the two AI methods side by side.",
     happens:
@@ -122,6 +122,7 @@ export const RATIONALE: { title: string; text: string }[] = [
   { title: "Provenance everywhere", text: "Every retrieved passage carries its source, version and licence; every finding its evidence; every approval its author and reason." },
   { title: "Honest outcomes", text: "A repair that makes the model fail earlier is “regressed”; one that changes the robot is “rejected”. A null result is still a result." },
   { title: "Local and private", text: "The language models run on this computer through Ollama; OpenModelica and MuJoCo run locally. No robot data leaves the machine." },
+  { title: "Every failure explained", text: "Wherever something fails (a check, a repair, a launch), a note opens on demand and says in simple terms what happened, why it matters and what usually fixes it, next to the system's own message." },
   { title: "People decide", text: "Every change is reviewed and every promotion approved by a person, with a record. Nothing is accepted automatically." },
 ];
 
@@ -132,7 +133,7 @@ export const MEASURED: { date: string; text: string; source: string }[] = [
   { date: "23 Oct 2026", text: "OpenModelica check: loads, balanced (6 814 equations = unknowns), simulates, but not validated: right finger up to 52.9 mm off; both fingers start outside their limits; 18 of 49 robot connections have no drawn line.", source: "reports/workflow/STAGE2_ALOHA_VX300S.md" },
   { date: "26 Oct 2026", text: "Modelica knowledge collection v2: 3 036 passages, adding the Modelica Language Specification 3.7, the OpenModelica 1.27.1 error messages, the MSL 3 → 4 conversion rules and the OpenModelica User's Guide. On the frozen faults, the right source now comes first for an old MSL 3 name (F02), unbalanced equations (F08) and a singular initialization (F10).", source: "reports/workflow/ASSETS_V2.md" },
   { date: "23 Oct 2026", text: "Modelica knowledge collection v1: 1 730 passages from the Modelica Standard Library 4.1.0, ModelicaReference 4.1.0 and 5 project patterns, each with source, version and licence; nothing downloaded.", source: "reports/workflow/ASSETS_V1.md" },
-  { date: "23 Oct 2026", text: "Ten seeded faults frozen before any AI run; all ten are caught by the OpenModelica checks. The AI repair comparison is running; its results will be reported as measured.", source: "kkh/workflow/faults.py (commit 7c8d735)" },
+  { date: "23 Oct 2026", text: "Ten seeded faults frozen before any AI run; all ten are caught by the OpenModelica checks. The AI Repair Comparison is running; its results will be reported as measured.", source: "kkh/workflow/faults.py (commit 7c8d735)" },
 ];
 
 export const GLOSSARY: { group: string; terms: [string, string][] }[] = [
