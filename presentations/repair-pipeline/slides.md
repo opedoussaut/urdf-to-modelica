@@ -145,8 +145,32 @@ aeronautics and space.
 
 What the pipeline measured on the DLR output (ALOHA 2 follower arm, Stage 1 and Stage 2, 23 Oct):
 
+<div class="grid grid-cols-2 gap-6 text-sm">
+<div>
+
 | Strength | Measured |
 |---|---|
+| Reproducible | 2nd conversion: **63 files byte-identical** |
+| Faithful copy | **255 URDF values**, **0 differ** |
+| Sound structure | balanced (7 217 = 7 217), simulates |
+| Physics | torques within 5 % of MuJoCo, 8/8 joints |
+
+</div>
+<div>
+
+| Limit found | Consequence |
+|---|---|
+| URDF **mimic** recorded, not used | right finger up to **52.9 mm** off |
+| Fingers start **outside their limits** | 2 runtime warnings |
+| Mesh paths become `package:_/…` | no tool finds the shapes |
+| 18 of 49 connections not drawn | diagram only |
+
+</div>
+</div>
+
+<div class="mt-6 text-sm opacity-80">Credibility is why we use it as the author; measurement is why we still check it.</div>
+
+---|---|
 | Reproducible | second conversion: **63 files byte-identical** |
 | Faithful copy | **255 URDF values** compared, **0 differ** |
 | Sound structure | balanced (7 217 equations = 7 217 unknowns), simulates |
@@ -197,10 +221,34 @@ joint and model pages). A file with any error is **refused**; every finding give
 
 **Measured:** the 5 pinned robots are compliant; 14 deliberate violations are each caught by the rule that names them.
 
-<div class="mt-4 p-3 rounded bg-blue-500/10 text-sm">
-<b>Where a good URDF comes from:</b> robots designed in SolidWorks can be exported with the free
-<b>SolidWorks to URDF Exporter</b> add-in (link tree from the assembly, joint axes, meshes, masses from SolidWorks
-materials). Its output then passes this same gate.
+---
+
+# Where a good URDF comes from
+
+For robots designed in **SolidWorks**: the free **SolidWorks to URDF Exporter** add-in (ROS wiki: `sw_urdf_exporter`).
+
+<div class="grid grid-cols-2 gap-6">
+<div>
+
+### What it does
+
+- Exports a part or an assembly as a URDF package with its meshes.
+- Builds the **link tree from the assembly hierarchy**.
+- Works out **joint types, transforms and axes** automatically.
+- Takes masses and inertias from the **SolidWorks material properties**.
+- Not tied to ROS; writes `package://` mesh paths (the studio resolves them).
+
+</div>
+<div>
+
+### Our recommendation
+
+1. Assign real materials or measured masses to every part first.
+2. Enter joint limits, effort and velocity from the motor datasheets.
+3. Use SolidWorks **2018 SP5 or later** (known STL export bug before, per the exporter's page).
+4. Bring the exported `.urdf` into the studio: **Stage 0** is its first gate.
+
+</div>
 </div>
 
 ---
@@ -245,11 +293,13 @@ Every finding is machine-readable: id, step, category, severity, location, evide
 | Governed knowledge: **1 730 chunks** of the Modelica Standard Library 4.1.0, ModelicaReference, 5 validated project patterns, each with version and licence | — | ✓ |
 | Must **cite** the chunks it used (invented ids are flagged) | — | ✓ |
 
-**Frozen fault set v1**: 10 deliberate defects injected into the converted arm, frozen **before** any repair was run;
-3 are **held out** (F08–F10), so no pattern names them directly.
+<div class="text-sm">
 
-F01 missing semicolon · F02 MSL 3 class name · F03 misspelled class · F04 limit in degrees · F05 axis sign flipped ·
-F06 frame rotated 90° · F07 connection deleted · F08 wrong array index · F09 rounded mass · F10 conflicting initial equation
+**Frozen fault set v1**: 10 deliberate defects, frozen **before** any repair run; 3 **held out** (F08–F10). F01 missing
+semicolon · F02 MSL 3 class name · F03 misspelled class · F04 limit in degrees · F05 axis sign flipped · F06 frame
+rotated 90° · F07 connection deleted · F08 wrong array index · F09 rounded mass · F10 conflicting initial equation
+
+</div>
 
 ---
 
@@ -285,7 +335,9 @@ layout → simulation.
 
 ---
 
-# Results of the repair campaign (23 Oct, ALOHA 2 follower)
+# Repair campaign results (23 Oct, ALOHA 2 follower)
+
+<div class="text-sm">
 
 **qwen3-coder 30B**, 4 cases (the natural defect + 3 faults)
 
@@ -300,6 +352,8 @@ layout → simulation.
 |---|---|---|---|---|
 | AI only | 0 | 0 | 1 | 6 / 3 |
 | AI + Modelica assets | 0 | 0 | 2 | 16 / 7 |
+
+</div>
 
 <v-click>
 
@@ -374,6 +428,9 @@ Ollama, GraphDB.
 
 # Sources
 
+<div class="grid grid-cols-2 gap-6 text-xs">
+<div>
+
 **DLR**
 - [DLR: About us](https://www.dlr.de/en/dlr/about-us) · [DLR at a glance](https://www.dlr.de/en/dlr/dlr-at-a-glance) · [Helmholtz: German Aerospace Center](https://www.helmholtz.de/en/about-us/helmholtz-centers/centers-a-z/german-aerospace-center-dlr/)
 - [History of the DLR LWR](https://www.dlr.de/en/rm/research/robotic-systems/arms/lwr-iii/history-of-the-dlr-lwr) · [The KUKA-DLR Lightweight Robot arm (IEEE)](https://ieeexplore.ieee.org/document/5756872)
@@ -382,8 +439,14 @@ Ollama, GraphDB.
 - [URDF XML specification (ROS wiki)](https://wiki.ros.org/urdf/XML) · [SolidWorks to URDF Exporter](https://wiki.ros.org/sw_urdf_exporter)
 - [URDFModelica (DLR-RM) on GitHub](https://github.com/DLR-RM/urdfmodelica): README, `CITATION.cff` (v0.3.3, 2025-09-02)
 
+</div>
+<div>
+
 **Our measurements** (this repository)
 - `reports/CONVERT_REVIEW_CAMPAIGN_2026-10-21.md` (conversion and review campaign, SO-101 addendum)
 - `reports/workflow/STAGE1_ALOHA_VX300S.md`, `STAGE2_ALOHA_VX300S.md`, `ASSETS_V1.md`
 - `reports/workflow/REPAIR_CAMPAIGN_qwen3_coder_30b.md`, `REPAIR_CAMPAIGN_nemotron_3_nano_4b.md`
 - `docs/REPAIR_PIPELINE_PROPOSAL.md`
+
+</div>
+</div>
