@@ -157,3 +157,21 @@
 .sx .wf-downloads { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
 .sx .wf-downloads select { max-width: 320px; }
 .sx a.sx-btn { text-decoration: none; }
+.sx .wf-battle p { max-width: 900px; margin: 0 0 14px; }
+.sx .wf-battle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+
+/* ---- head-to-head: quieter tiles, bigger numbers, one colour per method ---- */
+.sx .wf-stat { background: var(--canvas); border-radius: 12px; padding: 12px 14px; gap: 2px; }
+.sx .wf-stat b { font-size: 22px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.sx .wf-stat span { font-size: 12.5px; }
+.sx .wf-arms { gap: 16px; }
+.sx .wf-arm { border: 1px solid var(--line); border-top: 0; border-radius: 16px; padding: 16px 18px; position: relative; overflow: hidden; }
+.sx .wf-arm::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: #8e8e93; }
+.sx .wf-arm.ai_assets::before { background: var(--violet); }
+.sx .wf-arm h3 { margin: 4px 0 10px; font-size: 16px; }
+.sx .wf-arm .wf-stats { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+.sx .wf-card h2 { font-size: 19px; letter-spacing: -0.015em; }
+.sx .wf-chips button { border-radius: 980px; padding: 6px 13px; font-size: 13px; }
+.sx .wf-chips button.on { background: var(--ink); border-color: var(--ink); }
+.sx .wf-table th { font-size: 12px; text-transform: none; }
+.sx .wf-steps li { border-radius: 10px; padding: 9px 12px; }

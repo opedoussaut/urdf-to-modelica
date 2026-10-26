@@ -186,7 +186,7 @@ def repair(run_dir: Path, case: str, arm: str, model: str, log=print, client: Ol
               "started": dt.datetime.now().isoformat(timespec="seconds"), "initial_verdict": diag["verdict"],
               "attempts": []}
     ws = F.copy_ws(run_dir, out / "ws") if case == "natural" else _copy(src_ws, out / "ws")
-    pkg_dir = ws / "URDFModelica" / "Examples" / F.TARGET["package"]
+    pkg_dir = F.pkg_of(ws)
     findings, verdict, history = in_scope(diag["findings"]), diag["verdict"], []
     t0 = time.time()
     try:

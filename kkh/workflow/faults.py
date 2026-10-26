@@ -97,6 +97,17 @@ def set_digest() -> str:
     return hashlib.sha256(json.dumps(FAULTS, sort_keys=True).encode()).hexdigest()
 
 
+def pkg_of(ws: Path) -> Path:
+    """The generated robot package inside a URDFModelica workspace: the Examples folder that is not part of the pinned
+    library (any robot; the fault set itself only targets the ALOHA follower)."""
+    from kkh.convert.sources import ROOT
+    ex = Path(ws) / "URDFModelica" / "Examples"
+    lib = ROOT / "third_party" / "URDFModelica" / "URDFModelica" / "Examples"
+    library = {p.name for p in lib.iterdir()} if lib.exists() else set()
+    generated = [p for p in ex.iterdir() if p.is_dir() and p.name not in library] if ex.exists() else []
+    return generated[0] if len(generated) == 1 else ex / TARGET["package"]
+
+
 def stage1_ws(run_dir: Path) -> Path:
     return Path(run_dir) / "stage1" / "convert" / "ws"
 

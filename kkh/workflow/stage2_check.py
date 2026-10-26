@@ -234,6 +234,11 @@ def run(run_dir: Path, log=print, ws_dir: Path | None = None, out_dir: Path | No
         ws_dir = Path(ws_dir).resolve()
         package_file = ws_dir / "URDFModelica" / "package.mo"
         pkg_dir = ws_dir / "URDFModelica" / "Examples" / pkg_dir.name
+    ws_root = ws_dir if ws_dir is not None else package_file.parent.parent
+    longest = max((len(str(p.resolve())) for p in ws_root.rglob("*")), default=0)
+    if longest >= 255:
+        raise ValueError(f"a file path in {ws_root.name} is {longest} characters long; Windows (and OpenModelica on it) "
+                         "cannot open paths of 260 characters or more. Use a shorter run name or a shorter repository path.")
     test_model = st1["generated"]["test_model"]
     robot_class = test_model.rsplit(".", 1)[0] + "." + pkg_dir.name
     urdf_path = run_dir / "stage1" / "input" / Path(st1["source"]["urdf"]).name

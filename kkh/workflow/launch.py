@@ -18,6 +18,8 @@ from . import stage2_check as s2
 
 ROBOTS = ("unitree_g1", "berkeley_humanoid_lite", "aloha_vx300s")  # the studio's pipeline robots, in display order
 ACTIVE = s1.RUNS / "active.json"
+# Short run names: Windows limits paths to 260 characters and the converter's own library already uses ~140 of them.
+SHORT = {"unitree_g1": "g1", "berkeley_humanoid_lite": "bhl", "aloha_vx300s": "aloha"}
 STEPS = [("compliance", "URDF compliance"), ("convert", "Convert (DLR URDFModelica)"), ("check", "OpenModelica check")]
 
 
@@ -73,7 +75,7 @@ def active() -> dict:
 def launch(source: str, log=print) -> dict:
     """Run stages 0-2 for `source` in a new run directory; returns {run, ok, verdict, ...}."""
     urdf, meta = sources.resolve(source)  # refuses unknown ids
-    run_id = f"{source}-{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    run_id = f"{SHORT.get(source, source.replace('upload-', 'up-')[:9])}-{dt.datetime.now().strftime('%y%m%d-%H%M%S')}"
     out = s1.RUNS / run_id
     p = Progress(run_id, source, meta.get("label") or urdf.name)
     try:
@@ -97,6 +99,42 @@ def launch(source: str, log=print) -> dict:
         p.close(True)
         return {"run": run_id, "ok": True, "verdict": diag.get("verdict"), "compliance": comp["verdict"]}
     except Exception as exc:  # report, never hide
+        for s in p.state["steps"]:
+            if s["status"] == "running":
+                p.step(s["id"], "failed", f"{type(exc).__name__}: {exc}"[:300])
+        p.close(False, f"{type(exc).__name__}: {exc}"[:500])
+        raise
+
+
+REPAIR_STEPS = [("ai_only", "AI only"), ("ai_assets", "AI + Modelica knowledge"), ("validate", "Independent validation")]
+
+
+def launch_repair(base_run: str, model: str, log=print) -> dict:
+    """The AI repair battle on a run's own (natural) findings: both arms with the same local model, then independent
+    validation. Runs in a copy of the base run named <run>--<model>, like the measured campaigns."""
+    from . import campaign
+    from . import stage3_repair as s3
+    from . import stage4_validate as s4
+    base = s1.RUNS / base_run
+    if not (base / "stage2" / "diagnostics.json").exists():
+        raise ValueError("This run has no OpenModelica check yet; launch the pipeline first")
+    d = campaign.model_run(base, model)
+    p = Progress(d.name, base_run, f"AI repair battle · {model}")
+    p.state["steps"] = [{"id": i, "label": l, "status": "pending"} for i, l in REPAIR_STEPS]
+    p.write()
+    try:
+        for arm in s3.ARMS:
+            p.step(arm, "running")
+            rec = s3.repair(d, "natural", arm, model, log=log)
+            p.step(arm, "done", rec.get("final_verdict"))
+        p.step("validate", "running")
+        s4.validate_case(d, "natural", log=log)
+        rep = s4.report(d, ["natural"])
+        states = {a: (rep["cases"][0]["arms"].get(a) or {}).get("state") for a in s3.ARMS}
+        p.step("validate", "done", " · ".join(f"{dict(REPAIR_STEPS)[a]}: {s}" for a, s in states.items()))
+        p.close(True)
+        return {"run": d.name, "ok": True, "states": states}
+    except Exception as exc:
         for s in p.state["steps"]:
             if s["status"] == "running":
                 p.step(s["id"], "failed", f"{type(exc).__name__}: {exc}"[:300])

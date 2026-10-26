@@ -224,3 +224,25 @@ def download(rid: str, key: str | None = None):
     d = _run(rid)
     data, name = _guard(lambda: D.version_zip(d, key) if key else D.compare_zip(d))
     return Response(data, media_type="application/zip", headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
+class RepairLaunch(BaseModel):
+    model: str = Field(min_length=1, max_length=80)
+
+
+@router.get("/models")
+def models():
+    """Local Ollama models available for the repair battle."""
+    from kkh.convert.api import installed_models
+    return installed_models()
+
+
+@router.post("/runs/{rid}/repair")
+def repair_launch(rid: str, body: RepairLaunch):
+    """Both AI arms on this run's natural findings with one local model, then independent validation (follow /active)."""
+    from kkh.convert.api import installed_models
+    from .launch import launch_repair
+    d = _run(rid)
+    if body.model not in {m["name"] for m in installed_models()}:
+        raise HTTPException(422, "Not an installed local model")
+    return _job("AI repair battle", lambda: launch_repair(d.name, body.model))

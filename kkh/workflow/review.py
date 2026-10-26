@@ -52,14 +52,7 @@ def case_of(key: str) -> str:
 
 
 def pkg_of(ws: Path) -> Path:
-    """The generated robot package inside a workspace: the Examples folder that is not part of the pinned URDFModelica
-    library (works for every robot, not only the ALOHA arm the fault set targets)."""
-    ex = Path(ws) / "URDFModelica" / "Examples"
-    from kkh.convert.sources import ROOT
-    lib = ROOT / "third_party" / "URDFModelica" / "URDFModelica" / "Examples"
-    library = {p.name for p in lib.iterdir()} if lib.exists() else set()
-    generated = [p for p in ex.iterdir() if p.is_dir() and p.name not in library] if ex.exists() else []
-    return generated[0] if len(generated) == 1 else ex / F.TARGET["package"]
+    return F.pkg_of(ws)
 
 
 def files(run_dir: Path, key: str) -> list[str]:
@@ -192,7 +185,7 @@ def decide(run_dir: Path, key: str, decision: str, reviewer: str, note: str, acc
     st1 = json.loads((run_dir / "stage1" / "manifest.json").read_text(encoding="utf-8"))
     chain = {"urdf_sha256": st1["source"]["urdf_sha256"], "converter_commit": st1["converter"]["commit"],
              "candidate": key, "candidate_meta": _meta(ws), "validation_files": val["files"]}
-    lay = layout.run(dest / "ws", F.TARGET["package"], work=dest / "layout_omc")
+    lay = layout.run(dest / "ws", F.pkg_of(dest / "ws").name, work=dest / "layout_omc")
     approval = {**rec, "approved": f"approved/{n}", "status": "approved" if clean else "approved with open findings",
                 "open_findings": val["open_findings"] if not clean else [], "integrity_flags": val["integrity_flags"],
                 "chain": chain, "layout_pass": {k: lay[k] for k in ("before", "after", "files_changed", "annotations_only")} | {"skipped": len(lay["skipped"])},

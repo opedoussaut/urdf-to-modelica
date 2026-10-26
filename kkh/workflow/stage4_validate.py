@@ -123,7 +123,7 @@ def validate_case(run_dir: Path, case: str, log=print) -> dict:
     run_dir = Path(run_dir).resolve()
     src_ws, diag_path = case_paths(run_dir, case)
     orig_diag = json.loads(diag_path.read_text(encoding="utf-8"))
-    orig_pkg = src_ws / "URDFModelica" / "Examples" / F.TARGET["package"]
+    orig_pkg = F.pkg_of(src_ws)
     res = {"case": case, "original": {"verdict": orig_diag["verdict"], "engineering_findings": len(in_scope_all(orig_diag["findings"])),
                                       "graphics": orig_diag["steps"].get("graphics", {}).get("totals")}, "arms": {}}
     if case != "natural":
@@ -135,7 +135,7 @@ def validate_case(run_dir: Path, case: str, log=print) -> dict:
             continue
         rec = json.loads(rec_path.read_text(encoding="utf-8"))
         cand_ws = Path(rec["candidate_ws"])
-        cand_pkg = cand_ws / "URDFModelica" / "Examples" / F.TARGET["package"]
+        cand_pkg = F.pkg_of(cand_ws)
         vdir = run_dir / "validate" / case / arm
         stored = vdir / "diagnostics.json"
         from .stage1_convert import _generated_hashes

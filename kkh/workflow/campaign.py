@@ -19,8 +19,16 @@ from . import stage3_repair as s3
 from . import stage4_validate as s4
 
 
+def model_tag(model: str) -> str:
+    """Short, readable tag for run folders (Windows path limit): 'qwen3-coder:30b' -> 'qwen3-30b'."""
+    name, _, size = model.lower().partition(':')
+    head = re.sub(r'[^a-z0-9.]+', '-', name).split('-')[0].replace('.', '')
+    return f"{head}-{re.sub(r'[^a-z0-9]+', '', size)}" if size else head
+
+
 def model_run(base: Path, model: str) -> Path:
-    dest = base.parent / f"{base.name}--{re.sub(r'[^a-z0-9]+', '-', model.lower()).strip('-')}"
+    legacy = base.parent / f"{base.name}--{re.sub(r'[^a-z0-9]+', '-', model.lower()).strip('-')}"
+    dest = legacy if legacy.exists() else base.parent / f"{base.name}--{model_tag(model)}"
     if not dest.exists():
         shutil.copytree(base, dest, ignore=shutil.ignore_patterns("repair", "validate", "review", "approved", "omc", "excite",
                                                                   "decisions.jsonl"))

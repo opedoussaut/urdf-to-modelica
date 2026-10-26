@@ -17,7 +17,7 @@ const STAGES: { id: Stage; label: string; plain: string }[] = [
   { id: "approved", label: "Approved model", plain: "Only a person promotes a model. Then, separately, the missing connection lines are drawn." },
   { id: "simulate", label: "Simulation", plain: "The approved model is simulated from here or opened in OMEdit." },
 ];
-const ARM_LABEL: Record<string, string> = { ai_only: "AI only", ai_assets: "AI + Modelica assets" };
+const ARM_LABEL: Record<string, string> = { ai_only: "AI only", ai_assets: "AI + Modelica knowledge" };
 const STATE_TONE: Record<string, string> = { validated: "ok", improved: "mid", regressed: "bad", "not improved": "bad", unchanged: "bad", "rejected (integrity)": "bad", "not run": "idle" };
 
 /** Start (choose a robot or upload a URDF, launch) → the pipeline of one run, stage by stage. */
@@ -115,7 +115,7 @@ export default function Workflow() {
           ) : stage === "check" ? (
             <Check run={run} expert={expert} />
           ) : stage === "repair" ? (
-            <Repair run={run} expert={expert} />
+            <Repair run={run} expert={expert} open={open} reloadRuns={loadRuns} />
           ) : stage === "review" ? (
             <Review run={run} reload={() => load()} />
           ) : stage === "approved" ? (
@@ -141,35 +141,14 @@ function fmtTime(sec: number) {
 function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?: Stage) => void; onLaunched: () => void }) {
   const [robots, setRobots] = useState<Robot[]>([]);
   const [pick, setPick] = useState<string>("aloha_vx300s");
-  const [active, setActive] = useState<Active>({ running: false });
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
-  const [polledAt, setPolledAt] = useState(Date.now());
-  const [now, setNow] = useState(Date.now());
+  const { active, setActive, serverNow } = useActive(busy);
   const file = useRef<HTMLInputElement>(null);
   const loadRobots = () => wf<Robot[]>("/robots").then(setRobots).catch((e) => setErr(message(e)));
   useEffect(() => {
     loadRobots();
   }, []);
-  useEffect(() => {
-    let stop = false;
-    const tick = () =>
-      wf<Active>("/active")
-        .then((a) => {
-          if (stop) return;
-          setActive(a);
-          setPolledAt(Date.now());
-        })
-        .catch(() => {});
-    tick();
-    const t = setInterval(() => (busy || active.running) && tick(), 1000);
-    const c = setInterval(() => setNow(Date.now()), 1000);
-    return () => {
-      stop = true;
-      clearInterval(t);
-      clearInterval(c);
-    };
-  }, [busy, active.running]);
 
   const upload = async (f?: File) => {
     if (!f) return;
@@ -203,8 +182,7 @@ function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?
   const chosen = robots.find((r) => r.id === pick);
   const studio = robots.filter((r) => r.kind === "pinned"),
     uploads = robots.filter((r) => r.kind !== "pinned");
-  const serverNow = (active.now || 0) + (now - polledAt) / 1000;
-  const showProgress = busy || active.running;
+  const showProgress = busy || (active.running && !(active.label || "").startsWith("AI repair"));
 
   return (
     <>
@@ -258,23 +236,7 @@ function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?
           </button>
         </div>
 
-        {showProgress && active.steps && active.steps.length > 0 && (
-          <ol className="wf-progress" aria-live="polite">
-            {active.steps.map((s) => {
-              const t = s.started ? (s.finished || (s.status === "running" ? serverNow : s.started)) - s.started : 0;
-              return (
-                <li key={s.id} className={s.status}>
-                  <span className="wf-progress-icon">
-                    {s.status === "done" ? <CheckCircle2 size={18} /> : s.status === "running" ? <Loader2 size={18} className="sx-spin" /> : s.status === "failed" ? <XCircle size={18} /> : <CircleDashed size={18} />}
-                  </span>
-                  <b>{s.label}</b>
-                  <span className="wf-progress-note">{s.note || (s.status === "running" ? "in progress" : s.status)}</span>
-                  <span className="wf-progress-time">{s.started ? fmtTime(t) : ""}</span>
-                </li>
-              );
-            })}
-          </ol>
-        )}
+        {showProgress && <ProgressList active={active} serverNow={serverNow} />}
         {!showProgress && active.error && active.run && (
           <p className="lab-error">
             Last launch stopped: {active.error.slice(0, 300)}{" "}
@@ -457,7 +419,7 @@ function Check({ run, expert }: { run: any; expert: boolean }) {
   );
 }
 
-function Repair({ run, expert }: { run: any; expert: boolean }) {
+function Repair({ run, expert, open, reloadRuns }: { run: any; expert: boolean; open: (id: string, at?: Stage) => void; reloadRuns: () => void }) {
   const cases = run.validation?.cases || [];
   const [sel, setSel] = useState<string>(cases[0]?.case || "natural");
   const [detail, setDetail] = useState<Record<string, any>>({});
@@ -469,8 +431,7 @@ function Repair({ run, expert }: { run: any; expert: boolean }) {
       ),
     ).then((pairs) => setDetail(Object.fromEntries(pairs)));
   }, [sel, run.id]);
-  if (!cases.length && !Object.keys(run.repairs || {}).length)
-    return <p className="sx-muted">No repair has been run on this run yet. Choose a run made by a repair campaign (python -m kkh.workflow.campaign).</p>;
+  if (!cases.length && !Object.keys(run.repairs || {}).length) return <Battle run={run} open={open} reloadRuns={reloadRuns} />;
   const summ = run.validation?.summary || {};
   const c = cases.find((x: any) => x.case === sel);
   const ch = (run.faults.characterisation || []).find((r: any) => r.id === sel);
@@ -998,5 +959,118 @@ function Downloads({ rid }: { rid: string }) {
         </a>
       )}
     </div>
+  );
+}
+
+/** Polls /api/workflow/active every second while something runs; the clock ticks from the server's own times. */
+function useActive(busy: boolean) {
+  const [active, setActive] = useState<Active>({ running: false });
+  const [polledAt, setPolledAt] = useState(Date.now());
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    let stop = false;
+    const tick = () =>
+      wf<Active>("/active")
+        .then((a) => {
+          if (stop) return;
+          setActive(a);
+          setPolledAt(Date.now());
+        })
+        .catch(() => {});
+    tick();
+    const t = setInterval(() => (busy || active.running) && tick(), 1000);
+    const c = setInterval(() => setNow(Date.now()), 1000);
+    return () => {
+      stop = true;
+      clearInterval(t);
+      clearInterval(c);
+    };
+  }, [busy, active.running]);
+  return { active, setActive, serverNow: (active.now || 0) + (now - polledAt) / 1000 };
+}
+
+function ProgressList({ active, serverNow }: { active: Active; serverNow: number }) {
+  if (!active.steps?.length) return null;
+  return (
+    <ol className="wf-progress" aria-live="polite">
+      {active.steps.map((s) => {
+        const t = s.started ? (s.finished || (s.status === "running" ? serverNow : s.started)) - s.started : 0;
+        return (
+          <li key={s.id} className={s.status}>
+            <span className="wf-progress-icon">
+              {s.status === "done" ? <CheckCircle2 size={18} /> : s.status === "running" ? <Loader2 size={18} className="sx-spin" /> : s.status === "failed" ? <XCircle size={18} /> : <CircleDashed size={18} />}
+            </span>
+            <b>{s.label}</b>
+            <span className="wf-progress-note">{s.note || (s.status === "running" ? "in progress" : s.status)}</span>
+            <span className="wf-progress-time">{s.started ? fmtTime(t) : ""}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** Start the AI repair battle on this run's own findings: both methods, one local model, then independent validation. */
+function Battle({ run, open, reloadRuns }: { run: any; open: (id: string, at?: Stage) => void; reloadRuns: () => void }) {
+  const [models, setModels] = useState<{ name: string; parameters?: string; size_gb?: number }[]>([]);
+  const [model, setModel] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const { active, serverNow } = useActive(busy);
+  useEffect(() => {
+    wf<any[]>("/models")
+      .then((m) => {
+        setModels(m);
+        setModel((m.find((x) => x.name.startsWith("qwen3-coder")) || m[0])?.name || "");
+      })
+      .catch((e) => setErr(message(e)));
+  }, []);
+  const running = busy || (active.running && (active.label || "").startsWith("AI repair"));
+  const findings = (run.stage2?.findings || []).filter((f: any) => f.severity !== "info" && f.step !== "graphics").length;
+  const start = async () => {
+    setBusy(true);
+    setErr("");
+    try {
+      const job = await wf<any>(`/runs/${run.id}/repair`, "POST", { model });
+      const res: any = await waitJob(job);
+      reloadRuns();
+      if (res?.run) open(res.run, "repair");
+    } catch (e) {
+      setErr(message(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <section className="wf-card wf-battle">
+      <h2>Start the AI repair battle</h2>
+      <p>
+        Two methods get the same {findings} findings from the OpenModelica check of this run, the same robot file, the same model files and the
+        same rules. <b>AI only</b> repairs from what it knows; <b>AI + Modelica knowledge</b> also reads passages from the Modelica Standard
+        Library, the language reference and validated project patterns, and must cite them. Every proposal is then checked independently.
+      </p>
+      <div className="wf-battle-row">
+        <label className="wf-runpick">
+          <span>Local model</span>
+          <select value={model} onChange={(e) => setModel(e.target.value)} disabled={running}>
+            {models.map((m) => (
+              <option key={m.name} value={m.name}>
+                {m.name}
+                {m.parameters ? ` · ${m.parameters}` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="wf-go" onClick={start} disabled={!model || running || !run.stage2}>
+          {running ? <Loader2 size={18} className="sx-spin" /> : <Play size={18} />} {running ? "Battle in progress…" : "Start the battle"}
+        </button>
+      </div>
+      <small className="sx-muted">
+        Measured on this laptop: a few minutes per method with nemotron-3-nano 4B, about 10 minutes per method with qwen3-coder 30B. Everything
+        runs locally.
+      </small>
+      {running && <ProgressList active={active} serverNow={serverNow} />}
+      {err && <p className="lab-error">{err}</p>}
+    </section>
   );
 }
