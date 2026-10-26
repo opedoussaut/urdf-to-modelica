@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CircleAlert, CircleDashed, ExternalLink, Play, RefreshCw, ShieldAlert, XCircle } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2, CircleAlert, CircleDashed, Download, ExternalLink, Loader2, Play, RefreshCw, ShieldAlert, Upload, XCircle } from "lucide-react";
 import { useAudience } from "../audience";
 import { message, waitJob } from "../studio";
-import { wf } from "./api";
+import { convert, wf } from "./api";
+import RobotView from "./RobotView";
 import "./workflow.css";
 
 type Stage = "input" | "compliance" | "convert" | "check" | "repair" | "review" | "approved" | "simulate";
@@ -19,33 +20,35 @@ const STAGES: { id: Stage; label: string; plain: string }[] = [
 const ARM_LABEL: Record<string, string> = { ai_only: "AI only", ai_assets: "AI + Modelica assets" };
 const STATE_TONE: Record<string, string> = { validated: "ok", improved: "mid", regressed: "bad", "not improved": "bad", unchanged: "bad", "rejected (integrity)": "bad", "not run": "idle" };
 
-/** URDF → Convert → OpenModelica check → AI repair comparison → Engineer review → Approved model → Simulation. */
+/** Start (choose a robot or upload a URDF, launch) → the pipeline of one run, stage by stage. */
 export default function Workflow() {
   const expert = useAudience() === "expert";
   const [runs, setRuns] = useState<any[]>([]);
   const [rid, setRid] = useState<string>();
   const [run, setRun] = useState<any>();
+  const [view, setView] = useState<"start" | "run">("start");
   const [stage, setStage] = useState<Stage>("check");
   const [error, setError] = useState("");
   const load = (id = rid) => id && wf("/runs/" + id).then(setRun).catch((e) => setError(message(e)));
+  const loadRuns = () => wf<any[]>("/runs").then(setRuns).catch((e) => setError(message(e)));
   useEffect(() => {
-    wf<any[]>("/runs")
-      .then((r) => {
-        setRuns(r);
-        const pick = r.find((x) => x.model?.startsWith("qwen3") && x.validated_cases) || r.find((x) => x.validated_cases) || r[0];
-        if (pick) setRid(pick.id);
-      })
-      .catch((e) => setError(message(e)));
+    loadRuns();
   }, []);
   useEffect(() => {
     setRun(undefined);
     load(rid);
   }, [rid]);
+  const open = (id: string, at: Stage = "check") => {
+    setRid(id);
+    setStage(at);
+    setView("run");
+    scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const done: Record<Stage, boolean> = {
     input: !!run?.stage1,
     compliance: !!run?.stage0,
-    convert: !!run?.stage1,
+    convert: !!run?.stage1?.assets,
     check: !!run?.stage2,
     repair: !!run && Object.keys(run.repairs || {}).length > 0,
     review: !!run?.reviews?.length,
@@ -55,62 +58,250 @@ export default function Workflow() {
 
   return (
     <div className="lab sx-page wf">
-      <span className="lab-eyebrow">ENGINEERING WORKFLOW · URDF → MODELICA</span>
-      <h1>Convert, check, let AI repair, and let an engineer decide</h1>
-      <p className="lab-plain">
-        <b>IN PLAIN WORDS</b> A converter writes the physics model without AI. OpenModelica lists its problems. Two AI methods then try to repair it
-        under exactly the same conditions; the only difference is that one also reads Modelica documentation. Every change is checked
-        independently and a person decides what is kept. Results are measured, whichever method turns out better.
-      </p>
-      <div className="wf-bar">
-        <label>
-          Run{" "}
-          <select value={rid || ""} onChange={(e) => setRid(e.target.value)}>
-            {runs.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.robot} · {r.model ? "repairs by " + r.model : "conversion and checks"} {r.validated_cases ? `· ${r.validated_cases} cases validated` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button className="sx-btn" onClick={() => load()}>
-          <RefreshCw size={14} /> Refresh
-        </button>
-      </div>
+      <header className="wf-hero">
+        <span className="lab-eyebrow">ENGINEERING PIPELINE · URDF → MODELICA</span>
+        <h1>From robot file to approved physics model.</h1>
+        <p className="wf-hero-sub">
+          A proven converter writes the model. OpenModelica finds what is wrong. Two AI methods compete to repair it, one of them with Modelica
+          knowledge. Every change is checked independently, and an engineer decides.
+        </p>
+      </header>
       {error && <p className="lab-error">{error}</p>}
 
-      <ol className="wf-rail" aria-label="Workflow stages">
-        {STAGES.map((s, i) => (
-          <li key={s.id}>
-            <button className={(stage === s.id ? "on " : "") + (done[s.id] ? "done" : "")} onClick={() => setStage(s.id)} aria-current={stage === s.id ? "step" : undefined}>
-              <span className="wf-n">{done[s.id] ? <CheckCircle2 size={15} /> : i + 1}</span>
-              {s.label}
-            </button>
-          </li>
-        ))}
-      </ol>
-      <p className="wf-stage-plain">{STAGES.find((s) => s.id === stage)!.plain}</p>
-
-      {!run ? (
-        <p className="sx-muted">{runs.length ? "Loading…" : "No workflow run yet. Run: python -m kkh.workflow.stage1_convert aloha_vx300s, then stage2_check."}</p>
-      ) : stage === "input" ? (
-        <Input run={run} expert={expert} />
-      ) : stage === "compliance" ? (
-        <Compliance run={run} expert={expert} />
-      ) : stage === "convert" ? (
-        <Convert run={run} expert={expert} />
-      ) : stage === "check" ? (
-        <Check run={run} expert={expert} />
-      ) : stage === "repair" ? (
-        <Repair run={run} expert={expert} />
-      ) : stage === "review" ? (
-        <Review run={run} reload={() => load()} />
-      ) : stage === "approved" ? (
-        <Approved run={run} reload={() => load()} />
+      {view === "start" ? (
+        <Start runs={runs} open={open} onLaunched={() => loadRuns()} />
       ) : (
-        <Simulate run={run} />
+        <>
+          <div className="wf-bar">
+            <button className="sx-btn" onClick={() => setView("start")}>
+              ← New run
+            </button>
+            <label className="wf-runpick">
+              <span>Run</span>
+              <select value={rid || ""} onChange={(e) => setRid(e.target.value)}>
+                {runs.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.robot || r.id} · {r.model ? "repairs by " + r.model : "conversion and checks"} {r.validated_cases ? `· ${r.validated_cases} cases validated` : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="sx-btn" onClick={() => load()}>
+              <RefreshCw size={14} /> Refresh
+            </button>
+            {rid && <Downloads rid={rid} />}
+          </div>
+
+          <ol className="wf-rail" aria-label="Pipeline stages">
+            {STAGES.map((s, i) => (
+              <li key={s.id}>
+                <button className={(stage === s.id ? "on " : "") + (done[s.id] ? "done" : "")} onClick={() => setStage(s.id)} aria-current={stage === s.id ? "step" : undefined}>
+                  <span className="wf-n">{done[s.id] ? <CheckCircle2 size={16} /> : i + 1}</span>
+                  <span className="wf-rail-label">{s.label}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+          <p className="wf-stage-plain">{STAGES.find((s) => s.id === stage)!.plain}</p>
+
+          {!run ? (
+            <p className="sx-muted">Loading…</p>
+          ) : stage === "input" ? (
+            <Input run={run} expert={expert} />
+          ) : stage === "compliance" ? (
+            <Compliance run={run} expert={expert} />
+          ) : stage === "convert" ? (
+            <Convert run={run} expert={expert} />
+          ) : stage === "check" ? (
+            <Check run={run} expert={expert} />
+          ) : stage === "repair" ? (
+            <Repair run={run} expert={expert} />
+          ) : stage === "review" ? (
+            <Review run={run} reload={() => load()} />
+          ) : stage === "approved" ? (
+            <Approved run={run} reload={() => load()} />
+          ) : (
+            <Simulate run={run} />
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+type Robot = { id: string; label: string; short?: string; what?: string; license?: string; provenance?: string; links: number; joints: number; movable: number; mass_kg: number; kind: string; filename?: string };
+type Active = { run?: string; label?: string; running: boolean; ok?: boolean; error?: string; started?: number; finished?: number; now?: number; steps?: { id: string; label: string; status: string; started?: number; finished?: number; note?: string }[] };
+
+function fmtTime(sec: number) {
+  const s = Math.max(0, Math.round(sec));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+/** Choose one of the studio's robots or upload a URDF, launch stages 0-2 and follow them live. */
+function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?: Stage) => void; onLaunched: () => void }) {
+  const [robots, setRobots] = useState<Robot[]>([]);
+  const [pick, setPick] = useState<string>("aloha_vx300s");
+  const [active, setActive] = useState<Active>({ running: false });
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [polledAt, setPolledAt] = useState(Date.now());
+  const [now, setNow] = useState(Date.now());
+  const file = useRef<HTMLInputElement>(null);
+  const loadRobots = () => wf<Robot[]>("/robots").then(setRobots).catch((e) => setErr(message(e)));
+  useEffect(() => {
+    loadRobots();
+  }, []);
+  useEffect(() => {
+    let stop = false;
+    const tick = () =>
+      wf<Active>("/active")
+        .then((a) => {
+          if (stop) return;
+          setActive(a);
+          setPolledAt(Date.now());
+        })
+        .catch(() => {});
+    tick();
+    const t = setInterval(() => (busy || active.running) && tick(), 1000);
+    const c = setInterval(() => setNow(Date.now()), 1000);
+    return () => {
+      stop = true;
+      clearInterval(t);
+      clearInterval(c);
+    };
+  }, [busy, active.running]);
+
+  const upload = async (f?: File) => {
+    if (!f) return;
+    setErr("");
+    try {
+      const meta = await convert<{ id: string }>("/upload", "POST", { filename: f.name, content: await f.text() });
+      await loadRobots();
+      setPick(meta.id);
+    } catch (e) {
+      setErr(message(e));
+    } finally {
+      if (file.current) file.current.value = "";
+    }
+  };
+  const launch = async () => {
+    setBusy(true);
+    setErr("");
+    try {
+      const job = await wf<any>("/launch", "POST", { source: pick });
+      setActive({ running: true, label: robots.find((r) => r.id === pick)?.label, steps: [] });
+      const res: any = await waitJob(job);
+      onLaunched();
+      if (res?.run && res.ok) open(res.run, "check");
+      else if (res?.run) open(res.run, "compliance");
+    } catch (e) {
+      setErr(message(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const chosen = robots.find((r) => r.id === pick);
+  const studio = robots.filter((r) => r.kind === "pinned"),
+    uploads = robots.filter((r) => r.kind !== "pinned");
+  const serverNow = (active.now || 0) + (now - polledAt) / 1000;
+  const showProgress = busy || active.running;
+
+  return (
+    <>
+      <section className="wf-start">
+        <div className="wf-start-head">
+          <h2>1 · Choose a robot</h2>
+          <p>Three robots from their makers' public files, or your own URDF.</p>
+        </div>
+        <div className="wf-robots">
+          {studio.map((r) => (
+            <button key={r.id} className={"wf-robot" + (pick === r.id ? " on" : "")} onClick={() => setPick(r.id)} disabled={showProgress}>
+              <div className="wf-robot-3d">
+                <RobotView source={r.id} lod="low" autoRotate height={190} />
+              </div>
+              <b>{r.label}</b>
+              <small>{r.what}</small>
+              <span className="wf-robot-meta">
+                {r.movable} joints · {r.links} parts · {Number(r.mass_kg).toFixed(1)} kg
+              </span>
+            </button>
+          ))}
+          <div className={"wf-robot wf-upload" + (uploads.some((u) => u.id === pick) ? " on" : "")}>
+            <button className="wf-upload-drop" onClick={() => file.current?.click()} disabled={showProgress}>
+              <Upload size={26} />
+              <b>Your own URDF</b>
+              <small>A .urdf file up to 300 kB. It is checked against the URDF specification before anything else.</small>
+            </button>
+            <input ref={file} type="file" accept=".urdf" hidden onChange={(e) => upload(e.target.files?.[0])} />
+            {uploads.length > 0 && (
+              <div className="wf-upload-list">
+                {uploads.slice(0, 4).map((u) => (
+                  <button key={u.id} className={pick === u.id ? "on" : ""} onClick={() => setPick(u.id)} disabled={showProgress}>
+                    {u.label} <small>· {u.movable} joints</small>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="wf-launch">
+          <div>
+            <h2>2 · Launch</h2>
+            <p>
+              URDF compliance → conversion with DLR URDFModelica → OpenModelica check
+              {chosen ? ` on ${chosen.label}` : ""}. About 1 minute for an arm, about 3 minutes for a humanoid.
+            </p>
+          </div>
+          <button className="wf-go" onClick={launch} disabled={!chosen || showProgress}>
+            {showProgress ? <Loader2 size={18} className="sx-spin" /> : <Play size={18} />} {showProgress ? "Running…" : "Launch the pipeline"}
+          </button>
+        </div>
+
+        {showProgress && active.steps && active.steps.length > 0 && (
+          <ol className="wf-progress" aria-live="polite">
+            {active.steps.map((s) => {
+              const t = s.started ? (s.finished || (s.status === "running" ? serverNow : s.started)) - s.started : 0;
+              return (
+                <li key={s.id} className={s.status}>
+                  <span className="wf-progress-icon">
+                    {s.status === "done" ? <CheckCircle2 size={18} /> : s.status === "running" ? <Loader2 size={18} className="sx-spin" /> : s.status === "failed" ? <XCircle size={18} /> : <CircleDashed size={18} />}
+                  </span>
+                  <b>{s.label}</b>
+                  <span className="wf-progress-note">{s.note || (s.status === "running" ? "in progress" : s.status)}</span>
+                  <span className="wf-progress-time">{s.started ? fmtTime(t) : ""}</span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+        {!showProgress && active.error && active.run && (
+          <p className="lab-error">
+            Last launch stopped: {active.error.slice(0, 300)}{" "}
+            <button className="sx-link" onClick={() => open(active.run!, "compliance")}>
+              Open it
+            </button>
+          </p>
+        )}
+        {err && <p className="lab-error">{err}</p>}
+      </section>
+
+      {runs.length > 0 && (
+        <section className="wf-recent">
+          <h2>Recent runs</h2>
+          <div className="wf-recent-grid">
+            {runs.slice(0, 9).map((r) => (
+              <button key={r.id} onClick={() => open(r.id, r.validated_cases ? "repair" : "check")}>
+                <b>{r.robot || r.id}</b>
+                <small>{r.model ? `AI repairs by ${r.model}` : "Conversion and checks"}</small>
+                <span className={"wf-pill " + (r.verdict?.startsWith("validated") ? "ok" : r.verdict ? "mid" : "")}>{r.verdict || "refused at Stage 0"}</span>
+                {r.created && <small className="wf-recent-date">{new Date(r.created).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</small>}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+    </>
   );
 }
 
@@ -772,5 +963,40 @@ function Compliance({ run, expert }: { run: any; expert: boolean }) {
         </ul>
       </section>
     </>
+  );
+}
+
+/** Download any version of the model (ready for OMEdit) or every version before and after repair, with diffs. */
+function Downloads({ rid }: { rid: string }) {
+  const [versions, setVersions] = useState<{ key: string; label: string }[]>([]);
+  const [key, setKey] = useState("original");
+  useEffect(() => {
+    wf<{ key: string; label: string }[]>(`/runs/${rid}/versions`)
+      .then((v) => {
+        setVersions(v);
+        setKey("original");
+      })
+      .catch(() => setVersions([]));
+  }, [rid]);
+  if (!versions.length) return null;
+  const base = `/api/workflow/runs/${encodeURIComponent(rid)}/download`;
+  return (
+    <div className="wf-downloads">
+      <select value={key} onChange={(e) => setKey(e.target.value)} aria-label="Version to download">
+        {versions.map((v) => (
+          <option key={v.key} value={v.key}>
+            {v.key === "original" ? "Converter output (before repair)" : v.label}
+          </option>
+        ))}
+      </select>
+      <a className="sx-btn" href={`${base}?key=${encodeURIComponent(key)}`} download title="This version as a .zip ready for OMEdit, with the robot's 3D shapes">
+        <Download size={14} /> Download .zip
+      </a>
+      {versions.length > 1 && (
+        <a className="sx-btn primary" href={base} download title="The converter's output and every repaired version side by side, each with its changes (.diff)">
+          <Download size={14} /> Before &amp; after (all versions)
+        </a>
+      )}
+    </div>
   );
 }

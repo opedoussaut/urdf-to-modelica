@@ -32,9 +32,13 @@ copilot_lock = threading.Lock()
 @app.middleware("http")
 async def loopback_origin(request: Request, call_next):
     # Protect expensive local jobs against cross-origin browser requests.
+    # The page's own origin is always allowed: the host is restricted to loopback names above, so a same-origin
+    # request can only come from this studio, whatever port it is served on.
     if request.method not in {"GET", "HEAD", "OPTIONS"}:
-        if request.headers.get("origin") not in {None, "http://localhost:8000", "http://127.0.0.1:8000",
-                                                 "http://localhost:5173", "http://127.0.0.1:5173"}:
+        origin = request.headers.get("origin")
+        same = origin == f"http://{request.headers.get('host', '')}"
+        if not same and origin not in {None, "http://localhost:8000", "http://127.0.0.1:8000",
+                                       "http://localhost:5173", "http://127.0.0.1:5173"}:
             return JSONResponse({"detail": "Cross-origin writes are prohibited"}, status_code=403)
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"

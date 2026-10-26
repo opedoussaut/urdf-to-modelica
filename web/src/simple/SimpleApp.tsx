@@ -4,6 +4,7 @@ import { convert } from "./api";
 import { AudienceContext, storeAudience, storedAudience, type Audience } from "../audience";
 import "../lab.css";
 import "./simple.css";
+import "./theme.css";
 
 const Convert = lazy(() => import("./Convert")),
   Review = lazy(() => import("./Review")),

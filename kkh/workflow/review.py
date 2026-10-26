@@ -52,7 +52,14 @@ def case_of(key: str) -> str:
 
 
 def pkg_of(ws: Path) -> Path:
-    return ws / "URDFModelica" / "Examples" / F.TARGET["package"]
+    """The generated robot package inside a workspace: the Examples folder that is not part of the pinned URDFModelica
+    library (works for every robot, not only the ALOHA arm the fault set targets)."""
+    ex = Path(ws) / "URDFModelica" / "Examples"
+    from kkh.convert.sources import ROOT
+    lib = ROOT / "third_party" / "URDFModelica" / "URDFModelica" / "Examples"
+    library = {p.name for p in lib.iterdir()} if lib.exists() else set()
+    generated = [p for p in ex.iterdir() if p.is_dir() and p.name not in library] if ex.exists() else []
+    return generated[0] if len(generated) == 1 else ex / F.TARGET["package"]
 
 
 def files(run_dir: Path, key: str) -> list[str]:

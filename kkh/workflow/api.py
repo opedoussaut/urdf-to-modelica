@@ -175,3 +175,52 @@ def omedit(rid: str, body: Key):
 def simulate(rid: str, body: Key):
     d = _run(rid)
     return _job("Simulate approved model", lambda: R.simulate(d, body.key))
+
+
+# ---------------------------------------------------------------- launch from the studio
+
+class Launch(BaseModel):
+    source: str = Field(min_length=1, max_length=80)
+
+
+@router.get("/robots")
+def robots():
+    """The studio's pipeline robots (Unitree G1, Berkeley Humanoid Lite, ALOHA 2 follower) and uploaded URDFs."""
+    from .launch import robots as _robots
+    return _robots()
+
+
+@router.post("/launch")
+def launch(body: Launch):
+    """Run URDF compliance -> convert -> OpenModelica check for one robot, in a new run (follow GET /active)."""
+    from kkh.convert import sources
+    from .launch import ROBOTS, launch as _launch
+    if body.source not in ROBOTS and not re.fullmatch(r"upload-[0-9a-f]{16}", body.source):
+        raise HTTPException(422, "Choose one of the studio's robots or an uploaded URDF")
+    _guard(lambda: sources.resolve(body.source))
+    return _job("Engineering pipeline", lambda: _launch(body.source))
+
+
+@router.get("/active")
+def active():
+    from .launch import active as _active
+    return _active()
+
+
+# ---------------------------------------------------------------- downloads
+
+@router.get("/runs/{rid}/versions")
+def versions(rid: str):
+    from . import downloads as D
+    d = _run(rid)
+    return [{"key": k, "label": D.describe(k)} for k in D.keys(d)]
+
+
+@router.get("/runs/{rid}/download")
+def download(rid: str, key: str | None = None):
+    """One version ready for OMEdit (key), or every version before and after repair with diffs (no key)."""
+    from fastapi.responses import Response
+    from . import downloads as D
+    d = _run(rid)
+    data, name = _guard(lambda: D.version_zip(d, key) if key else D.compare_zip(d))
+    return Response(data, media_type="application/zip", headers={"Content-Disposition": f'attachment; filename="{name}"'})

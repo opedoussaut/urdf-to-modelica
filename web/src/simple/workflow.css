@@ -1,5 +1,4 @@
 /* Repair workflow page (simple UI). Scoped under .sx .wf; tokens from simple.css. AI only = slate, AI + assets = violet. */
-.sx .wf h1 { font-size: 26px; margin: 6px 0 12px; }
 .sx .wf-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; }
 .sx .wf-bar select, .sx .wf-bar input, .sx .wf textarea, .sx .wf-amend select { font: inherit; padding: 7px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); }
 .sx .wf textarea { width: 100%; font-family: "JetBrains Mono", Consolas, monospace; font-size: 12.5px; margin: 6px 0; }
@@ -7,14 +6,6 @@
 .sx .sx-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .sx .sx-btn:disabled { opacity: 0.5; cursor: default; }
 
-.sx .wf-rail { list-style: none; padding: 0; margin: 14px 0 6px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-.sx .wf-rail button { width: 100%; display: flex; align-items: center; gap: 8px; text-align: left; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
-.sx .wf-rail button.done { border-color: #bfe3cf; }
-.sx .wf-rail button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-.sx .wf-n { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--canvas); color: var(--ink-2); font-size: 12px; flex: none; }
-.sx .wf-rail button.done .wf-n { color: var(--green); background: var(--green-soft); }
-.sx .wf-rail button.on .wf-n { background: rgba(255, 255, 255, 0.2); color: #fff; }
-.sx .wf-stage-plain { color: var(--ink-2); margin: 4px 0 12px; }
 
 .sx .wf-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-top: 14px; }
 .sx .wf-card h2 { display: flex; align-items: center; gap: 10px; font-size: 17px; margin: 0 0 10px; }
@@ -81,3 +72,88 @@
 .wf .wf-tip { border-left: 4px solid var(--accent); }
 .wf .wf-tip ul { margin: 6px 0 0; padding-left: 18px; }
 .sx .wf-stat.warn b { color: var(--amber); }
+
+/* ---- hero, start screen, launch, progress (theme.css tokens) ---- */
+.sx .wf-hero { max-width: 900px; margin-bottom: 26px; }
+.sx .wf-hero-sub { font-size: 19px; line-height: 1.45; color: var(--ink-2); margin: 0; }
+.sx .wf-start { background: var(--surface); border-radius: 24px; box-shadow: var(--shadow); padding: 28px; border: 1px solid rgba(0, 0, 0, 0.06); }
+.sx .wf-start-head, .sx .wf-launch > div { display: flex; flex-direction: column; gap: 4px; }
+.sx .wf-start h2, .sx .wf-recent h2 { margin: 0; }
+.sx .wf-start-head p, .sx .wf-launch p { color: var(--muted); margin: 0; }
+.sx .wf-robots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 20px 0 8px; }
+.sx .wf-robot {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; padding: 14px 16px 16px;
+  border-radius: var(--radius); border: 1.5px solid var(--line); background: var(--surface); cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease; min-width: 0;
+}
+.sx .wf-robot:hover:not(:disabled) { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+.sx .wf-robot.on { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.14); }
+.sx .wf-robot b { font-size: 16px; font-weight: 650; color: var(--ink); letter-spacing: -0.01em; }
+.sx .wf-robot small { color: var(--muted); font-size: 13px; line-height: 1.35; font-family: inherit; }
+.sx .wf-robot-3d { width: 100%; border-radius: 14px; background: linear-gradient(180deg, #f2f4f8, #fbfbfd); margin-bottom: 8px; pointer-events: none; overflow: hidden; }
+.sx .wf-robot-meta { margin-top: auto; padding-top: 6px; font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.sx .wf-upload { cursor: default; padding: 0; overflow: hidden; }
+.sx .wf-upload-drop {
+  flex: 1; width: 100%; min-height: 190px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  text-align: center; padding: 18px; border: 0; background: repeating-linear-gradient(135deg, #fafafc, #fafafc 10px, #f5f5f7 10px, #f5f5f7 20px);
+  color: var(--ink-2); cursor: pointer;
+}
+.sx .wf-upload-drop svg { color: var(--accent); }
+.sx .wf-upload-list { display: flex; flex-direction: column; width: 100%; border-top: 1px solid var(--line); }
+.sx .wf-upload-list button { text-align: left; border: 0; border-bottom: 1px solid var(--line); background: var(--surface); padding: 9px 14px; font-size: 13.5px; cursor: pointer; }
+.sx .wf-upload-list button.on { color: var(--accent); font-weight: 600; background: var(--accent-soft); }
+.sx .wf-launch { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+.sx .wf-go {
+  display: inline-flex; align-items: center; gap: 10px; border: 0; border-radius: 980px; background: var(--accent); color: #fff;
+  font-size: 17px; font-weight: 600; padding: 14px 28px; cursor: pointer; white-space: nowrap; box-shadow: 0 6px 18px rgba(0, 113, 227, 0.3);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.sx .wf-go:hover:not(:disabled) { background: var(--accent-2); transform: translateY(-1px); }
+.sx .wf-go:disabled { opacity: 0.55; cursor: default; box-shadow: none; }
+.sx .wf-progress { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 8px; }
+.sx .wf-progress li { display: grid; grid-template-columns: 26px 220px 1fr 60px; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 14px; background: var(--canvas); }
+.sx .wf-progress li.done .wf-progress-icon { color: var(--green); }
+.sx .wf-progress li.running { background: var(--accent-soft); }
+.sx .wf-progress li.running .wf-progress-icon { color: var(--accent); }
+.sx .wf-progress li.failed .wf-progress-icon { color: var(--red); }
+.sx .wf-progress li.pending, .sx .wf-progress li.skipped { opacity: 0.55; }
+.sx .wf-progress-icon { display: grid; place-items: center; color: var(--muted); }
+.sx .wf-progress-note { color: var(--ink-2); font-size: 13.5px; }
+.sx .wf-progress-time { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 600; }
+.sx .wf-recent { margin-top: 36px; }
+.sx .wf-recent-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.sx .wf-recent-grid button {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; padding: 16px 18px; border-radius: var(--radius);
+  border: 1px solid rgba(0, 0, 0, 0.06); background: var(--surface); box-shadow: var(--shadow); cursor: pointer; transition: box-shadow 0.18s ease;
+}
+.sx .wf-recent-grid button:hover { box-shadow: var(--shadow-hover); }
+.sx .wf-recent-grid b { font-size: 15px; color: var(--ink); }
+.sx .wf-recent-grid small { color: var(--muted); font-size: 13px; font-family: inherit; }
+.sx .wf-recent-date { font-size: 12px !important; }
+.sx .wf-runpick { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+
+/* ---- rail: eight steps, all the same size ---- */
+.sx .wf-rail { list-style: none; padding: 6px; margin: 18px 0 8px; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; background: rgba(0, 0, 0, 0.04); border-radius: 16px; }
+.sx .wf-rail li { display: flex; }
+.sx .wf-rail button {
+  flex: 1; height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px 6px;
+  border-radius: 12px; border: 0; background: transparent; color: var(--ink-2); font-size: 13px; font-weight: 500; text-align: center; cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.sx .wf-rail button:hover { background: rgba(255, 255, 255, 0.7); }
+.sx .wf-rail button.on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05); }
+.sx .wf-rail-label { line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sx .wf-n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(0, 0, 0, 0.06); color: var(--ink-2); font-size: 12px; font-weight: 600; flex: none; }
+.sx .wf-rail button.done .wf-n { color: var(--green); background: var(--green-soft); }
+.sx .wf-rail button.on .wf-n { background: var(--accent); color: #fff; }
+.sx .wf-stage-plain { color: var(--ink-2); margin: 6px 2px 14px; font-size: 15px; }
+@media (max-width: 1100px) {
+  .sx .wf-robots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sx .wf-rail { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .sx .wf-recent-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sx .wf-progress li { grid-template-columns: 26px 1fr 60px; }
+  .sx .wf-progress-note { grid-column: 2 / 3; }
+}
+.sx .wf-downloads { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.sx .wf-downloads select { max-width: 320px; }
+.sx a.sx-btn { text-decoration: none; }
