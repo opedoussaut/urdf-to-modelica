@@ -29,8 +29,20 @@ export const FLOW: Step[] = [
     code: "kkh/workflow/stage1_convert.py",
   },
   {
-    id: "convert",
+    id: "compliance",
     n: 2,
+    title: "URDF compliance",
+    page: "repair",
+    doWhat: "Nothing: the check runs before every conversion. If the robot is designed in SolidWorks, export the URDF with the free SolidWorks to URDF Exporter rather than writing it by hand.",
+    happens:
+      "The file is checked against the official URDF specification on the ROS wiki (required elements and attributes, joint types, limits on revolute and prismatic joints, number formats, colours, mimic references), against its tree rule (one root, one parent per link, no cycle, nothing disconnected), and against basic physics that the specification does not cover (positive masses, an inertia a real body can have, ordered limits, mesh files that exist). Every finding gives the line in the file and the rule it breaks.",
+    get: "A verdict (compliant, compliant with warnings, physically implausible, not compliant). A file with any error is refused before conversion.",
+    why: "A malformed or physically impossible file would otherwise surface later, disguised as a Modelica error, and waste the converter, the checks and the AI on a problem that is in the input. The five pinned robots all pass; 14 deliberate violations in the tests are each caught by the rule that names them.",
+    code: "kkh/workflow/stage0_urdf.py",
+  },
+  {
+    id: "convert",
+    n: 3,
     title: "Convert (no AI)",
     page: "repair",
     doWhat: "Nothing: the conversion is automatic.",
@@ -42,7 +54,7 @@ export const FLOW: Step[] = [
   },
   {
     id: "check",
-    n: 3,
+    n: 4,
     title: "OpenModelica check",
     page: "repair",
     doWhat: "Read the findings: what is wrong, where, and how serious.",
@@ -54,7 +66,7 @@ export const FLOW: Step[] = [
   },
   {
     id: "repair",
-    n: 4,
+    n: 5,
     title: "AI repair comparison",
     page: "repair",
     doWhat: "Choose a case (the natural findings or one of ten seeded faults) and compare the two AI methods side by side.",
@@ -66,7 +78,7 @@ export const FLOW: Step[] = [
   },
   {
     id: "validate",
-    n: 5,
+    n: 6,
     title: "Independent validation",
     page: "repair",
     doWhat: "Read each method's verdict: validated, improved, regressed, unchanged or rejected.",
@@ -78,7 +90,7 @@ export const FLOW: Step[] = [
   },
   {
     id: "review",
-    n: 6,
+    n: 7,
     title: "Engineer review",
     page: "repair",
     doWhat: "Keep or reject each proposed change, amend a file by hand if needed, re-check, and open the model in OMEdit.",
@@ -89,7 +101,7 @@ export const FLOW: Step[] = [
   },
   {
     id: "approve",
-    n: 7,
+    n: 8,
     title: "Approved model & simulation",
     page: "repair",
     doWhat: "Approve (or reject) the candidate, then simulate it here or open it in OMEdit.",

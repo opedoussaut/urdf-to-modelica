@@ -322,10 +322,24 @@ def _versions() -> dict:
             "converter_uses": uses.group(1) if uses else None}
 
 
-def run(source: str, out: Path | None = None, check_reproducible: bool = True, log=print) -> dict:
+def run(source: str, out: Path | None = None, check_reproducible: bool = True, log=print, force: bool = False) -> dict:
     urdf, meta = sources.resolve(source)
     stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     out = out or RUNS / f"{source}-{stamp}"
+    # Stage 0: the URDF must comply with the URDF specification before anything is converted
+    from kkh.convert.robot3d import resolve_mesh
+    from .stage0_urdf import check as urdf_compliance
+    compliance = urdf_compliance(urdf, resolve_mesh)
+    (out / "stage0").mkdir(parents=True, exist_ok=True)
+    (out / "stage0" / "compliance.json").write_text(json.dumps(compliance, indent=1), encoding="utf-8")
+    log(f"[stage0] URDF compliance: {compliance['verdict']}")
+    if compliance["blocking"] and not force:
+        manifest = {"schema": SCHEMA, "source": source, "ok": False, "compliance": compliance["verdict"],
+                    "error": "Stage 0 refused the URDF: " + "; ".join(
+                        f"line {x['line']}: {x['message']}" for x in compliance["findings"] if x["blocking"])[:2000]}
+        (out / "stage1").mkdir(parents=True, exist_ok=True)
+        (out / "stage1" / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")
+        return manifest
     st = out / "stage1"
     if st.exists():
         shutil.rmtree(st)
@@ -375,6 +389,7 @@ def run(source: str, out: Path | None = None, check_reproducible: bool = True, l
         "generated": {"package_dir": _rel(pkg_dir), "package_file": _rel(Path(conv["package_file"])),
                       "test_model": conv["model"], "files": gen_hashes},
         "reproducibility": repro,
+        "compliance": {"verdict": compliance["verdict"], "counts": compliance["counts"], "forced": force and compliance["blocking"]},
         "summary": {"mapped_links": sum(1 for m in mapping if m["kind"] == "link" and m["params_file"]),
                     "mapped_joints": sum(1 for m in mapping if m["kind"] == "joint" and m["params_file"]),
                     "unmapped": [m["urdf_name"] for m in mapping if not m["params_file"]],
@@ -395,8 +410,9 @@ def main():
     ap.add_argument("source", help="pinned source id (e.g. aloha_vx300s) or upload-<hash>")
     ap.add_argument("--out", type=Path, help="run directory (default runs/workflow/<source>-<time>)")
     ap.add_argument("--no-repro", action="store_true", help="skip the second conversion")
+    ap.add_argument("--force", action="store_true", help="convert even if Stage 0 finds blocking errors (recorded)")
     a = ap.parse_args()
-    m = run(a.source, a.out, check_reproducible=not a.no_repro)
+    m = run(a.source, a.out, check_reproducible=not a.no_repro, force=a.force)
     print(json.dumps(m.get("summary", m), indent=1))
 
 

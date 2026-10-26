@@ -5,9 +5,10 @@ import { message, waitJob } from "../studio";
 import { wf } from "./api";
 import "./workflow.css";
 
-type Stage = "input" | "convert" | "check" | "repair" | "review" | "approved" | "simulate";
+type Stage = "input" | "compliance" | "convert" | "check" | "repair" | "review" | "approved" | "simulate";
 const STAGES: { id: Stage; label: string; plain: string }[] = [
   { id: "input", label: "URDF input", plain: "The robot's description file and its meshes, fixed (pinned) and fingerprinted (hashed)." },
+  { id: "compliance", label: "URDF compliance", plain: "Before anything is converted, the file is checked against the official URDF specification (ROS wiki), its tree structure and basic physics. A file with errors is refused." },
   { id: "convert", label: "Convert", plain: "The DLR converter turns the file into a Modelica model. No AI, no corrections." },
   { id: "check", label: "OpenModelica check", plain: "OpenModelica and an independent comparison with the robot file list every problem, in order." },
   { id: "repair", label: "AI repair comparison", plain: "Two AI methods try to fix those problems under identical conditions: AI alone, and AI with Modelica knowledge." },
@@ -43,6 +44,7 @@ export default function Workflow() {
 
   const done: Record<Stage, boolean> = {
     input: !!run?.stage1,
+    compliance: !!run?.stage0,
     convert: !!run?.stage1,
     check: !!run?.stage2,
     repair: !!run && Object.keys(run.repairs || {}).length > 0,
@@ -93,6 +95,8 @@ export default function Workflow() {
         <p className="sx-muted">{runs.length ? "Loading…" : "No workflow run yet. Run: python -m kkh.workflow.stage1_convert aloha_vx300s, then stage2_check."}</p>
       ) : stage === "input" ? (
         <Input run={run} expert={expert} />
+      ) : stage === "compliance" ? (
+        <Compliance run={run} expert={expert} />
       ) : stage === "convert" ? (
         <Convert run={run} expert={expert} />
       ) : stage === "check" ? (
@@ -121,6 +125,13 @@ function Stat({ k, v, tone }: { k: string; v: any; tone?: string }) {
 
 function Input({ run, expert }: { run: any; expert: boolean }) {
   const s = run.stage1.source;
+  if (!run.stage1.assets)
+    return (
+      <section className="wf-card">
+        <h2>Conversion refused</h2>
+        <p className="lab-error">{run.stage1.error || "Stage 0 found blocking errors in the URDF."}</p>
+      </section>
+    );
   return (
     <section className="wf-card">
       <h2>{s.label}</h2>
@@ -650,5 +661,116 @@ function Simulate({ run }: { run: any }) {
       {busy && <p className="sx-muted">{busy}… (OpenModelica, about a minute)</p>}
       {err && <p className="lab-error">{err}</p>}
     </section>
+  );
+}
+
+const LAYER: Record<string, string> = {
+  spec: "URDF specification",
+  structure: "Tree structure",
+  physical: "Physics (beyond the specification)",
+};
+
+/** Stage 0: compliance of the input URDF with the URDF specification, its tree structure and basic physics. */
+function Compliance({ run, expert }: { run: any; expert: boolean }) {
+  const c = run.stage0;
+  const [showInfo, setShowInfo] = useState(false);
+  if (!c)
+    return (
+      <section className="wf-card">
+        <p className="sx-muted">This run was made before Stage 0 existed. New runs check the URDF first: python -m kkh.workflow.stage0_urdf &lt;robot&gt;.</p>
+      </section>
+    );
+  const n = (layer: string, sev: string) => c.counts[`${layer}_${sev}`] || 0;
+  const tone = c.verdict === "compliant" ? "ok" : c.verdict === "compliant with warnings" ? "warn" : "bad";
+  const shown = c.findings.filter((x: any) => showInfo || x.severity !== "info");
+  return (
+    <>
+      <section className="wf-card">
+        <h2>
+          {tone === "ok" ? <CheckCircle2 size={18} /> : tone === "warn" ? <CircleAlert size={18} /> : <XCircle size={18} />} {c.file}: {c.verdict}
+        </h2>
+        <div className="wf-stats">
+          <Stat k="links · joints" v={`${c.structure.links} · ${c.structure.joints}`} />
+          <Stat k="root link" v={(c.structure.roots || []).join(", ") || "none"} tone={(c.structure.roots || []).length === 1 ? "" : "bad"} />
+          {(["spec", "structure", "physical"] as const).map((l) => (
+            <Stat key={l} k={LAYER[l]} v={`${n(l, "error")} errors · ${n(l, "warning")} warnings`} tone={n(l, "error") ? "bad" : n(l, "warning") ? "warn" : ""} />
+          ))}
+        </div>
+        <p className="sx-muted">
+          Rules from the official URDF specification on the ROS wiki (
+          {(["robot", "link", "joint", "model"] as const).map((k, i) => (
+            <span key={k}>
+              {i ? ", " : ""}
+              <a href={c.specification[k]} target="_blank" rel="noreferrer">
+                {k}
+              </a>
+            </span>
+          ))}
+          ), the tree rule ("only tree structures can be represented"), and physical plausibility checks that go beyond the specification and are
+          labelled as such. {c.verdict_rule}.
+        </p>
+        <table className="wf-table">
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Layer</th>
+              <th>Where</th>
+              <th>Finding</th>
+              {expert && <th>Rule · source</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((x: any) => (
+              <tr key={x.id} className={"sev-" + x.severity}>
+                <td>{x.severity}</td>
+                <td>{LAYER[x.layer]}</td>
+                <td>
+                  {x.entity || "robot"}
+                  {x.line ? ` · line ${x.line}` : ""}
+                </td>
+                <td>
+                  {x.message}
+                  {x.evidence && <small className="wf-mono"> {x.evidence}</small>}
+                </td>
+                {expert && (
+                  <td>
+                    <code>{x.rule}</code> · {x.source.startsWith("http") ? <a href={x.source} target="_blank" rel="noreferrer">spec</a> : x.source}
+                  </td>
+                )}
+              </tr>
+            ))}
+            {!shown.length && (
+              <tr>
+                <td colSpan={expert ? 5 : 4}>No errors or warnings.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        <label className="sx-check">
+          <input type="checkbox" checked={showInfo} onChange={(e) => setShowInfo(e.target.checked)} /> Show information notes (
+          {c.findings.filter((x: any) => x.severity === "info").length})
+        </label>
+      </section>
+      <section className="wf-card wf-tip">
+        <h3>Where a good URDF comes from: the SolidWorks exporter</h3>
+        <p>
+          If your robot is designed in SolidWorks, export it with the{" "}
+          <a href="https://wiki.ros.org/sw_urdf_exporter" target="_blank" rel="noreferrer">
+            SolidWorks to URDF Exporter
+          </a>{" "}
+          (a free SolidWorks add-in) rather than writing the file by hand. It builds the link tree from the assembly hierarchy, works out joint
+          types, transforms and axes, exports the meshes, and takes masses and inertias from the SolidWorks material properties.
+        </p>
+        <ul>
+          <li>Assign real materials (or measured masses) to every part first: the exported masses and inertias are only as good as those.</li>
+          <li>Check the joint limits, effort and velocity it writes: they come from what you enter in the add-in, not from the motors.</li>
+          <li>
+            It writes <code>package://</code> mesh paths for ROS; this studio resolves them. Use SolidWorks 2018 SP5 or later (an STL export
+            bug makes earlier 2018 service packs unusable, per the exporter's page).
+          </li>
+          <li>Then bring the exported .urdf here: this Stage 0 check is the first gate.</li>
+        </ul>
+      </section>
+    </>
   );
 }

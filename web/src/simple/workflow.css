@@ -75,3 +75,9 @@
   .sx .wf-rail { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .sx .wf-arms { grid-template-columns: 1fr; }
 }
+.wf .wf-table tr.sev-error td:first-child { color: var(--red); font-weight: 700; }
+.wf .wf-table tr.sev-warning td:first-child { color: var(--amber); font-weight: 700; }
+.wf .wf-table tr.sev-info td:first-child { color: var(--muted); }
+.wf .wf-tip { border-left: 4px solid var(--accent); }
+.wf .wf-tip ul { margin: 6px 0 0; padding-left: 18px; }
+.sx .wf-stat.warn b { color: var(--amber); }

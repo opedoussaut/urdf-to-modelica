@@ -167,7 +167,8 @@ What the pipeline measured on the DLR output (ALOHA 2 follower arm, Stage 1 and 
 
 ```mermaid {scale: 0.72}
 flowchart LR
-  A[URDF + meshes<br/>hash-pinned] --> B[1 Convert<br/>DLR URDFModelica<br/>no AI]
+  A[URDF + meshes<br/>hash-pinned] --> Z[0 URDF compliance<br/>ROS specification,<br/>tree, physics]
+  Z --> B[1 Convert<br/>DLR URDFModelica<br/>no AI]
   B --> C[2 Check<br/>OpenModelica, ordered<br/>diagnostics.json]
   C --> D1[3a AI only<br/>proposes edits]
   C --> D2[3b AI + Modelica assets<br/>cites sources]
@@ -180,6 +181,27 @@ flowchart LR
 
 - Every artefact records the **hash of its inputs**: a run can be traced from robot file to approved model.
 - The AI never writes to the approved model; it edits **isolated copies** only.
+
+---
+
+# Stage 0: is the input a valid URDF?
+
+Before anything is converted, the file is checked against the **official URDF specification** (ROS wiki: robot, link,
+joint and model pages). A file with any error is **refused**; every finding gives the **line** and the **rule**.
+
+| Layer | Examples of rules |
+|---|---|
+| Specification | joint type is one of six; `<limit>` required for revolute and prismatic joints, with effort and velocity; axis of three numbers; colours in [0, 1]; mimic points to an existing joint |
+| Tree structure | "only tree structures can be represented": one root, one parent per link, no closed chain, nothing disconnected |
+| Physics (beyond the spec, labelled) | positive mass; an inertia a real body can have (positive definite, I1 + I2 ≥ I3); lower ≤ upper; mesh files exist |
+
+**Measured:** the 5 pinned robots are compliant; 14 deliberate violations are each caught by the rule that names them.
+
+<div class="mt-4 p-3 rounded bg-blue-500/10 text-sm">
+<b>Where a good URDF comes from:</b> robots designed in SolidWorks can be exported with the free
+<b>SolidWorks to URDF Exporter</b> add-in (link tree from the assembly, joint axes, meshes, masses from SolidWorks
+materials). Its output then passes this same gate.
+</div>
 
 ---
 
@@ -357,6 +379,7 @@ Ollama, GraphDB.
 - [History of the DLR LWR](https://www.dlr.de/en/rm/research/robotic-systems/arms/lwr-iii/history-of-the-dlr-lwr) · [The KUKA-DLR Lightweight Robot arm (IEEE)](https://ieeexplore.ieee.org/document/5756872)
 - [Modelica Association: new chair press release (2024)](https://modelica.org/news/2024-05-29-newchairpr/) · [Modelica Association](https://modelica.org/association) · [DLR-SR: about us](https://www.dlr.de/en/sr/about-us)
 - Modelica Standard Library 4.1.0, `Modelica.Mechanics.MultiBody.UsersGuide.Contact` (library officers, DLR-SR)
+- [URDF XML specification (ROS wiki)](https://wiki.ros.org/urdf/XML) · [SolidWorks to URDF Exporter](https://wiki.ros.org/sw_urdf_exporter)
 - [URDFModelica (DLR-RM) on GitHub](https://github.com/DLR-RM/urdfmodelica): README, `CITATION.cff` (v0.3.3, 2025-09-02)
 
 **Our measurements** (this repository)

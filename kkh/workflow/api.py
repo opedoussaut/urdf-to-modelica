@@ -77,7 +77,7 @@ def run_detail(rid: str):
     for rv in reviews:
         rv["validation"] = _j(R.ws_of(d, rv["key"]).parent / "validation.json")
     approvals = [_j(p) for p in sorted(d.glob("approved/*/approval.json"))]
-    return {"id": rid, "campaign": _j(d / "campaign.json"),
+    return {"id": rid, "campaign": _j(d / "campaign.json"), "stage0": _j(d / "stage0" / "compliance.json"),
             "stage1": {k: m.get(k) for k in ("source", "converter", "versions", "reproducibility", "summary", "assets")} if m else None,
             "unsupported": _j(d / "stage1" / "unsupported.json"),
             "stage2": {k: diag[k] for k in ("verdict", "graphics_verdict", "counts", "steps", "findings", "verdict_rule")} if diag else None,

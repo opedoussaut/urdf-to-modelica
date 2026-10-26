@@ -8,7 +8,7 @@ remembered per browser (`localStorage kkh.ui`).
 | --- | --- | --- |
 | **Convert & compare** | URDF → Modelica three ways, scored by the same seven real OpenModelica checks | `kkh/convert/`, `web/src/simple/Convert.tsx` |
 | **Review** | Review a generated (or seeded test) file: manually, AI-assisted, or AI + ontologies; each review scored against known defects | `kkh/convert/review.py`, `review_score.py`, `web/src/simple/Review.tsx` |
-| **Repair workflow** | URDF input → Convert (DLR, no AI) → OpenModelica check (ordered steps, diagnostics.json) → AI repair comparison (AI only vs AI + Modelica assets, frozen fault set v1) → Engineer review (keep/reject each edit, amend, re-check, OMEdit) → Approved model (justified approval, separate layout pass) → Simulation. Reads `runs/workflow/<run>/`; see docs/REPAIR_PIPELINE_PROPOSAL.md | `kkh/workflow/*`, `web/src/simple/Workflow.tsx` |
+| **Repair workflow** | URDF input → **URDF compliance** (Stage 0: ROS wiki specification, tree rule, physics; a file with errors is refused) → Convert (DLR, no AI) → OpenModelica check (ordered steps, diagnostics.json) → AI repair comparison (AI only vs AI + Modelica assets, frozen fault set v1) → Engineer review (keep/reject each edit, amend, re-check, OMEdit) → Approved model (justified approval, separate layout pass) → Simulation. Reads `runs/workflow/<run>/`; see docs/REPAIR_PIPELINE_PROPOSAL.md | `kkh/workflow/*`, `web/src/simple/Workflow.tsx` |
 | **Guide** | Documentation of the flow (5 steps: you do / what happens / you get / why), the design rationale, dated measured results, the revised workflow with build status, and a searchable glossary (48 terms). Engineering view adds code paths and sources. Deep link `?page=guide` | `web/src/simple/Guide.tsx`, `guideContent.ts` |
 | **Learn the ideas** | The Physical AI Atlas, incl. the concept "Three ways to build a model from a robot file" | `web/src/Atlas.tsx` |
 
@@ -163,3 +163,27 @@ the three methods with sourced definitions (URDFModelica, RAG, BM25).
   motion); `max_joint_motion_rad` is reported so a model that barely moves is visible.
 - Name-based matching: a match is a name correspondence; the kinematic comparison is what tests the wiring.
 - Not a hardware validation: motors, friction and controllers are outside the URDF.
+
+## Stage 0: URDF compliance (`kkh/workflow/stage0_urdf.py`)
+
+Runs before every conversion (Stage 1 calls it and refuses a file with errors; `--force` converts anyway and records
+it). Output `runs/workflow/<run>/stage0/compliance.json`; each finding has
+`{id, layer, rule, severity, blocking, element, entity, line, message, evidence, source}`.
+
+| Layer | Rules (source) |
+|---|---|
+| spec | root `<robot name>`; link/joint names, unique joint names; joint type in revolute, continuous, prismatic, fixed, floating, planar; `<parent>`/`<child link>`; `<limit>` required for revolute and prismatic, with `effort` and `velocity`; `<axis xyz>` three numbers, non-zero, normalised (warning); origin `xyz`/`rpy` three numbers; `<inertial>` with `<mass value>` and six inertia attributes; one geometry per visual/collision with its required sizes; `rgba` four numbers in [0, 1]; mimic references an existing joint; `safety_controller k_velocity`, soft limits inside the limits; custom elements reported as info (ignored by URDF parsers). Sources: wiki.ros.org/urdf/XML/robot, /link, /joint (read 26 Oct 2026). |
+| structure | links referenced by joints exist; one parent per link; exactly one root; no closed chain (named, e.g. `lower -> upper -> lower`); every link connected. Source: wiki.ros.org/urdf/XML/model ("only tree structures can be represented"). |
+| physical | beyond the specification, labelled as such: mass > 0 (negative = error), placeholder masses (≤ 1e-3 kg, project rule), inertia positive definite and satisfying the triangle inequality, lower ≤ upper, effort and velocity > 0, non-negative damping/friction, mesh files that resolve. |
+
+Verdicts: *not compliant* (spec or structure error), *physically implausible* (physical error only), *compliant with
+warnings*, *compliant*. Measured: the five pinned robots (SO-101, both ALOHA arms, G1, Berkeley Humanoid Lite) are
+compliant (information notes only: placeholder masses, 4 G1 sensor links without inertial, `ros2_control` elements);
+14 single deliberate violations in `tests/test_workflow_stage0.py` are each caught by the rule that names them.
+The ROS wiki blocks automated fetches, so the rules were read in a browser; the machine-readable XSD
+(`urdfdom/xsd/urdf.xsd`) is referenced by the specification but not used yet (a download, pending approval).
+
+**Where a good URDF comes from:** for robots designed in SolidWorks, the page recommends the free
+[SolidWorks to URDF Exporter](https://wiki.ros.org/sw_urdf_exporter) add-in (link tree from the assembly hierarchy,
+joint types/transforms/axes, meshes, masses and inertias from SolidWorks materials; `package://` mesh paths, which the
+studio resolves; SolidWorks 2018 SP5 or later per its page). Its output then goes through Stage 0 like any URDF.
