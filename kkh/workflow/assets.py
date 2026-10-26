@@ -7,6 +7,15 @@ Sources (v1, all local, no download):
                            Icon, Diagram, connect, ...). Modelica 3-Clause BSD.
   project-patterns         validated project conventions (kkh/workflow/patterns/*.md, front matter with source,
                            commit and evidence). Project-internal: the repository has no licence file.
+Added in v2 (26 Oct 2026, approved by the user):
+  mls-3.7                  Modelica Language Specification 3.7 (May 2026), LaTeX chapters pinned in
+                           config/public_sources.json; one passage per section. CC BY-SA 4.0 (read from LICENSE.md).
+  omc-errors-1.27.1        OpenModelica 1.27.1 compiler error-message catalog (OMCompiler/Compiler/Util/Error.mo), one
+                           passage per message. OSMC-PL 1.8 or AGPL 3 (read from OSMC-License.txt).
+  msl-conversion-4.0.0     the MSL's own conversion script 3.2.3 -> 4.0.0 (local, part of MSL 4.1.0), one passage per
+                           old package with its renames. Modelica 3-Clause BSD.
+  omc-guide-1.27           OpenModelica User's Guide 1.27 (local, installed with OpenModelica), one passage per
+                           section. OSMC-PL 1.8 or AGPL 3 (read from the installation's OSMC-License.txt).
 Library locations and versions are asked from OpenModelica (getSourceFile / getVersion), never guessed; licences are
 read from each library's own package.mo and an asset without a verified licence is refused.
 
@@ -49,6 +58,26 @@ SOURCES = [
      "scope": ["package.mo"]},
     {"id": "project-patterns", "library": None, "version": None,
      "title": "Validated project Modelica patterns (kkh/workflow/patterns)", "scope": ["*.md"]},
+    {"id": "mls-3.7", "library": None, "version": "3.7", "type": "latex",
+     "title": "Modelica Language Specification 3.7 (Modelica Association, May 2026)",
+     "root": "third_party/modelica_specification", "licence_file": "LICENSE.md", "licence_mark": "Attribution-ShareAlike 4.0",
+     "licence_name": "CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)",
+     "scope": ["chapters/*.tex"], "skip": ["abstract.tex", "copyright.tex", "preface.tex", "titlepage.tex", "revisions.tex"]},
+    {"id": "omc-errors-1.27.1", "library": None, "version": "1.27.1", "type": "omc-errors",
+     "title": "OpenModelica 1.27.1 compiler error messages (Error.mo)",
+     "root": "third_party/openmodelica_errors", "licence_file": "OSMC-License.txt", "licence_mark": "OSMC Public License",
+     "licence_name": "OSMC-PL 1.8 or AGPL 3 (Open Source Modelica Consortium)",
+     "scope": ["OMCompiler/Compiler/Util/Error.mo"]},
+    {"id": "msl-conversion-4.0.0", "library": "Modelica", "version": "4.1.0", "type": "mos",
+     "title": "Modelica Standard Library conversion script 3.2.3 -> 4.0.0 (shipped with MSL 4.1.0)",
+     "scope": ["Resources/Scripts/Conversion/ConvertModelica_from_3.2.3_to_4.0.0.mos"]},
+    {"id": "omc-guide-1.27", "library": None, "version": "1.27", "type": "html",
+     "title": "OpenModelica User's Guide 1.27 (installed with OpenModelica)",
+     "root": "@OMHOME/share/doc/omc/OpenModelicaUsersGuide", "licence_file": "@OMHOME/bin/OSMC-License.txt",
+     "licence_mark": "OSMC Public License", "licence_name": "OSMC-PL 1.8 or AGPL 3 (Open Source Modelica Consortium)",
+     # only the pages about checking, solving, initialization, debugging, compiler flags and porting
+     "scope": ["solving.html", "debugger.html", "simulationflags.html", "faq.html", "porting.html", "compiler.html",
+               "backwardscompatibility.html", "technical_details.html", "omchelptext.html"]},
 ]
 
 
@@ -113,7 +142,16 @@ def manifest(cache: Path = CACHE) -> dict:
     loc = locate(libs, cache)
     assets = []
     for s in SOURCES:
-        if s["library"]:
+        if s.get("root"):  # a pinned or installed document set with its own licence file
+            from kkh.engineering.omc import DEFAULT_OMHOME
+            def where(x):
+                return Path(x.replace("@OMHOME", DEFAULT_OMHOME)) if x.startswith("@OMHOME") else ROOT / x
+            root = where(s["root"])
+            lf = where(s["licence_file"]) if s["licence_file"].startswith("@OMHOME") else root / s["licence_file"]
+            if not lf.exists() or s["licence_mark"] not in lf.read_text(encoding="utf-8", errors="replace"):
+                raise ValueError(f"{s['id']}: licence not verified in {lf}: asset refused")
+            licence = s["licence_name"]
+        elif s["library"]:
             root = Path(loc[s["library"]]["root"])
             if loc[s["library"]]["version"] != s["version"]:
                 raise ValueError(f"{s['library']}: OpenModelica reports {loc[s['library']]['version']}, expected {s['version']}")
@@ -122,7 +160,7 @@ def manifest(cache: Path = CACHE) -> dict:
             root, licence = PATTERNS, "project-internal (authored in this repository; the repository has no licence file)"
         if _excluded(root):
             raise ValueError(f"excluded source root: {root}")
-        files = _files(root, s["scope"])
+        files = [f for f in _files(root, s["scope"]) if f.name not in s.get("skip", [])]
         assets.append({**s, "root": root.as_posix(), "licence": licence,
                        "files": {f.relative_to(root).as_posix(): sha256_file(f) for f in files}})
     code = sha256_file(Path(__file__))  # the chunker is part of the key: changed code never reuses a stale index
@@ -303,14 +341,120 @@ def pattern_chunk(path: Path, asset: dict, file_sha: str) -> dict:
             "text": f"pattern {meta['id']}: {meta['title']}\n{m.group(2).strip()}"[:TEXT_CHARS]}
 
 
+# ---------------------------------------------------------------- v2 document chunkers
+
+def _passage(a: dict, cid: str, title: str, kind: str, rel: str, l0: int, l1: int, sha: str, text: str) -> dict:
+    return {"id": f"{a['id']}:{cid}", "asset_id": a["id"], "version": a["version"], "licence": a["licence"],
+            "class": title, "kind": kind, "source_path": rel, "line_start": l0, "line_end": l1, "file_sha256": sha,
+            "text": text[:TEXT_CHARS]}
+
+
+def latex_text(s: str) -> str:
+    """LaTeX of the specification to readable plain text (code kept, markup dropped)."""
+    s = re.sub(r"(?<!\\)%.*", "", s)
+    s = re.sub(r"\\(?:lstinline|robustinline)\s*!([^!]*)!", r"\1", s)
+    s = re.sub(r"\\(?:lstinline|robustinline)\s*\{([^}]*)\}", r"\1", s)
+    s = re.sub(r"\\begin\{lstlisting\}(?:\[[^\]]*\])?", "\n", s).replace("\\end{lstlisting}", "\n")
+    s = re.sub(r"\\(?:index|label|indexinline|hypertarget)\{[^}]*\}(?:\{[^}]*\})?", "", s)
+    s = re.sub(r"\\[cC]ref\{([^}]*)\}", r"section \1", s)
+    s = re.sub(r"\\productionref\{([^}]*)\}", r"production \1", s)
+    s = re.sub(r"\\begin\{nonnormative\}", "[Non-normative] ", s)
+    s = re.sub(r"\\(?:begin|end)\{[^}]*\}(?:\[[^\]]*\])?(?:\{[^}]*\})?", "\n", s)
+    s = re.sub(r"\\item\s*", "- ", s)
+    for _ in range(3):
+        s = re.sub(r"\\[a-zA-Z]+\*?(?:\[[^\]]*\])?\{([^{}]*)\}", r"\1", s)
+    s = re.sub(r"\\[a-zA-Z]+\*?", " ", s).replace("$", "").replace("{", "").replace("}", "").replace("~", " ")
+    return re.sub(r"[ \t]+", " ", re.sub(r"\n\s*\n+", "\n", s)).strip()
+
+
+_SEC = re.compile(r"^\\(chapter|section|subsection|subsubsection)\*?\{(.+?)\}\s*(?:\\label\{([^}]*)\})?", re.M)
+
+
+def latex_chunks(path: Path, root: Path, a: dict, sha: str) -> list[dict]:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    heads = list(_SEC.finditer(text))
+    out, trail = [], {}
+    levels = ["chapter", "section", "subsection", "subsubsection"]
+    for i, m in enumerate(heads):
+        lvl = levels.index(m.group(1))
+        trail = {k: v for k, v in trail.items() if k < lvl}
+        trail[lvl] = latex_text(m.group(2))
+        end = heads[i + 1].start() if i + 1 < len(heads) else len(text)
+        body = latex_text(text[m.end():end])
+        if len(body) < 40:
+            continue
+        label = m.group(3) or re.sub(r"[^a-z0-9]+", "-", trail[lvl].lower()).strip("-")
+        title = " > ".join(trail[k] for k in sorted(trail))
+        l0 = text.count("\n", 0, m.start()) + 1
+        parts = [body[j:j + TEXT_CHARS - 300] for j in range(0, len(body), TEXT_CHARS - 300)][:4]
+        for k, part in enumerate(parts):
+            out.append(_passage(a, label + (f"#{k + 1}" if len(parts) > 1 else ""), title, "spec-section",
+                                path.relative_to(root).as_posix(), l0, text.count("\n", 0, end) + 1, sha,
+                                f"Modelica Language Specification 3.7, {title}\n{part}"))
+    return out
+
+
+_ERR = re.compile(r"public constant ErrorTypes\.Message (\w+) = ErrorTypes\.MESSAGE\((\d+),\s*ErrorTypes\.(\w+)\(\),\s*"
+                  r"ErrorTypes\.(\w+)\(\),\s*Gettext\.gettext\((.*?)\)\);", re.S)
+
+
+def omc_error_chunks(path: Path, root: Path, a: dict, sha: str) -> list[dict]:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    out = []
+    for m in _ERR.finditer(text):
+        msg = "".join(re.findall(r'"((?:[^"\\]|\\.)*)"', m.group(5))).replace('\\"', '"')
+        words = m.group(1).replace("_", " ").lower()
+        out.append(_passage(a, m.group(1), f"OpenModelica error {m.group(1)}", "error-message", path.relative_to(root).as_posix(),
+                            text.count("\n", 0, m.start()) + 1, text.count("\n", 0, m.end()) + 1, sha,
+                            f"OpenModelica 1.27.1 message {m.group(1)} (id {m.group(2)}, {m.group(3).lower()}, "
+                            f"{m.group(4).lower()}): {msg}\nMeaning in words: {words}. %s marks the names filled in by the compiler."))
+    return out
+
+
+def mos_chunks(path: Path, root: Path, a: dict, sha: str) -> list[dict]:
+    """The conversion script grouped by old package (two levels below Modelica): each passage lists its renames."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    groups: dict[str, list[str]] = {}
+    for m in re.finditer(r'convert(Class|Element|Modifiers|ClassIf)\(\s*"([^"]+)"\s*,\s*(.*?)\)\s*;', text, re.S):
+        old = m.group(2)
+        key = ".".join(old.split(".")[:3])
+        groups.setdefault(key, []).append(f"convert{m.group(1)}({old} -> {re.sub(r'\s+', ' ', m.group(3))[:160]})")
+    return [_passage(a, k, f"MSL 3 -> 4 renames under {k}", "conversion-rule", path.relative_to(root).as_posix(), 1,
+                     text.count("\n") + 1, sha,
+                     f"Modelica Standard Library conversion 3.2.3 -> 4.0.0, classes formerly under {k} "
+                     f"(an old MSL 3 name used with MSL 4 must be replaced by its new name):\n" + "\n".join(v))
+            for k, v in sorted(groups.items())]
+
+
+def html_chunks(path: Path, root: Path, a: dict, sha: str) -> list[dict]:
+    """User's Guide page cut at its h2/h3 headings (Sphinx sections)."""
+    raw = path.read_text(encoding="utf-8", errors="replace")
+    body = re.search(r'(?is)<div[^>]+role="main"[^>]*>(.*)', raw)
+    raw = body.group(1) if body else raw
+    parts = re.split(r"(?is)(<h[23][^>]*>.*?</h[23]>)", raw)
+    out, title = [], path.stem
+    for k in range(1, len(parts), 2):
+        title = html_text(parts[k]).replace("\uf0c1", "").strip(" #\u00b6")
+        text = html_text(parts[k + 1] if k + 1 < len(parts) else "")
+        if len(text) < 60:
+            continue
+        cid = f"{path.stem}/{re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')}"
+        out.append(_passage(a, cid, f"OpenModelica User's Guide: {title}", "guide-section", path.relative_to(root).as_posix(),
+                            1, raw.count("\n") + 1, sha, f"OpenModelica User's Guide 1.27, {path.stem}: {title}\n{text}"))
+    return out
+
+
 def build_chunks(man: dict) -> list[dict]:
     chunks = []
+    by_type = {"latex": latex_chunks, "omc-errors": omc_error_chunks, "mos": mos_chunks, "html": html_chunks}
     for a in man["assets"]:
         root = Path(a["root"])
         for rel, sha in a["files"].items():
             f = root / rel
             if a["id"] == "project-patterns":
                 chunks.append(pattern_chunk(f, a, sha))
+            elif a.get("type") in by_type:
+                chunks += by_type[a["type"]](f, root, a, sha)
             else:
                 chunks += chunks_of_file(f, root, a, sha)
     ids = Counter(c["id"] for c in chunks)

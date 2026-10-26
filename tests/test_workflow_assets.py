@@ -118,7 +118,8 @@ def test_real_collection_builds_with_licences_and_answers_findings(tmp_path):
         idx = A.build()
     except Exception as exc:  # no OpenModelica / libraries on this machine
         pytest.skip(f"Modelica libraries not available: {exc}")
-    assert {a["id"] for a in idx["manifest"]["assets"]} == {"msl-4.1.0", "modelicareference-4.1.0", "project-patterns"}
+    assert {a["id"] for a in idx["manifest"]["assets"]} == {"msl-4.1.0", "modelicareference-4.1.0", "project-patterns",
+                                                           "mls-3.7", "omc-errors-1.27.1", "msl-conversion-4.0.0", "omc-guide-1.27"}
     assert all(a["licence"] for a in idx["manifest"]["assets"]) and idx["n"] > 1000
     assert all(FIELDS <= set(c) and c["licence"] for c in idx["chunks"])
     assert not any(A._excluded(Path(c["source_path"])) for c in idx["chunks"])
@@ -128,3 +129,22 @@ def test_real_collection_builds_with_licences_and_answers_findings(tmp_path):
     r1, r2 = A.retrieve(finding, index=idx), A.retrieve(finding, index=idx)
     assert [c["id"] for c in r1["chunks"]] == [c["id"] for c in r2["chunks"]] and r1["chunks"]
     assert json.dumps(r1)  # serialisable for the repair prompt record
+
+
+@pytest.mark.slow
+def test_v2_sources_answer_the_findings_they_were_added_for():
+    """Knowledge collection v2 (26 Oct 2026): each added source is found for the kind of finding it covers."""
+    try:
+        idx = A.build()
+    except Exception as exc:
+        pytest.skip(f"Modelica libraries not available: {exc}")
+    def top(message, category, k=5):
+        return [c["id"] for c in A.retrieve({"category": category, "check": "", "message": message, "entity": ""}, k=k, index=idx)["chunks"]]
+    assert any(i.startswith("msl-conversion-4.0.0:Modelica.SIunits") for i in
+               top("Function Modelica.SIunits.Conversions.to_deg not found in scope Elbow.", "missing class or library"))
+    assert "omc-errors-1.27.1:IMBALANCED_EQUATIONS" in top(
+        "An independent subset of the model has imbalanced number of equations (5520) and variables (5519).", "other")
+    assert any(i.startswith("omc-errors-1.27.1:STRUCTURAL_SINGULAR_INITIAL") for i in
+               top("Initialization problem is structural singular. Please, check the initial conditions.", "initialization and numerical"))
+    licences = {c["asset_id"]: c["licence"] for c in idx["chunks"]}
+    assert "CC BY-SA 4.0" in licences["mls-3.7"] and "OSMC" in licences["omc-errors-1.27.1"]

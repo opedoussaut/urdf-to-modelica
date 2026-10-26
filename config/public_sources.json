@@ -175,6 +175,59 @@
         "Simulation/SO101/assets/wrist_roll_pitch_so101_v2.stl"
       ],
       "role": "SO-101 arm (TheRobotStudio / Hugging Face LeRobot) URDF and the meshes it references; quick-demo robot"
+    },
+    {
+      "id": "modelica_specification",
+      "url": "https://github.com/modelica/ModelicaSpecification.git",
+      "ref": "v3.7",
+      "commit": "b7361fab8cad41971d2fe55e329f09c951d3a090",
+      "license": "CC-BY-SA-4.0",
+      "dir": "modelica_specification",
+      "shallow": true,
+      "sparse_files": [
+        "LICENSE.md",
+        "README.md",
+        "chapters/abstract.tex",
+        "chapters/annotations.tex",
+        "chapters/arrays.tex",
+        "chapters/classes.tex",
+        "chapters/connectors.tex",
+        "chapters/copyright.tex",
+        "chapters/dae.tex",
+        "chapters/derivationofstream.tex",
+        "chapters/equations.tex",
+        "chapters/functions.tex",
+        "chapters/inheritance.tex",
+        "chapters/interface.tex",
+        "chapters/introduction.tex",
+        "chapters/lexicalstructure.tex",
+        "chapters/library.tex",
+        "chapters/operatorsandexpressions.tex",
+        "chapters/overloaded.tex",
+        "chapters/packages.tex",
+        "chapters/scoping.tex",
+        "chapters/statemachines.tex",
+        "chapters/statements.tex",
+        "chapters/stream.tex",
+        "chapters/synchronous.tex",
+        "chapters/syntax.tex",
+        "chapters/unitexpressions.tex"
+      ],
+      "role": "Modelica Language Specification 3.7 (May 2026), LaTeX chapters; knowledge for the AI + Modelica knowledge repair arm"
+    },
+    {
+      "id": "openmodelica_errors",
+      "url": "https://github.com/OpenModelica/OpenModelica.git",
+      "ref": "v1.27.1",
+      "commit": "4a7248c1ab64f4205eb4222b6b009bbf2b0df383",
+      "license": "OSMC-PL-1.8 or AGPL-3.0",
+      "dir": "openmodelica_errors",
+      "shallow": true,
+      "sparse_files": [
+        "OSMC-License.txt",
+        "OMCompiler/Compiler/Util/Error.mo"
+      ],
+      "role": "OpenModelica 1.27.1 compiler error-message catalog (Error.mo); knowledge for the AI + Modelica knowledge repair arm"
     }
   ]
 }

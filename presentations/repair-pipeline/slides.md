@@ -290,7 +290,7 @@ Every finding is machine-readable: id, step, category, severity, location, evide
 |---|---|---|
 | Local model, seed 42, temperature 0, 3 attempts | ✓ | ✓ |
 | Same findings, same budget, same file-selection rule | ✓ | ✓ |
-| Governed knowledge: **1 730 chunks** of the Modelica Standard Library 4.1.0, ModelicaReference, 5 validated project patterns, each with version and licence | — | ✓ |
+| Governed knowledge v2: **3 036 passages**: MSL 4.1.0, ModelicaReference, **MLS 3.7**, **OpenModelica 1.27.1 error messages**, MSL 3→4 conversion rules, OpenModelica User's Guide, 5 project patterns; each with version and licence | — | ✓ |
 | Must **cite** the chunks it used (invented ids are flagged) | — | ✓ |
 
 <div class="text-sm">
@@ -317,8 +317,9 @@ rotated 90° · F07 connection deleted · F08 wrong array index · F09 rounded m
 | **≤ 3 reference passages per finding**, each with id, source, version, licence | — | ✓ |
 | Its previous attempt and the new check result | ✓ | ✓ |
 
-**Sources:** Modelica Standard Library 4.1.0 and ModelicaReference 4.1.0 (BSD), 5 validated project patterns:
-**1 730 passages**, all local. The converter's own library is excluded.
+**Sources (v2):** MSL 4.1.0, ModelicaReference 4.1.0 and the MSL 3→4 rules (BSD), **Modelica Language Specification 3.7**
+(CC BY-SA 4.0), **OpenModelica 1.27.1 error messages** and User's Guide (OSMC-PL), 5 project patterns: **3 036 passages**.
+The converter's own library is excluded.
 
 </div>
 <div>

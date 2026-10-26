@@ -130,7 +130,8 @@ export const MEASURED: { date: string; text: string; source: string }[] = [
   { date: "21 Oct 2026", text: "Earlier comparison on the ALOHA leader arm: the DLR converter was best; no model written from scratch by a local AI passed the completeness check. This is why AI now repairs instead of writing.", source: "reports/CONVERT_REVIEW_CAMPAIGN_2026-10-21.md" },
   { date: "23 Oct 2026", text: "ALOHA follower, conversion: reproducible (63 files byte-identical), 255 URDF values copied unchanged, 15 items flagged (finger mimic recorded but not used, ros2_control ignored, mesh paths rewritten).", source: "reports/workflow/STAGE1_ALOHA_VX300S.md" },
   { date: "23 Oct 2026", text: "OpenModelica check: loads, balanced (6 814 equations = unknowns), simulates, but not validated: right finger up to 52.9 mm off; both fingers start outside their limits; 18 of 49 robot connections have no drawn line.", source: "reports/workflow/STAGE2_ALOHA_VX300S.md" },
-  { date: "23 Oct 2026", text: "Modelica knowledge collection: 1 730 passages from the Modelica Standard Library 4.1.0, ModelicaReference 4.1.0 and 5 project patterns, each with source, version and licence; nothing downloaded.", source: "reports/workflow/ASSETS_V1.md" },
+  { date: "26 Oct 2026", text: "Modelica knowledge collection v2: 3 036 passages, adding the Modelica Language Specification 3.7, the OpenModelica 1.27.1 error messages, the MSL 3 → 4 conversion rules and the OpenModelica User's Guide. On the frozen faults, the right source now comes first for an old MSL 3 name (F02), unbalanced equations (F08) and a singular initialization (F10).", source: "reports/workflow/ASSETS_V2.md" },
+  { date: "23 Oct 2026", text: "Modelica knowledge collection v1: 1 730 passages from the Modelica Standard Library 4.1.0, ModelicaReference 4.1.0 and 5 project patterns, each with source, version and licence; nothing downloaded.", source: "reports/workflow/ASSETS_V1.md" },
   { date: "23 Oct 2026", text: "Ten seeded faults frozen before any AI run; all ten are caught by the OpenModelica checks. The AI repair comparison is running; its results will be reported as measured.", source: "kkh/workflow/faults.py (commit 7c8d735)" },
 ];
 
@@ -228,10 +229,14 @@ export const AI_SOURCES: { name: string; version: string; licence: string; what:
   { name: "Modelica Standard Library", version: "4.1.0 (the version the studio simulates with)", licence: "Modelica 3-Clause BSD", what: "The building blocks the model is made of: MultiBody (bodies, joints, frames, with their examples), rotational and translational mechanics, signal blocks, units, and the library's user guide. 582 files." },
   { name: "ModelicaReference", version: "4.1.0", licence: "Modelica 3-Clause BSD", what: "The language reference: keywords, operators and annotations, with their meaning." },
   { name: "Project patterns", version: "commit 9e867d1", licence: "project-internal", what: "5 short notes, each validated in this project: URDF mimic joints, URDF roll-pitch-yaw rotations, massless frames, joint-input units, prescribed motion." },
+  { name: "Modelica Language Specification", version: "3.7 (May 2026, the latest), pinned from the Modelica Association's repository", licence: "CC BY-SA 4.0", what: "The official rules of the language, one passage per section: syntax, connectors and connections, arrays, equations and initialization, units, and the graphical annotations (Placement, Line, Diagram). 568 passages." },
+  { name: "OpenModelica error messages", version: "1.27.1 (the compiler the studio runs), from its source code", licence: "OSMC-PL 1.8 or AGPL 3", what: "Every message the compiler can print, with its kind and severity: 608 messages. The search can match a finding's exact error text to its explanation." },
+  { name: "MSL 3 → 4 conversion rules", version: "shipped with MSL 4.1.0", licence: "Modelica 3-Clause BSD", what: "The library's own renaming table from version 3 to 4 (e.g. Modelica.SIunits → Modelica.Units.SI), grouped by package: 64 passages." },
+  { name: "OpenModelica User's Guide", version: "1.27", licence: "OSMC-PL 1.8 or AGPL 3", what: "The chapters about solving, initialization, debugging, compiler flags, porting and the FAQ: 66 passages." },
 ];
 
 export const AI_HOW: { title: string; text: string }[] = [
-  { title: "1 · Cut into passages, once", text: "Each library class becomes one passage: its declarations, its description and its documentation (and, for examples, its equations). 1 730 passages in all, each keeping its source, version, licence and line numbers." },
+  { title: "1 · Cut into passages, once", text: "Each library class becomes one passage: its declarations, its description and its documentation (and, for examples, its equations). 3 036 passages in all (version 2 of the collection, 26 Oct 2026), each keeping its source, version, licence and line numbers." },
   { title: "2 · Search per finding, without AI", text: "For each finding, a keyword search (BM25, the ranking method used by classic search engines) looks for the passages whose words best match the finding's words, plus a fixed list of terms for its category. The same finding always returns the same passages." },
   { title: "3 · Put in the prompt", text: "The best passages are pasted into the request, labelled with their ids. The model does not learn or remember anything: it reads them for this request only, like an engineer opening a manual at the right page." },
   { title: "4 · The model proposes edits", text: "It returns small search-and-replace edits on the model files, each with a one-sentence reason, the findings it addresses and the ids of the passages it used. Invented ids are flagged." },
@@ -247,7 +252,8 @@ export const AI_EXAMPLE = {
 export const AI_LIMITS: string[] = [
   "The “AI only” method receives everything except the reference material, so any difference between the two arms comes from that material.",
   "Retrieval is simple keyword search, deliberately: it is predictable and auditable, but sometimes weak (for a finger starting outside its limits, it returned only generic initialisation material).",
-  "Diagram annotations (lines, placements) are specified in the Modelica Language Specification, which is not in the collection yet.",
+  "Some faults remain hard for any documentation: a missing semicolon or a misspelled class name returns only generic material, because the right answer is in the model itself, not in a manual.",
+  "The MSL conversion rules are close to an answer key for one frozen fault (F02, an old MSL 3 name); results on F02 are reported separately.",
   "Reference passages never supply physical values: robot values come only from the URDF (rule 7).",
   "The model runs locally (Ollama); nothing is sent outside this computer, and nothing is used to train it.",
 ];

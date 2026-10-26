@@ -26,7 +26,15 @@ def main():
         if only and s["id"] not in only:
             continue
         d = TP / s["dir"]
-        if not (d / ".git").exists():
+        if not (d / ".git").exists() and s.get("shallow"):
+            # large repositories: no history at all, only the pinned commit and only the listed files
+            d.mkdir(parents=True)
+            git("init", "-q", cwd=d)
+            git("remote", "add", "origin", s["url"], cwd=d)
+            git("config", "remote.origin.promisor", "true", cwd=d)
+            git("config", "remote.origin.partialclonefilter", "blob:none", cwd=d)
+            git("fetch", "--depth", "1", "--filter=blob:none", "origin", s["commit"], cwd=d)
+        elif not (d / ".git").exists():
             args = ["clone", "--filter=blob:none", "--no-checkout", s["url"], str(d)]
             git(*args)
             if s.get("sparse"):
