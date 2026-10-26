@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { ArrowRight, BookOpen, ChevronRight, Search } from "lucide-react";
 import { useAudience } from "../audience";
-import { FLOW, GLOSSARY, MEASURED, RATIONALE } from "./guideContent";
+import { AI_EXAMPLE, AI_HOW, AI_INPUTS, AI_LIMITS, AI_SOURCES, FLOW, GLOSSARY, MEASURED, RATIONALE } from "./guideContent";
 import "./guide.css";
 
 const SECTIONS = [
   ["flow", "The flow, step by step"],
+  ["ai", "What the AI receives"],
   ["why", "Why it is built this way"],
   ["measured", "What has been measured"],
   ["terms", "Terminology"],
@@ -90,6 +91,81 @@ export default function Guide({ go, learn }: { go: (page: "repair") => void; lea
               {expert && s.code && <p className="gd-code">Under the hood: {s.code}</p>}
             </article>
           ))}
+        </section>
+
+        <section id="gd-ai" className="gd-section">
+          <h2>What the AI receives, and how it uses it</h2>
+          <p className="gd-intro">
+            In the repair stage, the AI never sees the whole project and never learns anything permanently. For each repair it receives one request
+            containing the items below, answers with proposed edits, and those edits are checked. The two methods differ in one thing only: the
+            Modelica reference material.
+          </p>
+          <table className="gd-table">
+            <thead>
+              <tr>
+                <th>In the request</th>
+                <th>AI only</th>
+                <th>AI + Modelica knowledge</th>
+                <th>What it is</th>
+              </tr>
+            </thead>
+            <tbody>
+              {AI_INPUTS.map((r) => (
+                <tr key={r.what} className={r.aiOnly !== r.aiAssets ? "gd-diff" : ""}>
+                  <td>
+                    <b>{r.what}</b>
+                  </td>
+                  <td>{r.aiOnly ? "yes" : "no"}</td>
+                  <td>{r.aiAssets ? "yes" : "no"}</td>
+                  <td>{r.detail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <h3>Where the reference material comes from</h3>
+          <p className="gd-intro">Only sources with a known version and licence, all already on this computer (nothing downloaded). The converter's own library and the project's generated models are excluded on purpose, so the AI cannot copy an answer.</p>
+          <div className="gd-why-grid">
+            {AI_SOURCES.map((x) => (
+              <div key={x.name} className="gd-card">
+                <b>{x.name}</b>
+                <p>{x.what}</p>
+                <small>
+                  Version {x.version} · licence {x.licence}
+                </small>
+              </div>
+            ))}
+          </div>
+
+          <h3>How the AI uses it, in simple terms</h3>
+          <ol className="gd-how">
+            {AI_HOW.map((x) => (
+              <li key={x.title}>
+                <b>{x.title}</b>
+                <p>{x.text}</p>
+              </li>
+            ))}
+          </ol>
+
+          <div className="gd-card gd-example">
+            <b>A real example</b>
+            <p>
+              <i>Finding:</i> {AI_EXAMPLE.finding}
+            </p>
+            <p>
+              <i>Retrieved:</i> {AI_EXAMPLE.retrieved}
+            </p>
+            <p>
+              <i>How it helps:</i> {AI_EXAMPLE.use}
+            </p>
+          </div>
+
+          <h3>Limits to keep in mind</h3>
+          <ul className="gd-limits">
+            {AI_LIMITS.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
         </section>
 
         <section id="gd-why" className="gd-section">

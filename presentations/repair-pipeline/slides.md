@@ -303,6 +303,40 @@ rotated 90° · F07 connection deleted · F08 wrong array index · F09 rounded m
 
 ---
 
+# What the AI receives, and how it uses it
+
+<div class="grid grid-cols-2 gap-6 text-sm">
+<div>
+
+| In each request | AI only | AI + knowledge |
+|---|---|---|
+| 6 repair rules (never delete, never change robot values…) | ✓ | ✓ |
+| The URDF (the only source of physical values) | ✓ | ✓ |
+| Up to 8 findings with evidence | ✓ | ✓ |
+| The model files concerned (≈ 26 000 characters) | ✓ | ✓ |
+| **≤ 3 reference passages per finding**, each with id, source, version, licence | — | ✓ |
+| Its previous attempt and the new check result | ✓ | ✓ |
+
+**Sources:** Modelica Standard Library 4.1.0 and ModelicaReference 4.1.0 (BSD), 5 validated project patterns:
+**1 730 passages**, all local. The converter's own library is excluded.
+
+</div>
+<div>
+
+**How it is used, in simple terms**
+
+1. **Search, without AI:** keyword search (BM25) finds the passages that match each finding. Same finding, same passages.
+2. **Read, not learned:** the passages are pasted into the request, like opening a manual at the right page. Nothing is trained or remembered.
+3. **Propose and cite:** small edits, each with a reason and the passage ids it used. Invented ids are flagged.
+4. **Checked, never trusted:** re-validation, integrity guard, then a person.
+
+*Example:* "right finger 52.9 mm off" → top passage: the project pattern on **URDF mimic joints**, found without the word "mimic" in the finding.
+
+</div>
+</div>
+
+---
+
 # Stage 4: independent validation and integrity guard
 
 - The full Stage 2 is run **again** on every candidate, independently of who produced it.

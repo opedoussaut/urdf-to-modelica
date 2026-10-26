@@ -190,6 +190,9 @@ export const GLOSSARY: { group: string; terms: [string, string][] }[] = [
       ["Repair round / attempt", "A new try after OpenModelica's real error messages are given back to the AI; limited and all recorded."],
       ["RAG (retrieval)", "Retrieval-augmented generation: relevant documents are looked up and added to the AI's prompt."],
       ["BM25", "A classic, deterministic keyword-search ranking used to find library classes; no download or embedding model."],
+      ["Prompt (request)", "Everything the AI receives for one answer: rules, robot file, findings, model files and, for one method, reference passages. It is kept with every run."],
+      ["Passage (chunk)", "One piece of the reference material, usually one library class, with its id, source file, line, version and licence."],
+      ["Citation", "The ids of the passages the AI says it used for an edit; an id that was not given is flagged as invented."],
       ["Ontology", "A shared vocabulary with rules (what a joint, a limit or a unit is) that a computer can check."],
       ["Knowledge graph (GraphDB)", "The robot's facts stored with that vocabulary, each with its unit and source."],
       ["Provenance", "Where a fact or a piece of retrieved text comes from: file, version, licence."],
@@ -208,4 +211,43 @@ export const GLOSSARY: { group: string; terms: [string, string][] }[] = [
       ["Sim-to-real gap", "The difference between what a simulation predicts and what the real robot does: the reason every assumption is labelled."],
     ],
   },
+];
+
+/** What the AI receives in the repair stage, where that knowledge comes from, and how the model uses it.
+ * Every number is read from kkh/workflow/stage3_repair.py (SETTINGS, RULES, ASSETS_RULE) and reports/workflow/ASSETS_V1.md. */
+export const AI_INPUTS: { what: string; aiOnly: boolean; aiAssets: boolean; detail: string }[] = [
+  { what: "Repair rules", aiOnly: true, aiAssets: true, detail: "Six fixed rules: fix the findings; never delete parts, connections or checks; never change values that come from the robot file; keep the robot's structure; no cosmetic edits; small, exact edits, each explained." },
+  { what: "The robot file (URDF)", aiOnly: true, aiAssets: true, detail: "The same URDF the converter used, without its 3D shapes. It is the only allowed source of physical values (masses, inertias, positions, limits)." },
+  { what: "The findings to fix", aiOnly: true, aiAssets: true, detail: "Up to 8 errors and warnings from the OpenModelica check (errors first), each with its evidence. Drawing-only findings are left out for both arms." },
+  { what: "The model files concerned", aiOnly: true, aiAssets: true, detail: "The main robot model, its test model, and the files and parameter records of the parts the findings name, up to about 26 000 characters." },
+  { what: "Modelica reference material", aiOnly: false, aiAssets: true, detail: "Up to 3 short passages per finding (about 9 000 characters in total), each labelled with an id, its library, version, licence, file and line." },
+  { what: "Its previous attempt", aiOnly: true, aiAssets: true, detail: "From the second attempt on: which edits applied, which failed and why, and the new check result. At most 3 attempts." },
+];
+
+export const AI_SOURCES: { name: string; version: string; licence: string; what: string }[] = [
+  { name: "Modelica Standard Library", version: "4.1.0 (the version the studio simulates with)", licence: "Modelica 3-Clause BSD", what: "The building blocks the model is made of: MultiBody (bodies, joints, frames, with their examples), rotational and translational mechanics, signal blocks, units, and the library's user guide. 582 files." },
+  { name: "ModelicaReference", version: "4.1.0", licence: "Modelica 3-Clause BSD", what: "The language reference: keywords, operators and annotations, with their meaning." },
+  { name: "Project patterns", version: "commit 9e867d1", licence: "project-internal", what: "5 short notes, each validated in this project: URDF mimic joints, URDF roll-pitch-yaw rotations, massless frames, joint-input units, prescribed motion." },
+];
+
+export const AI_HOW: { title: string; text: string }[] = [
+  { title: "1 · Cut into passages, once", text: "Each library class becomes one passage: its declarations, its description and its documentation (and, for examples, its equations). 1 730 passages in all, each keeping its source, version, licence and line numbers." },
+  { title: "2 · Search per finding, without AI", text: "For each finding, a keyword search (BM25, the ranking method used by classic search engines) looks for the passages whose words best match the finding's words, plus a fixed list of terms for its category. The same finding always returns the same passages." },
+  { title: "3 · Put in the prompt", text: "The best passages are pasted into the request, labelled with their ids. The model does not learn or remember anything: it reads them for this request only, like an engineer opening a manual at the right page." },
+  { title: "4 · The model proposes edits", text: "It returns small search-and-replace edits on the model files, each with a one-sentence reason, the findings it addresses and the ids of the passages it used. Invented ids are flagged." },
+  { title: "5 · Checked, never trusted", text: "Each edit is applied to a copy, the full OpenModelica check runs again, and an integrity guard rejects any edit that deletes parts or changes robot values. Then a person decides." },
+];
+
+export const AI_EXAMPLE = {
+  finding: "The right finger is up to 52.9 mm away from where the robot file puts it (ALOHA follower).",
+  retrieved: "Top passage, found without the word \u201cmimic\u201d in the finding: the project pattern \u201cURDF mimic joint expressed as an equation on the mimicking joint\u201d (score 43.5), then two MultiBody joint classes that are only loosely related.",
+  use: "The pattern explains that the right finger must follow the left one (right = \u22121 \u00d7 left), so the model can propose that relation instead of guessing; the multiplier itself must come from the robot file, never from the passage.",
+};
+
+export const AI_LIMITS: string[] = [
+  "The “AI only” method receives everything except the reference material, so any difference between the two arms comes from that material.",
+  "Retrieval is simple keyword search, deliberately: it is predictable and auditable, but sometimes weak (for a finger starting outside its limits, it returned only generic initialisation material).",
+  "Diagram annotations (lines, placements) are specified in the Modelica Language Specification, which is not in the collection yet.",
+  "Reference passages never supply physical values: robot values come only from the URDF (rule 7).",
+  "The model runs locally (Ollama); nothing is sent outside this computer, and nothing is used to train it.",
 ];
