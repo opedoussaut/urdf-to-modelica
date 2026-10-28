@@ -34,16 +34,29 @@ const STATE_TONE: Record<string, string> = { validated: "ok", improved: "mid", r
 export default function Workflow() {
   const expert = useAudience() === "expert";
   const [runs, setRuns] = useState<any[]>([]);
-  const [rid, setRid] = useState<string>();
+  // direct links: ?run=<id>&stage=<stage> opens that run at that stage (demo bookmarks, captures)
+  const q = new URLSearchParams(location.search);
+  const [rid, setRid] = useState<string | undefined>(q.get("run") || undefined);
   const [run, setRun] = useState<any>();
-  const [view, setView] = useState<"start" | "run">("start");
-  const [stage, setStage] = useState<Stage>("check");
+  const [view, setView] = useState<"start" | "run">(q.get("run") ? "run" : "start");
+  const [stage, setStage] = useState<Stage>((STAGES.find((s) => s.id === q.get("stage"))?.id as Stage) || "check");
   const [error, setError] = useState("");
   const load = (id = rid) => id && wf("/runs/" + id).then(setRun).catch((e) => setError(message(e)));
   const loadRuns = () => wf<any[]>("/runs").then(setRuns).catch((e) => setError(message(e)));
   useEffect(() => {
     loadRuns();
   }, []);
+  useEffect(() => {
+    const u = new URL(location.href);
+    if (view === "run" && rid) {
+      u.searchParams.set("run", rid);
+      u.searchParams.set("stage", stage);
+    } else {
+      u.searchParams.delete("run");
+      u.searchParams.delete("stage");
+    }
+    history.replaceState(null, "", u);
+  }, [view, rid, stage]);
   useEffect(() => {
     setRun(undefined);
     load(rid);
@@ -64,6 +77,12 @@ export default function Workflow() {
     review: !!run?.reviews?.length,
     approved: !!run?.approvals?.length,
     simulate: false,
+  };
+  // a step that ran but did not pass is shown as failed on the rail, never with a green tick
+  const failed: Partial<Record<Stage, boolean>> = {
+    compliance: !!run?.stage0?.blocking,
+    convert: !!run?.stage1 && !run?.stage1?.assets,
+    check: !!run?.stage2 && run.stage2.verdict !== "validated",
   };
 
   return (
@@ -105,8 +124,8 @@ export default function Workflow() {
           <ol className="wf-rail" aria-label="Pipeline stages">
             {STAGES.map((s, i) => (
               <li key={s.id}>
-                <button className={(stage === s.id ? "on " : "") + (done[s.id] ? "done" : "")} onClick={() => setStage(s.id)} aria-current={stage === s.id ? "step" : undefined}>
-                  <span className="wf-n">{done[s.id] ? <CheckCircle2 size={16} /> : i + 1}</span>
+                <button className={(stage === s.id ? "on " : "") + (failed[s.id] ? "failed" : done[s.id] ? "done" : "")} onClick={() => setStage(s.id)} aria-current={stage === s.id ? "step" : undefined}>
+                  <span className="wf-n">{failed[s.id] ? <XCircle size={16} /> : done[s.id] ? <CheckCircle2 size={16} /> : i + 1}</span>
                   <span className="wf-rail-label">{s.label}</span>
                 </button>
               </li>
@@ -139,8 +158,8 @@ export default function Workflow() {
   );
 }
 
-type Robot = { id: string; label: string; short?: string; what?: string; license?: string; provenance?: string; links: number; joints: number; movable: number; mass_kg: number; kind: string; filename?: string };
-type Active = { run?: string; label?: string; running: boolean; ok?: boolean; error?: string; started?: number; finished?: number; now?: number; steps?: { id: string; label: string; status: string; started?: number; finished?: number; note?: string }[] };
+type Robot = { id: string; featured?: boolean; label: string; short?: string; what?: string; license?: string; provenance?: string; links: number; joints: number; movable: number; mass_kg: number; kind: string; filename?: string };
+type Active = { run?: string; source?: string; label?: string; running: boolean; ok?: boolean; error?: string; started?: number; finished?: number; now?: number; steps?: { id: string; label: string; status: string; started?: number; finished?: number; note?: string }[] };
 
 function fmtTime(sec: number) {
   const s = Math.max(0, Math.round(sec));
@@ -150,12 +169,18 @@ function fmtTime(sec: number) {
 /** Choose one of the studio's robots or upload a URDF, launch stages 0-2 and follow them live. */
 function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?: Stage) => void; onLaunched: () => void }) {
   const [robots, setRobots] = useState<Robot[]>([]);
-  const [pick, setPick] = useState<string>("aloha_vx300s");
+  const [pick, setPick] = useState<string>("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const { active, setActive, serverNow } = useActive(busy);
   const file = useRef<HTMLInputElement>(null);
-  const loadRobots = () => wf<Robot[]>("/robots").then(setRobots).catch((e) => setErr(message(e)));
+  const loadRobots = () =>
+    wf<Robot[]>("/robots")
+      .then((r) => {
+        setRobots(r);
+        setPick((p) => p || (r.find((x) => x.featured) || r[0])?.id || "");
+      })
+      .catch((e) => setErr(message(e)));
   useEffect(() => {
     loadRobots();
   }, []);
@@ -173,11 +198,11 @@ function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?
       if (file.current) file.current.value = "";
     }
   };
-  const launch = async () => {
+  const launch = async (force = false, source = pick) => {
     setBusy(true);
     setErr("");
     try {
-      const job = await wf<any>("/launch", "POST", { source: pick });
+      const job = await wf<any>("/launch", "POST", { source, force });
       setActive({ running: true, label: robots.find((r) => r.id === pick)?.label, steps: [] });
       const res: any = await waitJob(job);
       onLaunched();
@@ -192,6 +217,8 @@ function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?
   const chosen = robots.find((r) => r.id === pick);
   const studio = robots.filter((r) => r.kind === "pinned"),
     uploads = robots.filter((r) => r.kind !== "pinned");
+  const featured = studio.find((r) => r.featured),
+    others = studio.filter((r) => !r.featured);
   const showProgress = busy || (active.running && !(active.label || "").startsWith("AI Repair"));
 
   return (
@@ -199,13 +226,40 @@ function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?
       <section className="wf-start">
         <div className="wf-start-head">
           <h2>1 · Choose a robot</h2>
-          <p>Three robots from their makers' public files, or your own URDF.</p>
+          <p>Our main target, THEMIS, three reference robots from their makers' public files, or your own URDF.</p>
         </div>
+        {featured && (
+          <button className={"wf-hero-robot" + (pick === featured.id ? " on" : "")} onClick={() => setPick(featured.id)} disabled={showProgress}>
+            <div className="wf-hero-3d">
+              <RobotView source={featured.id} lod="full" autoRotate height={380} />
+            </div>
+            <div className="wf-hero-info">
+              <span className="wf-badge">Main target</span>
+              <b>{featured.label}</b>
+              <p>{featured.what}</p>
+              <div className="wf-hero-stats">
+                <span>
+                  <b>{featured.movable}</b> joints
+                </span>
+                <span>
+                  <b>{featured.links}</b> parts
+                </span>
+                <span>
+                  <b>{Number(featured.mass_kg).toFixed(1)}</b> kg
+                </span>
+              </div>
+              <small>
+                Official URDF from Westwood Robotics, exported from SolidWorks · {featured.license}
+              </small>
+            </div>
+          </button>
+        )}
+        <h3 className="wf-others-h">Reference robots</h3>
         <div className="wf-robots">
-          {studio.map((r) => (
+          {others.map((r) => (
             <button key={r.id} className={"wf-robot" + (pick === r.id ? " on" : "")} onClick={() => setPick(r.id)} disabled={showProgress}>
               <div className="wf-robot-3d">
-                <RobotView source={r.id} lod="low" autoRotate height={190} />
+                <RobotView source={r.id} lod="low" autoRotate height={150} />
               </div>
               <b>{r.label}</b>
               <small>{r.what}</small>
@@ -241,7 +295,7 @@ function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?
               {chosen ? ` on ${chosen.label}` : ""}. About 1 minute for an arm, about 3 minutes for a humanoid.
             </p>
           </div>
-          <button className="wf-go" onClick={launch} disabled={!chosen || showProgress}>
+          <button className="wf-go" onClick={() => launch()} disabled={!chosen || showProgress}>
             {showProgress ? <Loader2 size={18} className="sx-spin" /> : <Play size={18} />} {showProgress ? "Running…" : "Launch the pipeline"}
           </button>
         </div>
@@ -254,9 +308,24 @@ function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?
               Open it
             </button>
             <WhyNote open>
-              <p>{/Stage 0 refused/.test(active.error) ? COMPLIANCE_WHY["not compliant"] : "One step of the pipeline stopped with an error. The detail below is the system's own message."}</p>
+              <p>
+                {/Stage 0 refused/.test(active.error)
+                  ? COMPLIANCE_WHY[/physically implausible/.test(active.steps?.[0]?.note || "") ? "physically implausible" : "not compliant"]
+                  : "One step of the pipeline stopped with an error. The detail below is the system's own message."}
+              </p>
               <p className="wf-mono">{active.error.slice(0, 400)}</p>
             </WhyNote>
+            {/Stage 0 refused/.test(active.error) && active.source && (
+              <div className="wf-override">
+                <button className="sx-btn" onClick={() => launch(true, active.source)}>
+                  Convert anyway (engineer override, recorded)
+                </button>
+                <small>
+                  The file is converted exactly as published, nothing is corrected or invented. The refusal stays in the run and every later
+                  result is labelled as coming from a file that failed the compliance check.
+                </small>
+              </div>
+            )}
           </div>
         )}
         {err && <p className="lab-error">{err}</p>}
@@ -282,9 +351,11 @@ function Start({ runs, open, onLaunched }: { runs: any[]; open: (id: string, at?
 }
 
 /** Collapsible plain-language explanation shown next to every failure. */
+const NOTES_OPEN = new URLSearchParams(location.search).get("notes") === "open"; // ?notes=open: every note expanded (demos, captures)
+
 function WhyNote({ title = "What went wrong, in simple terms", children, open = false }: { title?: string; children: React.ReactNode; open?: boolean }) {
   return (
-    <details className="wf-why" open={open}>
+    <details className="wf-why" open={open || NOTES_OPEN}>
       <summary>
         <CircleAlert size={15} /> {title}
       </summary>
@@ -927,6 +998,12 @@ function Compliance({ run, expert }: { run: any; expert: boolean }) {
         <h2>
           {tone === "ok" ? <CheckCircle2 size={18} /> : tone === "warn" ? <CircleAlert size={18} /> : <XCircle size={18} />} {c.file}: {c.verdict}
         </h2>
+        {run.stage1?.compliance?.forced && (
+          <p className="wf-forced">
+            <ShieldAlert size={15} /> Converted anyway: an engineer overrode this refusal. The file was converted exactly as published, and every
+            later result in this run comes from a file that failed the compliance check.
+          </p>
+        )}
         {COMPLIANCE_WHY[c.verdict] && (
           <WhyNote title={c.verdict === "compliant with warnings" ? "What the warnings mean, in simple terms" : undefined} open={c.blocking}>
             <p>{COMPLIANCE_WHY[c.verdict]}</p>
@@ -1097,7 +1174,11 @@ function ProgressList({ active, serverNow }: { active: Active; serverNow: number
             {s.status === "failed" && (
               <div className="wf-progress-why">
                 <WhyNote open>
-                  <p>{PROGRESS_WHY[s.id] || "This step stopped with an error; the message above is the system's own."}</p>
+                  <p>
+                    {s.id === "compliance" && /override/.test(s.note || "")
+                      ? "The robot file failed the URDF compliance check. An engineer chose to convert it anyway, exactly as published: nothing was corrected or invented, and every later result is labelled as coming from a file that failed the check."
+                      : PROGRESS_WHY[s.id] || "This step stopped with an error; the message above is the system's own."}
+                  </p>
                   {s.note && <p className="wf-mono">{s.note}</p>}
                 </WhyNote>
               </div>
@@ -1144,7 +1225,7 @@ function RepairStart({ run, open, reloadRuns }: { run: any; open: (id: string, a
     <section className="wf-card wf-battle">
       <h2>AI Repair Comparison</h2>
       <p>
-        Two methods get the same {findings} findings from the OpenModelica check of this run, the same robot file, the same model files and the
+        Two methods get the same {Math.min(8, findings)} most severe of the {findings} findings from the OpenModelica check of this run, the same robot file, the same model files and the
         same rules. <b>AI only</b> repairs from what it knows; <b>AI + Modelica knowledge</b> also reads passages from the Modelica Standard
         Library, the language reference and validated project patterns, and must cite them. Every proposal is then checked independently.
       </p>

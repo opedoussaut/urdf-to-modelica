@@ -78,7 +78,7 @@ def run_detail(rid: str):
         rv["validation"] = _j(R.ws_of(d, rv["key"]).parent / "validation.json")
     approvals = [_j(p) for p in sorted(d.glob("approved/*/approval.json"))]
     return {"id": rid, "campaign": _j(d / "campaign.json"), "stage0": _j(d / "stage0" / "compliance.json"),
-            "stage1": {k: m.get(k) for k in ("source", "converter", "versions", "reproducibility", "summary", "assets")} if m else None,
+            "stage1": {k: m.get(k) for k in ("source", "converter", "versions", "reproducibility", "summary", "assets", "compliance", "ok", "error")} if m else None,
             "unsupported": _j(d / "stage1" / "unsupported.json"),
             "stage2": {k: diag[k] for k in ("verdict", "graphics_verdict", "counts", "steps", "findings", "verdict_rule")} if diag else None,
             "faults": {"version": F.VERSION, "digest": F.set_digest(),
@@ -181,6 +181,7 @@ def simulate(rid: str, body: Key):
 
 class Launch(BaseModel):
     source: str = Field(min_length=1, max_length=80)
+    force: bool = False  # engineer override of a Stage 0 refusal (recorded in the run)
 
 
 @router.get("/robots")
@@ -198,7 +199,7 @@ def launch(body: Launch):
     if body.source not in ROBOTS and not re.fullmatch(r"upload-[0-9a-f]{16}", body.source):
         raise HTTPException(422, "Choose one of the studio's robots or an uploaded URDF")
     _guard(lambda: sources.resolve(body.source))
-    return _job("Engineering pipeline", lambda: _launch(body.source))
+    return _job("Engineering pipeline", lambda: _launch(body.source, force=body.force))
 
 
 @router.get("/active")

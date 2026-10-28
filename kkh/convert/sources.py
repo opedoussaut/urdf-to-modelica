@@ -15,6 +15,16 @@ UPLOADS = RUNS / "uploads"
 MAX_UPLOAD = 300_000  # bytes
 
 PINNED = {
+    "themis": {
+        "path": "third_party/themis_simulation_model/TH02-A7-FULL/urdf/TH02-A7-FULL.urdf",
+        "label": "Westwood Robotics THEMIS (TH02-A7)", "short": "THEMIS", "default": True, "featured": True,
+        "what": "Full-size humanoid with 7-DoF arms and three-finger EN02 hands; TH02-A7 is the model in production",
+        "sources": ["Westwood Robotics THEMIS-Simulation-Model (official URDF TH02-A7-FULL, exported from SolidWorks)",
+                    "Repository README: TH02-A7 is the only THEMIS model in mass production (other models discontinued 25 Sep 2025)",
+                    "Note: the published file gives every joint lower = upper = 0, effort 0 and velocity 0 (exporter defaults), "
+                    "and two thumb links an inertia rounded to zero; Stage 0 reports both"],
+        "license": "Apache-2.0", "repo": "https://github.com/Westwood-Robotics/THEMIS-Simulation-Model",
+        "provenance": "THEMIS-Simulation-Model @ c955a30 (pinned, config/public_sources.json)", "graph": False},
     "so101": {
         "path": "third_party/so_arm100/Simulation/SO101/so101_new_calib.urdf",
         "label": "SO-101 arm (LeRobot)", "short": "SO-101", "demo": True,
@@ -26,7 +36,7 @@ PINNED = {
         "provenance": "SO-ARM100 @ a758567 (pinned, config/public_sources.json)", "graph": False},
     "unitree_g1": {
         "path": "third_party/unitree_ros/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf",
-        "label": "Unitree G1 EDU with Dex3-1 hands", "short": "Unitree G1", "default": True,
+        "label": "Unitree G1 EDU with Dex3-1 hands", "short": "Unitree G1",
         "what": "Bipedal humanoid with dexterous three-finger hands",
         "sources": ["Unitree unitree_ros g1_description (official URDF g1_29dof_with_hand_rev_1_0)",
                     "Unitree G1 product page and developer documentation"],

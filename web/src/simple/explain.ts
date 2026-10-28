@@ -67,6 +67,7 @@ export const CATEGORY_WHY: Record<string, string> = {
 
 /** Messages that deserve a more specific explanation than their category. */
 export const MESSAGE_WHY: [RegExp, string][] = [
+  [/Joint torque over (low|high) limit/i, "The model checks that each joint's torque stays within the effort limit written in the robot file. Here the limit is 0 N·m (a default the exporter writes when no limit is entered), so any torque at all exceeds it. The fix belongs in the robot file: enter the motors' real limits."],
   [/mimic/i, "In the robot file one finger copies the other (a “mimic” joint). The converter stored that rule but does not apply it, so the finger moves on its own and ends up in the wrong place."],
   [/below its lower|above its upper|outside .*limit/i, "The test model starts this joint outside the range the robot file allows. A real robot could not start there."],
   [/initial conditions are not fully specified/i, "OpenModelica had to guess some starting values. This is common and usually harmless, but it is reported so nothing is hidden."],

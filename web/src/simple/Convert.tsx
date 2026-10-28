@@ -160,7 +160,7 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
           <span className="sx-n">1</span> Choose a robot
         </h2>
         <p className="sx-muted sx-intro">
-          Five real robots described by public files from their makers. The SO-101 is small enough for a complete comparison in a few minutes. What you see is drawn from the very file that will be converted: every part, every
+          Six real robots described by public files from their makers: THEMIS is our main target, and the SO-101 is small enough for a complete comparison in a few minutes. What you see is drawn from the very file that will be converted: every part, every
           joint, where it sits and how it turns. That is what the physics model has to reproduce.
         </p>
         <div className="sx-robots">

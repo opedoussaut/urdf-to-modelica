@@ -16,16 +16,17 @@ from kkh.convert import sources
 from . import stage1_convert as s1
 from . import stage2_check as s2
 
-ROBOTS = ("unitree_g1", "berkeley_humanoid_lite", "aloha_vx300s")  # the studio's pipeline robots, in display order
+ROBOTS = ("themis", "unitree_g1", "berkeley_humanoid_lite", "aloha_vx300s")  # the studio's pipeline robots, in display order
 ACTIVE = s1.RUNS / "active.json"
 # Short run names: Windows limits paths to 260 characters and the converter's own library already uses ~140 of them.
-SHORT = {"unitree_g1": "g1", "berkeley_humanoid_lite": "bhl", "aloha_vx300s": "aloha"}
+SHORT = {"themis": "themis", "unitree_g1": "g1", "berkeley_humanoid_lite": "bhl", "aloha_vx300s": "aloha"}
 STEPS = [("compliance", "URDF compliance"), ("convert", "Convert (DLR URDFModelica)"), ("check", "OpenModelica check")]
 
 
 def robots() -> list[dict]:
     """The three studio robots and every uploaded URDF, with what the start screen shows."""
-    keep = ("id", "label", "short", "what", "license", "provenance", "links", "joints", "movable", "mass_kg", "kind", "filename")
+    keep = ("id", "label", "short", "what", "license", "provenance", "links", "joints", "movable", "mass_kg", "kind", "filename",
+            "featured", "sources", "repo")
     out = []
     for s in sources.list_sources():
         if s["id"] in ROBOTS or s.get("kind") != "pinned":
@@ -72,8 +73,9 @@ def active() -> dict:
     return st
 
 
-def launch(source: str, log=print) -> dict:
-    """Run stages 0-2 for `source` in a new run directory; returns {run, ok, verdict, ...}."""
+def launch(source: str, log=print, force: bool = False) -> dict:
+    """Run stages 0-2 for `source` in a new run directory; returns {run, ok, verdict, ...}. force: an engineer's
+    override converts a URDF that Stage 0 refused; the refusal stays on record and the run is labelled as forced."""
     urdf, meta = sources.resolve(source)  # refuses unknown ids
     run_id = f"{SHORT.get(source, source.replace('upload-', 'up-')[:9])}-{dt.datetime.now().strftime('%y%m%d-%H%M%S')}"
     out = s1.RUNS / run_id
@@ -83,12 +85,13 @@ def launch(source: str, log=print) -> dict:
         from kkh.convert.robot3d import resolve_mesh
         from .stage0_urdf import check
         comp = check(urdf, resolve_mesh)
-        p.step("compliance", "failed" if comp["blocking"] else "done", comp["verdict"])
-        if not comp["blocking"]:
+        p.step("compliance", "failed" if comp["blocking"] else "done",
+               comp["verdict"] + (" · converted anyway: engineer override, recorded" if comp["blocking"] and force else ""))
+        if not comp["blocking"] or force:
             p.step("convert", "running")
-        m = s1.run(source, out, log=log)  # repeats Stage 0 as its own gate and records it in the run
+        m = s1.run(source, out, log=log, force=force)  # repeats Stage 0 as its own gate and records it in the run
         if not m.get("ok"):
-            p.step("convert", "skipped" if comp["blocking"] else "failed", m.get("error", "")[:300])
+            p.step("convert", "skipped" if comp["blocking"] and not force else "failed", m.get("error", "")[:300])
             p.step("check", "skipped")
             p.close(False, m.get("error"))
             return {"run": run_id, "ok": False, "error": m.get("error"), "compliance": comp["verdict"]}
@@ -97,7 +100,7 @@ def launch(source: str, log=print) -> dict:
         diag = s2.run(out, log=log)
         p.step("check", "done", diag.get("verdict"))
         p.close(True)
-        return {"run": run_id, "ok": True, "verdict": diag.get("verdict"), "compliance": comp["verdict"]}
+        return {"run": run_id, "ok": True, "verdict": diag.get("verdict"), "compliance": comp["verdict"], "forced": comp["blocking"] and force}
     except Exception as exc:  # report, never hide
         for s in p.state["steps"]:
             if s["status"] == "running":

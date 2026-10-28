@@ -194,3 +194,32 @@
 .sx .wf-progress-why { grid-column: 1 / -1; }
 .sx .lab-error .wf-why { background: rgba(255, 255, 255, 0.6); }
 @media (max-width: 800px) { .sx .wf-why-dl { grid-template-columns: 1fr; } }
+
+/* ---- featured robot (main target) ---- */
+.sx .wf-hero-robot {
+  width: 100%; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 28px; align-items: center; text-align: left;
+  margin: 20px 0 8px; padding: 16px; border-radius: 22px; border: 1.5px solid var(--line); background: var(--surface); cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.sx .wf-hero-robot:hover:not(:disabled) { box-shadow: var(--shadow-hover); }
+.sx .wf-hero-robot.on { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.14); }
+.sx .wf-hero-3d { border-radius: 16px; overflow: hidden; background: radial-gradient(ellipse at 50% 35%, #eef2f8, #f9fafc 70%); pointer-events: none; }
+.sx .wf-hero-info { display: flex; flex-direction: column; gap: 10px; padding-right: 12px; }
+.sx .wf-hero-info > b { font-size: 28px; line-height: 1.15; letter-spacing: -0.02em; color: var(--ink); }
+.sx .wf-hero-info p { font-size: 16px; color: var(--ink-2); margin: 0; }
+.sx .wf-hero-info small { color: var(--muted); font-size: 13px; font-family: inherit; }
+.sx .wf-badge { align-self: flex-start; font-size: 12px; font-weight: 650; letter-spacing: 0.04em; color: var(--accent); background: var(--accent-soft); border-radius: 980px; padding: 4px 12px; }
+.sx .wf-hero-stats { display: flex; gap: 22px; margin: 4px 0; }
+.sx .wf-hero-stats span { display: flex; flex-direction: column; color: var(--muted); font-size: 13px; }
+.sx .wf-hero-stats b { font-size: 26px; font-weight: 650; color: var(--ink); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.sx .wf-others-h { margin: 18px 0 0; font-size: 14px; color: var(--muted); font-weight: 600; letter-spacing: 0.02em; }
+.sx .wf-robots { margin-top: 10px; }
+.sx .wf-robots .wf-robot b { font-size: 14.5px; }
+.sx .wf-robots .wf-robot small { font-size: 12.5px; }
+.sx .wf-robots .wf-upload-drop { min-height: 150px; }
+@media (max-width: 1100px) { .sx .wf-hero-robot { grid-template-columns: 1fr; } }
+.sx .wf-override { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 10px; }
+.sx .wf-override small { color: var(--ink-2); font-size: 12.5px; max-width: 720px; font-family: inherit; }
+.sx .wf-forced { display: flex; align-items: flex-start; gap: 8px; background: var(--red-soft); color: var(--red); border-radius: 12px; padding: 10px 14px; margin: 0 0 10px; font-size: 14px; }
+.sx .wf-rail button.failed .wf-n { color: var(--red); background: var(--red-soft); }
+.sx .wf-rail button.failed.on .wf-n { background: var(--red); color: #fff; }
