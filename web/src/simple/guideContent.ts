@@ -22,7 +22,7 @@ export const FLOW: Step[] = [
     n: 1,
     title: "URDF input",
     page: "repair",
-    doWhat: "On the start screen, choose the Unitree G1 humanoid, the Berkeley Humanoid Lite or the ALOHA 2 follower arm (each from its maker's own URDF and 3D mesh files), or upload your own URDF, then press Launch.",
+    doWhat: "On the start screen, choose our main target, the Westwood Robotics THEMIS humanoid, or one of the reference robots (Unitree G1, Berkeley Humanoid Lite, ALOHA 2 follower arm), each from its maker's own URDF and 3D mesh files, or upload your own URDF, then press Launch.",
     happens: "The file and every mesh it uses are fixed at a known version and fingerprinted (SHA-256), with their licence and source.",
     get: "One reference that every later step is compared against.",
     why: "If the input could change, no result could be reproduced or traced. Robots enter only as a URDF and its meshes, so the pipeline works for other robots too.",
@@ -37,7 +37,7 @@ export const FLOW: Step[] = [
     happens:
       "The file is checked against the official URDF specification on the ROS wiki (required elements and attributes, joint types, limits on revolute and prismatic joints, number formats, colours, mimic references), against its tree rule (one root, one parent per link, no cycle, nothing disconnected), and against basic physics that the specification does not cover (positive masses, an inertia a real body can have, ordered limits, mesh files that exist). Every finding gives the line in the file and the rule it breaks.",
     get: "A verdict (compliant, compliant with warnings, physically implausible, not compliant). A file with any error is refused before conversion.",
-    why: "A malformed or physically impossible file would otherwise surface later, disguised as a Modelica error, and waste the converter, the checks and the AI on a problem that is in the input. The five pinned robots all pass; 14 deliberate violations in the tests are each caught by the rule that names them.",
+    why: "A malformed or physically impossible file would otherwise surface later, disguised as a Modelica error, and waste the converter, the checks and the AI on a problem that is in the input. THEMIS's published file is refused as physically implausible (two thumb inertias rounded to zero; all 44 joints with zero limits, effort and velocity); the reference robots pass; 14 deliberate violations in the tests are each caught by the rule that names them. An engineer can still convert a refused file: the override is recorded.",
     code: "kkh/workflow/stage0_urdf.py",
   },
   {
@@ -71,7 +71,7 @@ export const FLOW: Step[] = [
     page: "repair",
     doWhat: "Choose a case (the natural findings or one of ten seeded faults) and compare the two AI methods side by side.",
     happens:
-      "Two AI methods receive exactly the same package, findings and rules, with the same local model, settings and three attempts. AI only works from that alone. AI + Modelica assets also receives passages from the Modelica Standard Library, the language reference and project patterns, chosen for each finding, each with its source, version and licence, and must cite what it used. Every proposed edit is applied to an isolated copy.",
+      "Two AI methods receive exactly the same package, findings and rules, with the same local model, settings and three attempts. AI only works from that alone. AI + Modelica knowledge also receives passages from the Modelica Standard Library, the language reference and project patterns, chosen for each finding, each with its source, version and licence, and must cite what it used. Every proposed edit is applied to an isolated copy.",
     get: "For each method: the edits, their explanations and cited sources, and the result after each attempt.",
     why: "The question is whether engineering knowledge measurably helps an AI repair a model. Identical conditions make the answer meaningful, and the experiment stays valid whichever method does better. The ten faults were frozen before any AI run.",
     code: "kkh/workflow/stage3_repair.py · faults.py · assets.py",
