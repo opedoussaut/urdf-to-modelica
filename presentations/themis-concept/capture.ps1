@@ -13,6 +13,7 @@ $shots = @(
   @{ n = "05_convert";      h = 1300; u = "/?page=repair&run=$run&stage=convert" },
   @{ n = "06_check";        h = 1700; u = "/?page=repair&run=$run&stage=check&notes=open" },
   @{ n = "07_repair_start"; h = 1000; u = "/?page=repair&run=$run&stage=repair" },
+  @{ n = "08_repair_result"; h = 1900; u = "/?page=repair&run=$run--qwen3-30b&stage=repair&notes=open" },
   @{ n = "10_guide";        h = 2400; u = "/?page=guide" },
   @{ n = "11_explore_3d";   h = 1700; u = "/?page=convert" }
 )

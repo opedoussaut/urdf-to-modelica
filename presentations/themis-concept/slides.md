@@ -134,19 +134,22 @@ flowchart LR
 <div class="box"><b>Knowledge v2, 3 036 passages, all licensed:</b> Modelica Language Specification 3.7, OpenModelica error messages, MSL 4.1.0 and its 3→4 rules, OpenModelica guide, project patterns. Must be cited.</div>
 </div>
 
-<div class="crop mt-3" style="--x:140;--y:575;--w:1160;--h:410"><img src="/shots/07_repair_start.png" /></div>
-<div class="cap">THEMIS's AI Repair Comparison running with qwen3-coder 30B, entirely on this laptop.</div>
+<div class="crop mt-3" style="--x:140;--y:575;--w:1160;--h:300"><img src="/shots/07_repair_start.png" /></div>
+<div class="cap">Starting THEMIS's AI Repair Comparison: pick a local model, then "Start the repair". The 8 most severe findings are sent to both methods.</div>
 
 ---
 
 # Step 4 · Checked, never trusted
 
-<!-- REPAIR_RESULTS -->
-
-<div class="grid grid-cols-2 gap-6 mt-4 text-sm">
-<div class="box"><b>Independent validation:</b> the full OpenModelica check runs again on every candidate; findings are matched as resolved, remaining or new.</div>
-<div class="box"><b>Integrity guard:</b> a "fix" that deletes a part, a connection or a check, or changes a value from the robot file, is rejected even if it compiles.</div>
+<div class="grid grid-cols-2 gap-4 text-sm">
+<div class="box"><span class="pill bad">regressed</span> <b>AI only</b> · now <b>fails at structure</b><br/>Tried to set the joint limits by inventing a class that does not exist (<code>URDFModelica.Joints.RotationalLimit</code>). 705 s.</div>
+<div class="box"><span class="pill bad">regressed</span> <b>AI + Modelica knowledge</b> · now <b>fails at load</b><br/>Added <code>Evaluate=true</code> annotations and left a missing <code>)</code>. 15 passages supplied, none cited. 381 s.</div>
 </div>
+
+<div class="crop mt-3" style="--x:140;--y:1322;--w:1160;--h:200"><img src="/shots/08_repair_result.png" /></div>
+<div class="cap">The real result in the studio (qwen3-coder 30B, 1 118 s on this laptop): every failure comes with its plain-language note.</div>
+
+<div class="box-blue mt-3 text-sm"><b>The right repair was no model change:</b> THEMIS's defects are in the robot file. Both "fixes" were caught by the independent OpenModelica re-check, so neither can reach the approved model.</div>
 
 ---
 
@@ -180,7 +183,7 @@ flowchart LR
 
 | Robot | Stage 0 | Converter → check | What the pipeline found |
 |---|---|---|---|
-| **THEMIS TH02-A7** | <span class="pill bad">implausible</span> | simulates, checks fail | zero joint limits and efforts, two impossible thumb inertias |
+| **THEMIS TH02-A7** | <span class="pill bad">implausible</span> | simulates, checks fail | zero joint limits and efforts, two impossible thumb inertias; both AI repairs regressed |
 | Unitree G1 + Dex3-1 | <span class="pill ok">compliant</span> | simulates, checks fail | 43 joints, end to end in about 3 min |
 | Berkeley Humanoid Lite | <span class="pill ok">compliant</span> | **fails at structure** | a **converter bug**: the `imu` sensor link written twice |
 | ALOHA 2 follower arm | <span class="pill ok">compliant</span> | simulates, checks fail | finger "mimic" dropped by the converter: 52.9 mm off |
@@ -228,7 +231,7 @@ flowchart LR
 
 - A **compliance gate before conversion** catches vendor-file issues in under a second.
 - The converter copied **845/845** values faithfully: the errors were already in the file.
-- AI repair is measured, cited and guarded, **and a person decides**.
+- Both AI repairs **made the model worse**, and the re-check caught it: AI is measured and guarded, **and a person decides**.
 
 </div>
 </div>

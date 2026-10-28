@@ -110,7 +110,7 @@ export default function Workflow() {
               <select value={rid || ""} onChange={(e) => setRid(e.target.value)}>
                 {runs.map((r) => (
                   <option key={r.id} value={r.id}>
-                    {r.robot || r.id} · {r.model ? "repairs by " + r.model : "conversion and checks"} {r.validated_cases ? `· ${r.validated_cases} cases validated` : ""}
+                    {r.robot || r.id} · {r.model ? "repairs by " + r.model : "conversion and checks"} {r.validated_cases ? `· ${r.validated_cases} ${r.validated_cases === 1 ? "case" : "cases"} compared` : ""}
                   </option>
                 ))}
               </select>
