@@ -105,6 +105,13 @@ def test_pinned_robots_are_compliant(source):
         pytest.skip("pinned source not fetched")
     from kkh.convert.robot3d import resolve_mesh
     rec = S0.check(urdf, resolve_mesh)
+    if source == "themis":
+        # Known fact about Westwood's published TH02-A7 file (26-28 Oct 2026): two thumb inertias rounded to zero by the
+        # exporter, and every joint limit / effort / velocity left at 0. If the vendor file changes, this test says so.
+        assert rec["verdict"] == "physically implausible"
+        assert sorted(x["entity"] for x in rec["findings"] if x["blocking"]) == ["THUMB_MIDDLE_L", "THUMB_MIDDLE_R"]
+        assert sum(x["rule"] == "effort-positive" for x in rec["findings"]) == 44
+        return
     assert not rec["blocking"], [x for x in rec["findings"] if x["blocking"]]
 
 
