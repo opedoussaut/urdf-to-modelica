@@ -191,7 +191,9 @@ def physical_table(robot, mapping: list[dict], pkg_dir: Path) -> list[dict]:
         if m["kind"] == "link":
             link, g = robot.links[m["urdf_name"]], parse_link_record(text)
             if link.inertial is None:
-                rows.append(_row(m["urdf_name"], "link", "inertial", None, g["mass"], "-"))
+                # No <inertial> in the URDF = a massless frame; a record with mass 0 (or none) says the same thing.
+                rows.append(_row(m["urdf_name"], "link", "inertial", None, g["mass"], "-")
+                            | {"match": g["mass"] is None or g["mass"] == 0.0})
                 continue
             I = link.inertial.inertia
             rows += [_row(m["urdf_name"], "link", "mass", link.inertial.mass, g["mass"], "kg"),
