@@ -1,13 +1,21 @@
-# CLAUDE.md — HT GEN7 PhysAI Studio (Engineering-Grounded Physical AI)
-
-Branding: **HT GEN7 PhysAI Studio** (official name) · **PhysAI** = short form of Physical AI · **Physical AI** = full term · **GEN7** = initiative · tagline **Engineering-Grounded Physical AI**. Technical identifiers (`kkh` package, `KKH_*` variables, `kkh-aloha-engineering` repository, ontology URIs, Modelica package names, API paths, repository name) keep their historic names.
+# CLAUDE.md — urdf-to-modelica (URDF → Modelica conversion and repair pipeline)
 
 Durable instructions for agents working in this repository.
 
+## Repository
+Split on 2026-11-02 from branch `feat/urdf-repair-pipeline` of `ai-kkh-physicalai` (history included); `main` here
+continues that branch. A move to a 3DS GitLab repository is planned. `third_party/` is not in Git: run
+`tools/fetch_sources.py`. The earlier HT GEN7 PhysAI Studio (ALOHA evidence graph, GraphDB, copilot, benchmarks) is
+still in the tree; its README is `docs/STUDIO_README.md`. Technical identifiers (`kkh` package, `KKH_*` variables,
+`kkh-aloha-engineering` GraphDB repository, ontology URIs, Modelica package names, API paths) keep their historic names.
+
 ## Purpose
-Local-first demonstrator: public ALOHA engineering assets → semantic knowledge graph (GraphDB) →
-executable Modelica virtual twin (OpenModelica) → explained by a local, ontology-grounded copilot (Ollama).
-Research question: does ontology grounding (GraphDB + GraphRAG) measurably improve LLM-assisted
+Main work: the URDF → Modelica engineering pipeline in `kkh/workflow/` — Stage 0 URDF compliance → Stage 1
+deterministic conversion (pinned DLR URDFModelica, no AI) → Stage 2 ordered OpenModelica checks (`diagnostics.json`) →
+Stage 3 two comparable AI repair arms ("AI only" vs "AI + Modelica assets") → Stage 4 independent validation with
+integrity guard → Stage 5 engineer review → Stage 6 approval, layout pass, simulation. The AI repairs; it never
+generates the model. Plan and decisions: `docs/REPAIR_PIPELINE_PROPOSAL.md`.
+Background research question (studio): does ontology grounding (GraphDB + GraphRAG) measurably improve LLM-assisted
 generation/repair of an executable Modelica model versus deterministic and LLM-only workflows?
 
 ## Hard rules
@@ -24,6 +32,8 @@ generation/repair of an executable Modelica model versus deterministic and LLM-o
 
 ## Layout
 ```
+kkh/workflow/      the pipeline: stage0_urdf..stage4_validate, faults (frozen sets), assets (governed knowledge),
+                   campaign, review (stages 5-6), layout, downloads, launch, api (/api/workflow)
 kkh/engineering/   generic: urdf_model (parse/validate/FK), modelica_gen (URDF→MSL MultiBody),
                    modelica_inspect (structure/completeness), omc (OpenModelica service, .mat reader), validation
 kkh/semantic/      generic: GraphDB client, ontology ingestion, SHACL, provenance
@@ -70,6 +80,10 @@ C: drive has little free space — keep large artefacts on E:.
 - URDF rpy → `FixedRotation(PlanarRotationSequence, sequence={3,2,1}, angles={yaw,pitch,roll})`.
 
 ## Experiment conventions
+- Repair fault sets (`kkh/workflow/faults.py`) are frozen by commit before any repair run; v1 was frozen at `7c8d735`.
+  If a fault changes, write a NEW set (v2) and keep v1 untouched. Both repair arms must get identical settings.
+- Repair edits that do not match the file exactly are recorded as failed, never fixed up. A candidate flagged by the
+  Stage 4 integrity guard is rejected, never counted as a success. Pipeline stage CLIs: see README.md.
 - Ontology rule set for candidate checking lives in `kkh/domain/aloha/candidate.py`. Rules were frozen at `53405d7`
   before the held-out mutations; if rules change, write a NEW held-out set before re-measuring.
 - Inside a SPARQL `GRAPH <g> {}` clause GraphDB sees only explicit triples; put inferred patterns (e.g. `?j a kkh:Joint`) outside.

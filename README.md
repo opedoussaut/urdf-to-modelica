@@ -1,80 +1,84 @@
-# HT GEN7 PhysAI Studio
+# URDF → Modelica: conversion and repair pipeline
 
-**Engineering-Grounded Physical AI**
+**Deterministic converter + AI repair, human approval.** A robot's URDF is converted to an executable Modelica model by
+the pinned DLR [URDFModelica](https://github.com/DLR-RM/urdfmodelica) converter, without AI. OpenModelica checks the
+result in a fixed order. Local AI then proposes repairs for what fails, those repairs are re-checked independently,
+and an engineer accepts or rejects every edit before a model is approved.
 
-| Name | Use |
-|---|---|
-| **HT GEN7 PhysAI Studio** | Official project and application name |
-| **PhysAI** | Short form of Physical AI |
-| **Physical AI** | Full technical term |
-| **GEN7** | Initiative identity |
-| **Engineering-Grounded Physical AI** | Positioning tagline |
+Everything runs locally: OpenModelica for checks and simulation, Ollama for the AI, no hosted inference.
 
-Technical identifiers keep their historic names so that code, data and history stay valid: the Python package `kkh`,
-`KKH_*` environment variables, the GraphDB repository `kkh-aloha-engineering`, ontology URIs (`https://w3id.org/kkh/…`),
-Modelica packages (`ALOHA2`), API paths (`/api/workbench/…`) and the Git repository name `ai-kkh-physicalai`.
+## The pipeline
 
-Local engineering demonstrator built on the preserved `feat/aloha-baseline` branch: pinned public ALOHA 2 assets → evidence graph → executable Modelica twin → ontology-grounded Ollama copilot.
+| Stage | What it does | Code |
+|---|---|---|
+| **0 URDF compliance** | Is the input a valid URDF? Checks the ROS wiki specification, the tree rule and, labelled as beyond the spec, physical plausibility (positive-definite inertia, ordered limits, mesh files). Conversion is refused on errors unless an engineer overrides it. | `kkh/workflow/stage0_urdf.py` |
+| **1 Convert** | DLR URDFModelica at a pinned commit, no corrections. Records a manifest (input hashes, converter arguments, tool versions), the URDF → Modelica mapping, a physical value table and the URDF content the converter ignores. | `kkh/workflow/stage1_convert.py` |
+| **2 Check** | OpenModelica, in order: load, structure, balance and translation, simulation, URDF consistency (kinematics, masses, inertia, joint torques against MuJoCo), record values, and graphics separately. One machine-readable `diagnostics.json`. | `kkh/workflow/stage2_check.py` |
+| **3 AI repair** | Two comparable arms on the same package and diagnostics: **AI only** and **AI + Modelica assets** (governed knowledge collection, cited by chunk id). Same model, seed, temperature and budgets for both. Edits are exact search/replace blocks; an edit that does not match is recorded as failed, never fixed up. | `kkh/workflow/stage3_repair.py`, `assets.py` |
+| **4 Validate** | Fresh Stage 2 on each candidate, resolved / remaining / new findings, and an integrity guard (removed components, changed URDF values, removed assertions…). A candidate that compiles only thanks to a flagged change is rejected. | `kkh/workflow/stage4_validate.py` |
+| **5 Review** | The engineer keeps or rejects each edit, can amend by hand, and re-validates. Every action records who, when and why. | `kkh/workflow/review.py` |
+| **6 Approve** | Promotion of an approved copy, then a deterministic layout pass that draws missing connection lines (annotations only), OMEdit and simulation. | `kkh/workflow/review.py`, `layout.py` |
 
-## Run the existing workspace
+Repairs are measured on a **frozen fault set** (`kkh/workflow/faults.py`, v1 frozen before any repair run, with
+held-out faults) as well as on the natural findings of the conversion. Robots supported from the studio: ALOHA 2
+(vx300s arm), Unitree G1, Berkeley Humanoid Lite, THEMIS (Westwood Robotics TH02-A7), or any uploaded URDF.
+
+Plan, design choices and open decisions: [docs/REPAIR_PIPELINE_PROPOSAL.md](docs/REPAIR_PIPELINE_PROPOSAL.md).
+Measured results: [reports/workflow/](reports/workflow/).
+
+## Setup (Windows)
+
+Requires OpenModelica 1.27.1 with MSL 4.1.0, Python 3.11+, Node.js (for the web UI) and a local
+[Ollama](https://ollama.com) server for the repair stage.
 
 ```powershell
-# Activate the existing project GraphDB service only.
-docker compose up -d --no-deps graphdb
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+# Pinned public sources (DLR converter, robot descriptions, Modelica specification) -> third_party/, not in Git
+.venv\Scripts\python tools\fetch_sources.py
+.venv\Scripts\python tools\expand_xacro.py
+```
 
-# After license activation, ingest and verify the evidence graph.
-.venv\Scripts\python -m kkh.domain.aloha.knowledge
+## Run
 
-# Build the React UI and start the loopback FastAPI server.
+**Studio** (the Engineering pipeline tab is the landing page):
+
+```powershell
 scripts\start.ps1
 ```
 
-Open [HT GEN7 PhysAI Studio](http://127.0.0.1:8000) or [GraphDB Workbench](http://localhost:7201). The installed local Ollama server must be running on port 11434. Primary local engineering copilot: **NVIDIA Nemotron 3 Nano 4B** (`nemotron-3-nano:4b`, override with `KKH_OLLAMA_MODEL`); any other installed local model can be chosen in the UI, and a missing model is reported explicitly (never substituted). The application does not download models, call hosted inference, or use cloud fallback. Historical benchmark reports keep the model IDs they were produced with (qwen3). See `docs/MODEL_STRATEGY_NVIDIA_FIRST.md`.
+Then open http://127.0.0.1:8000. The start screen launches Stages 0–2 for a robot or an uploaded URDF; the repair,
+review and approval stages run from their own pages. GraphDB is optional for the pipeline (`-SkipGraphDB`).
 
-### Workspaces
+**Command line** (from bash, set `PYTHONPATH=.`):
 
-| Workspace | What is real |
-|---|---|
-| **Guided demo** | Seven-step engineering story with live facts and a system-readiness check (`docs/DEMO_2026-10-18.md`). |
-| **Engineering reasoning** | Joint reasoning chain read from the URDF and GraphDB (asserted / inferred / verified / assumed / simulated), ontology rule check of seeded faulty models on isolated copies. |
-| **Generate model** | Live URDF → Modelica conversion with the project converter into `runs/studio/pipeline/<id>`, mapping, completeness, OpenModelica check, integrity (sources and frozen package re-hashed). |
-| **Joint simulation** | Single-joint servo model (MSL Rotational) with URDF-derived inertia and gravity, assumed servo parameters from the model revision, real OpenModelica runs, baseline vs candidate comparison, proposal as unaccepted revision. |
-| Modelica Engineering Editor · Robot Workspace · AI assistant · Knowledge Explorer | Existing workspaces (revisions/OMEdit, leader–follower and cube task, paired copilot, graph and trace). |
-
-Deep links: `?ws=journey|reasoning|pipeline|lab|editor|robot|copilot|knowledge` (+ `step`, `node`, `case`, `run`).
-
-The UI provides recorded 3D playback with pinned vendor meshes, joint telemetry and source inspection, a GraphDB-backed physical relationship graph, reasoning witnesses, measured B/C benchmark results, the source discrepancy register, and an evidence-cited copilot. All playback data comes from actual OpenModelica runs. **Run verification** compiles and simulates the existing generated package without regenerating it.
-
-For a fresh Python environment, install `requirements.txt` into a virtual environment on the workspace drive. `tools/fetch_sources.py` and `tools/expand_xacro.py` reproduce pinned input assets when absent. Existing `third_party/` assets are read-only. Do not refetch or recreate the environment merely to run this preserved checkout.
-
-## Reproduce engineering checks
-
-```powershell
-# Preserves the generated model and writes a new unique run directory.
-.venv\Scripts\python -m kkh.domain.aloha.verify RightArmReach
-.venv\Scripts\python -m kkh.domain.aloha.verify HoldStartPose
-.venv\Scripts\python -m kkh.domain.aloha.verify LeaderArmCheck
-
-# Includes synthetic and full-model OMC round trips, real GraphDB and Ollama checks.
-.venv\Scripts\python -m pytest -q --basetemp=runs/pytest-check
-
-# Paired local-model parameter generation/repair: identical sources and budgets.
-.venv\Scripts\python -m kkh.benchmark.harness --repeats 2 --max-attempts 2
-
-# Third-party DLR converter reference, evaluated separately.
-.venv\Scripts\python -m kkh.benchmark.workflow_a
+```bash
+python -m kkh.workflow.stage0_urdf aloha_vx300s
+python -m kkh.workflow.stage1_convert aloha_vx300s --out runs/workflow/<id>
+python -m kkh.workflow.stage2_check runs/workflow/<id>
+python -m kkh.workflow.faults runs/workflow/<id> --characterise
+python -m kkh.workflow.stage3_repair runs/workflow/<id> --case natural --arms ai_only,ai_assets
+python -m kkh.workflow.stage4_validate runs/workflow/<id>
+python -m kkh.workflow.campaign runs/workflow/<id> --model qwen3-coder:30b --cases natural,F04,F05
 ```
 
-`kkh.domain.aloha.pipeline` remains the original regenerate/check/simulate pipeline. Its explicit `run_dir` now isolates generated files and avoids replacing project reports during tests. The UI uses the separate frozen-model verifier.
+**Tests:** `.venv\Scripts\python -m pytest -q tests/test_workflow_*.py` (markers: `omc`, `slow`, `graphdb`, `ollama`).
 
-## Evidence and boundaries
+## Layout
 
-- [Preserved engineering baseline](reports/ENGINEERING_BASELINE.md): 29 links including world, 28 joints, 16 prescribed coordinates, two mimic joints; 9-second reach verified before feature work. FK agreement establishes consistency with URDF, not hardware, contact, controller, or actuator-load accuracy.
-- `reports/ontology.json`: GraphDB version and repository, full-precision data round trip, explicit/inferred witnesses, SPARQL facts, application pySHACL and GraphDB bulk SHACL reports with negative controls. Bulk validation does not install an incremental SHACL write gate.
-- `reports/benchmark.json`: latest paired B/C measurements, source and model hashes, prompts, proposals, every attempt, independent validation, actual OMC diagnostics, and model digest. `runs/benchmark/BC/` retains isolated candidates and result files. Success means the experiment completed, not that each candidate passed engineering checks.
-- B = Ollama with raw URDF; C = the same input plus ontology evidence. The current benchmark measures constrained numeric parameter generation/repair in a full-model context. It does not establish unrestricted whole-model synthesis or statistical generalization. Workflow A uses its own motion experiment and must not be ranked as a matched B/C trial.
-- Copilot source IDs and single-joint axis names are validated. Other generated claims still need engineering review. Missing inline markers are rendered from the model's valid declared citation list; no citations are invented. Model changes remain proposals, and no copilot endpoint can accept or apply them.
-- GraphDB writes are restricted to repository `kkh-aloha-engineering`. The primary endpoint is port 7201. Ports 7200 and 7300 belong to unrelated containers. Read-only retrieval uses fixed queries; bounded SPARQL rejects updates and federation.
-- Runtime outputs, local license files, and backups are excluded from Git. [GraphDB upgrade record](docs/GRAPHDB_UPGRADE.md) documents the data-preserving 11.3.3 upgrade and the cold backup.
+```
+kkh/workflow/      the pipeline: stages 0-4, faults, assets, campaign, review/approval, layout, downloads, API
+kkh/convert/       DLR converter wrapper, scorer, MuJoCo dynamics reference, export with meshes
+kkh/engineering/   URDF parsing and forward kinematics, OpenModelica service, Modelica inspection
+kkh/api/           FastAPI backend;  web/src/simple/  React UI (Workflow.tsx = the pipeline page, Guide.tsx)
+config/            pinned public sources (public_sources.json)
+reports/workflow/  committed stage and campaign reports;  runs/ (ignored) holds full outputs
+presentations/     Slidev decks: repair-pipeline, themis-concept
+```
 
-See [PROJECT_STATUS.md](PROJECT_STATUS.md) for the current measured milestone status and remaining limitations.
+## History
+
+This repository was split on 2026-11-02 from the `feat/urdf-repair-pipeline` branch of `ai-kkh-physicalai`, history
+included. It still contains the earlier HT GEN7 PhysAI Studio (ALOHA 2 evidence graph, GraphDB, copilot, benchmarks);
+see [docs/STUDIO_README.md](docs/STUDIO_README.md). Technical identifiers keep their historic names: the Python package
+`kkh`, `KKH_*` environment variables and the API paths.
