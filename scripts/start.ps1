@@ -1,15 +1,14 @@
 <#
 Starts HT GEN7 PhysAI Studio (Engineering-Grounded Physical AI) reliably (local only).
 
-  1. Project GraphDB container `kkh-aloha-graphdb` (compose.yaml, 127.0.0.1:7201) - only this container is touched.
   2. Checks the local Ollama server (127.0.0.1:11434); the copilot is unavailable without it, the rest still works.
   3. Builds the web UI when sources are newer than web/dist (or always with -Build).
   4. Starts the FastAPI server on 127.0.0.1:8000; restarts it when Python sources changed since it started
      (or with -Restart), waits for /api/health and prints a service summary.
 
-Usage:  scripts\start.ps1 [-Restart] [-Build] [-NoBuild] [-SkipGraphDB] [-NoBrowser]
+Usage:  scripts\start.ps1 [-Restart] [-Build] [-NoBuild] [-NoBrowser]
 #>
-param([switch]$Restart, [switch]$Build, [switch]$NoBuild, [switch]$SkipGraphDB, [switch]$NoBrowser)
+param([switch]$Restart, [switch]$Build, [switch]$NoBuild, [switch]$NoBrowser)
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $python = Join-Path $root '.venv\Scripts\python.exe'
@@ -21,20 +20,6 @@ function Test-Url($url, $timeout = 3) {
 function Wait-Url($url, $seconds) {
     for ($i = 0; $i -lt $seconds; $i += 2) { if (Test-Url $url) { return $true }; Start-Sleep -Seconds 2 }
     return $false
-}
-
-# 1. GraphDB (project container only)
-if (-not $SkipGraphDB) {
-    if (Test-Url 'http://localhost:7201/rest/info/version') {
-        Write-Host '[graphdb] running on http://localhost:7201'
-    } elseif (Get-Command docker -ErrorAction SilentlyContinue) {
-        Write-Host '[graphdb] starting project container kkh-aloha-graphdb ...'
-        & (Join-Path $PSScriptRoot 'start-graphdb-container.ps1')
-        if (Wait-Url 'http://localhost:7201/rest/info/version' 90) { Write-Host '[graphdb] ready' }
-        else { Write-Warning '[graphdb] not ready after 90 s - knowledge features will report unavailable' }
-    } else {
-        Write-Warning '[graphdb] Docker not available - knowledge features will report unavailable'
-    }
 }
 
 # 2. Ollama (never started or configured here; local loopback only)
@@ -87,8 +72,7 @@ if ($servers.Count -eq 0) {
 }
 if (-not (Wait-Url 'http://127.0.0.1:8000/api/health' 60)) { throw '[api] not healthy after 60 s - see runs\studio\stderr.log' }
 $health = Invoke-RestMethod 'http://127.0.0.1:8000/api/health' -TimeoutSec 20
-Write-Host ("[status] GraphDB: {0} | Ollama: {1} | OpenModelica installed: {2}" -f `
-    $(if ($health.graphdb.ok) { 'ready' } else { 'unavailable' }),
+Write-Host ("[status] Ollama: {0} | OpenModelica installed: {1}" -f `
     $(if ($health.ollama.ok) { "$($health.ollama.models.Count) local models" } else { 'unavailable' }),
     $health.openmodelica.installed)
 Write-Host 'HT GEN7 PhysAI Studio ready: http://127.0.0.1:8000'

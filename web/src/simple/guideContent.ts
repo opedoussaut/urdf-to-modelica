@@ -195,8 +195,6 @@ export const GLOSSARY: { group: string; terms: [string, string][] }[] = [
       ["Prompt (request)", "Everything the AI receives for one answer: rules, robot file, findings, model files and, for one method, reference passages. It is kept with every run."],
       ["Passage (chunk)", "One piece of the reference material, usually one library class, with its id, source file, line, version and licence."],
       ["Citation", "The ids of the passages the AI says it used for an edit; an id that was not given is flagged as invented."],
-      ["Ontology", "A shared vocabulary with rules (what a joint, a limit or a unit is) that a computer can check."],
-      ["Knowledge graph (GraphDB)", "The robot's facts stored with that vocabulary, each with its unit and source."],
       ["Provenance", "Where a fact or a piece of retrieved text comes from: file, version, licence."],
     ],
   },

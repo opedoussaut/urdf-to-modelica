@@ -89,10 +89,7 @@ def test_api_creates_derived_attempt_and_rejects_invalid_sources(demo, tmp_path,
     from fastapi.testclient import TestClient
     from kkh.api.main import app
     import kkh.studio.api as api
-    import kkh.semantic.trace as trace
     from kkh.studio.storage import Store
-    written = []
-    monkeypatch.setattr(trace, "_write", lambda g: written.append(g) or {"graphdb": "captured"})
     monkeypatch.setattr(api, "store", Store(tmp_path / "api.sqlite"))
     client = TestClient(app)
     sc, data, _ = demo
@@ -109,9 +106,6 @@ def test_api_creates_derived_attempt_and_rejects_invalid_sources(demo, tmp_path,
     result = state["data"]["result"]
     attempt = result["record"]
     assert attempt["data"]["derived"]["source"] == saved["id"] and result["task"]["metrics"]["task_completed"]
-    from rdflib import RDF
-    derived = [g for g in written if (None, trace.K.evidenceStatus, trace.K.Derived) in g]
-    assert derived and (None, trace.PROV.wasDerivedFrom, trace.node("observation", saved["id"])) in derived[-1]
     # an attempt and a legacy-frame recording cannot be retargeted
     assert client.post(f"/api/workbench/trajectory/{attempt['id']}/retarget").status_code == 422
     legacy = S.load("aloha2-cube-transfer")

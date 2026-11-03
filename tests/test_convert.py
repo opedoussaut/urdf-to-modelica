@@ -39,7 +39,7 @@ def test_upload_validation(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="too large"):
         sources.store_upload("r.urdf", b"<robot>" + b" " * (sources.MAX_UPLOAD + 1) + b"</robot>")
     meta = sources.store_upload("leader.urdf", LEADER.read_bytes())
-    assert meta["kind"] == "upload" and meta["graph"] is False and meta["joints"] == len(load_urdf(LEADER).joints)
+    assert meta["kind"] == "upload" and meta["joints"] == len(load_urdf(LEADER).joints)
     path, again = sources.resolve(meta["id"])
     assert path.read_bytes() == LEADER.read_bytes() and again["id"] == meta["id"]
     with pytest.raises(ValueError):

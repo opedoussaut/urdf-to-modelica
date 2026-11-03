@@ -1,7 +1,7 @@
 """Cross-source verification: vendor URDF (aloha_vx300s) vs official ALOHA 2 MJCF (mujoco_menagerie/aloha).
 
 MuJoCo is used purely as an independent kinematics engine for the MJCF; nothing is converted from it.
-Result is written to config/aloha2_crosscheck.json and cited by the manifest and the knowledge graph.
+Result is written to config/aloha2_crosscheck.json and cited by the manifest.
 """
 from __future__ import annotations
 

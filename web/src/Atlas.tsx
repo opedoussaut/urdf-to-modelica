@@ -258,12 +258,10 @@ const META: Record<Visual, Meta> = {
   tools: { title: "One language, several tools", caption: "Modelica models are text; tools compile and simulate them. Dymola has not been tested with the studio's package." },
   provenance: { title: "Four labels for every number", caption: "Used across the studio for every parameter and result." },
   "prov-o": { title: "Provenance of the follower URDF, in PROV terms", caption: "A real chain from this repository (data/urdf/expansion_record.json): the pinned vendor file, the expansion run, and the file the studio reads. PROV drawing convention: entities as ovals, activities as rectangles, agents as pentagons.", data: "repository record" },
-  ontology: { title: "A small knowledge graph about the elbow", caption: "Each arrow is one triple; the vocabulary comes from public standards." },
-  "semantic-stack": { title: "The semantic stack used by the studio", caption: "Each layer is a W3C or IEEE standard; GraphDB stores and reasons over them on this computer." },
   "leader-follower": { title: "Teleoperation with leader and follower", caption: "The person moves the leader; the follower mirrors it and everything is recorded." },
   "lfd-pipeline": { title: "From demonstrations to a policy", caption: "The usual imitation-learning pipeline, and the part the studio covers today." },
   chunking: { title: "Action chunking (ACT)", caption: "Instead of one action per decision, ACT predicts a chunk of k future actions at each decision." },
-  grounding: { title: "Answering with and without grounding", caption: "The AI assistant page shows both answers side by side." },
+  grounding: { title: "Answering with grounding", caption: "Grounding gives the model the facts it needs before it answers." },
   rag: { title: "How a grounded answer is built", caption: "Retrieval-augmented generation as used by the studio, with the model running locally." },
   "fm-outputs": { title: "Two ways a robot AI can give orders", caption: "Joint angles drive one known arm directly. Gripper poses fit any two-armed robot, but need inverse kinematics and limit checks on the way to the motors: the part the studio's engineering model can check." },
   "bench-vs-studio": { title: "What a benchmark measures, and what the studio measures", caption: "A benchmark scores the robot's AI on tasks. The studio checks the robot model the AI runs on. Different questions, both needed before trusting a robot." },
@@ -953,126 +951,6 @@ const DIAGRAMS: Partial<Record<Visual, React.ReactNode>> = {
       </T>
     </Svg>
   ),
-  ontology: (
-    <Svg label="A small knowledge graph about the elbow" h={250}>
-      <Box x={250} y={20} w={140} h={44} t="elbow" fill={violetBg} stroke="#cfc4f5" color={violet} />
-      <Box x={20} y={150} w={160} h={44} t="Revolute joint" s="CORA" />
-      <Box x={240} y={150} w={160} h={44} t="1.6 rad" s="upper limit · QUDT unit" />
-      <Box x={460} y={150} w={160} h={44} t="URDF @ commit" s="PROV-O source" />
-      <Arrow d="M290 64 L130 146" />
-      <Arrow d="M320 64 V146" />
-      <Arrow d="M350 64 L520 146" />
-      <T x={170} y={100} a="start" s={11.5}>
-        is a
-      </T>
-      <T x={326} y={112} a="start" s={11.5}>
-        has limit
-      </T>
-      <T x={448} y={100} a="start" s={11.5}>
-        comes from
-      </T>
-      <T x={320} y={232}>
-        rules (SHACL) check every fact: right type, right unit, value within bounds
-      </T>
-    </Svg>
-  ),
-  "semantic-stack": (
-    <Svg label="Semantic web stack used by the studio" h={270}>
-      {[
-        ["SPARQL", "ask questions of the graph", "the assistant's validated query templates", "#e0f2fe", "#0369a1"],
-        ["SHACL", "rules the data must satisfy", "units, types, bounds, required masses", amberBg, amber],
-        ["Ontologies (RDFS / OWL)", "the vocabulary and its logic", "CORA · QUDT · PROV-O · ALOHA ontology", violetBg, violet],
-        ["RDF", "facts as subject - predicate - object", "elbow - hasUpperLimit - 1.6 rad", blueBg, blue],
-        ["GraphDB", "stores the triples and reasons over them", "repository kkh-aloha-engineering, on this computer", "#f1f5f9", ink],
-      ].map(([t, s, ex, bg, c], n) => (
-        <g key={t} transform={`translate(${40 + n * 12} ${14 + n * 50})`}>
-          <rect width={560 - n * 24} height={42} rx={8} fill={bg} stroke={c} strokeOpacity={0.35} />
-          <text x={14} y={18} fontSize={13} fontWeight={700} fill={c}>
-            {t}
-          </text>
-          <text x={14} y={34} fontSize={11.5} fill={ink}>
-            {s}
-          </text>
-          <text x={546 - n * 24} y={27} textAnchor="end" fontSize={11} fill={muted}>
-            {ex}
-          </text>
-        </g>
-      ))}
-    </Svg>
-  ),
-  "leader-follower": (
-    <Svg label="Leader and follower arms" h={210}>
-      <Box x={30} y={60} w={170} h={70} t="Leader arm" s="WidowX 250 · moved by hand" />
-      <Box x={440} y={60} w={170} h={70} t="Follower arm" s="ViperX 300 S · does the work" fill={blueBg} stroke={blueLine} color={blue} />
-      <Arrow d="M200 95 H436" />
-      <T x={318} y={84}>
-        joint angles, many times per second
-      </T>
-      <Arrow d="M318 100 V150" dash />
-      <Box x={220} y={152} w={196} h={46} t="Recordings" s="→ training data for a policy" />
-    </Svg>
-  ),
-  "lfd-pipeline": (
-    <Svg label="Imitation learning pipeline" h={230}>
-      {[
-        ["Teleoperate", "leader → follower", true],
-        ["Record", "joints · images", true],
-        ["Train policy", "e.g. ACT", false],
-        ["Run policy", "on the robot", false],
-        ["Evaluate", "success rate", false],
-      ].map(([t, s, here], n) => {
-        const x = 12 + n * 126;
-        return (
-          <g key={t as string}>
-            <Box x={x} y={50} w={112} h={56} t={t as string} s={s as string} fs={13} fill={here ? greenBg : "#fff"} stroke={here ? "#bfe3cf" : line} color={here ? green : ink} />
-            {n < 4 && <Arrow d={`M${x + 112} 78 H${x + 124}`} />}
-          </g>
-        );
-      })}
-      <Arrow d="M194 106 V146" dash />
-      <Box x={120} y={150} w={240} h={52} t="Simulate the follower" s="physics model, OpenModelica" fill={greenBg} stroke="#bfe3cf" color={green} />
-      <rect x={410} y={160} width={14} height={14} rx={3} fill={greenBg} stroke="#bfe3cf" />
-      <T x={430} y={172} a="start" s={11.5}>
-        in the studio today
-      </T>
-      <rect x={410} y={182} width={14} height={14} rx={3} fill="#fff" stroke={line} />
-      <T x={430} y={194} a="start" s={11.5}>
-        not done here
-      </T>
-      <T x={320} y={30} s={12}>
-        imitation learning: learn the task by watching people do it
-      </T>
-    </Svg>
-  ),
-  chunking: (
-    <Svg label="Single-step policy versus action chunking" h={220}>
-      <T x={20} y={36} a="start" s={12.5} c={ink} w={650}>
-        One action per decision
-      </T>
-      {Array.from({ length: 12 }, (_, n) => (
-        <g key={n}>
-          <circle cx={60 + n * 46} cy={64} r={7} fill={blue} />
-          <line x1={60 + n * 46} y1={74} x2={60 + n * 46} y2={92} stroke={blue} strokeWidth={2} />
-          <rect x={52 + n * 46} y={92} width={16} height={10} rx={2} fill={blueBg} stroke={blueLine} />
-        </g>
-      ))}
-      <T x={20} y={136} a="start" s={12.5} c={ink} w={650}>
-        Action chunks (ACT): k actions per decision
-      </T>
-      {Array.from({ length: 3 }, (_, n) => (
-        <g key={n}>
-          <circle cx={60 + n * 184} cy={160} r={7} fill={amber} />
-          <path d={`M${60 + n * 184} 170 V180 H${60 + n * 184 + 138} V188`} fill="none" stroke={amber} strokeWidth={2} />
-          {Array.from({ length: 4 }, (_, m) => (
-            <rect key={m} x={52 + n * 184 + m * 46} y={188} width={16} height={10} rx={2} fill={amberBg} stroke="#f3d9a8" />
-          ))}
-        </g>
-      ))}
-      <T x={620} y={36} a="end" s={11}>
-        ● decision by the policy · ▭ action executed
-      </T>
-    </Svg>
-  ),
   grounding: (
     <Svg label="Answer without and with grounding" h={220}>
       <Box x={30} y={30} w={270} h={52} t="Question" s="“What is the elbow's upper limit?”" />
@@ -1089,7 +967,7 @@ const DIAGRAMS: Partial<Record<Visual, React.ReactNode>> = {
   rag: (
     <Svg label="Retrieval-augmented generation pipeline" h={250}>
       <Box x={10} y={40} w={110} h={56} t="Question" s="from the user" fs={13} />
-      <Box x={140} y={40} w={150} h={56} t="Retrieve" s="SPARQL on GraphDB" fs={13} fill={violetBg} stroke="#cfc4f5" color={violet} />
+      <Box x={140} y={40} w={150} h={56} t="Retrieve" s="Search the sources" fs={13} fill={violetBg} stroke="#cfc4f5" color={violet} />
       <Box x={310} y={40} w={150} h={56} t="Local LLM" s="Ollama · Nemotron" fs={13} fill={blueBg} stroke={blueLine} color={blue} />
       <Box x={480} y={40} w={150} h={56} t="Answer" s="with cited facts" fs={13} fill={greenBg} stroke="#bfe3cf" color={green} />
       <Arrow d="M120 68 H136" />
@@ -1110,7 +988,7 @@ const DIAGRAMS: Partial<Record<Visual, React.ReactNode>> = {
         graph, model and LLM all run locally
       </T>
       <T x={320} y={236} s={11}>
-        with a knowledge graph as the retrieval source, this is often called GraphRAG
+        the retrieval source is the project files
       </T>
     </Svg>
   ),
@@ -1176,8 +1054,6 @@ const DIAGRAMS: Partial<Record<Visual, React.ReactNode>> = {
       <Box x={352} y={70} w={252} h={44} t="Is the robot model right?" fs={12.5} fill={greenBg} stroke="#bfe3cf" color={green} />
       {[
         ["Twin validation", "model vs real recordings · being set up"],
-        ["Rule-check detection", "planted errors found: 12 of 16"],
-        ["Grounding question", "does graph evidence help the AI?"],
       ].map(([t, s], n) => (
         <g key={t}>
           <T x={366} y={140 + n * 38} a="start" s={12} c={ink} w={650}>

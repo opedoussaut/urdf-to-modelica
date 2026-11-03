@@ -1,4 +1,4 @@
-"""Task scenarios: Level-1 visual grasp rule, ALOHA binding (follower IK), API linkage and semantic trace."""
+"""Task scenarios: Level-1 visual grasp rule, ALOHA binding (follower IK), API linkage."""
 import numpy as np
 import pytest
 
@@ -93,10 +93,7 @@ def test_api_links_recording_to_scenario_task_and_trace(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
     from kkh.api.main import app
     import kkh.studio.api as api
-    import kkh.semantic.trace as trace
 
-    written = []
-    monkeypatch.setattr(trace, "_write", lambda g: written.append(g) or {"graphdb": "captured"})  # no GraphDB writes
     monkeypatch.setattr(api, "store", Store(tmp_path / "api.sqlite"))
     client = TestClient(app)
     sc = client.get("/api/workbench/scenarios/aloha2-cube-transfer").json()
@@ -112,30 +109,11 @@ def test_api_links_recording_to_scenario_task_and_trace(tmp_path, monkeypatch):
     task = client.get(f"/api/workbench/trajectory/{saved['id']}/task").json()
     assert task["metrics"]["task_completed"] and not task["scenario_changed_since_recording"]
     assert len(task["cube_path"]) == len(rows)
-    # the observation reaches the semantic trace with its scenario and the model revision it was recorded against
-    from rdflib import RDF
-    obs = [g for g in written if (None, RDF.type, trace.K.Observation) in g]
-    assert obs and (None, trace.K.forScenario, trace.E[f"scenario/{sc['id']}/{sc['version']}"]) in obs[-1]
-    assert (None, trace.PROV.wasInfluencedBy, trace.revision_node("rev-under-test")) in obs[-1]
     # Cartesian follower control endpoint
     ik = client.post("/api/workbench/follower-ik", json={"q": HOME, "target": [0.3, -0.14, 0.1]}).json()
     assert ik["success"]
     plain = client.post("/api/workbench/documents/trajectory", json={"name": "plain", "data": {k: v for k, v in data.items() if k != "scenario"}}).json()
     assert client.get(f"/api/workbench/trajectory/{plain['id']}/task").status_code == 404
-
-
-@pytest.mark.graphdb
-def test_ontology_applicability_separates_tunable_assumptions_from_verified_facts():
-    from kkh.semantic.graphdb import GraphDB
-    from kkh.semantic.parameters import applicability
-    db = GraphDB(timeout=8)
-    try:
-        kp = applicability(db, "ALOHA2.Control.FollowerServoSettings.shoulder", "kp")
-        assert kp["applicable"] and kp["evidence_status"] == "Assumed", kp
-        tau = applicability(db, "ALOHA2.Arms.AlohaVX300s.j_shoulder", "tau_max")
-        assert not tau["applicable"]
-    finally:
-        db.close()
 
 
 def test_simulated_signals_match_kinematic_signals_for_perfect_tracking():

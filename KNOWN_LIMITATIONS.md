@@ -71,8 +71,6 @@
 * Proposal checks are structural and policy checks (instance exists, numeric, changed, Modelica-declared bounds,
   only tunable design parameters). They do not establish engineering correctness — the simulation comparison does,
   for the recorded reference only.
-* No measured evidence that GraphDB grounding improves answers (see `reports/DETECTION_RESULTS.md` and
-  `reports/BENCHMARK_RESULTS.md`); the "with ontology" side adds traceable evidence, not proven accuracy.
 
 ## Application
 * The Modelica "Physical diagram" is a connection graph from source structure/placements, not icon-level Modelica graphics.

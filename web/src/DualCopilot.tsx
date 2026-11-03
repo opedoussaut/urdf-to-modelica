@@ -207,11 +207,9 @@ export default function DualCopilot({ context }: { context: Context }) {
   const sides = simple
     ? {
         without: { title: "AI on its own", sub: "Reads the robot files only" },
-        with: { title: "AI + engineering knowledge", sub: "Also checks the knowledge graph" },
       }
     : {
-        without: { title: "Without ontology", sub: "Engineering sources + shared context" },
-        with: { title: "With ontology", sub: "Same foundation + GraphDB evidence" },
+        without: { title: "Local AI", sub: "Engineering sources + shared context" },
       };
   const pairIds = [...new Set(messages.map((m) => m.data.pair || m.id))];
   const groups: [string, Doc[]][] = [];
@@ -231,7 +229,7 @@ export default function DualCopilot({ context }: { context: Context }) {
           <p>
             {simple
               ? "Ask anything about the arm. You get two answers side by side - one from the AI alone, one backed by the studio's engineering knowledge - so you can see the difference."
-              : "One question, the same local model, two answers: without and with ontology grounding. Compare the evidence."}
+              : "One question to the local model, answered from the engineering sources."}
           </p>
         </div>
         <div className="cp-head-actions">
@@ -357,13 +355,6 @@ export default function DualCopilot({ context }: { context: Context }) {
                       {sides.without.sub}
                     </span>
                   </div>
-                  <div className="with">
-                    <Network size={16} />
-                    <span>
-                      <b>{sides.with.title}</b>
-                      {sides.with.sub}
-                    </span>
-                  </div>
                 </div>
                 <div className="cp-suggest">
                   {SUGGESTIONS.map((s) => {
@@ -398,13 +389,13 @@ export default function DualCopilot({ context }: { context: Context }) {
                     </div>
                   )}
                   <div className="cp-answers">
-                    {(["without", "with"] as const).map((mode) => {
-                      const answer = pair.find((m) => m.data.role === "assistant" && (m.data.mode === mode || (mode === "with" && m.data.mode === "grounded")));
+                    {(["without"] as const).map((mode) => {
+                      const answer = pair.find((m) => m.data.role === "assistant" && (m.data.mode === mode || (false && m.data.mode === "grounded")));
                       return (
                         <article key={mode} className={"cp-answer " + mode}>
                           <header>
                             <span className="cp-side">
-                              {mode === "with" ? <Network size={14} /> : <MessageSquare size={14} />}
+                              <MessageSquare size={14} />
                               {sides[mode].title}
                             </span>
                             {answer && answer.data.status !== "pending" && (

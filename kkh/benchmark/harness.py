@@ -27,8 +27,6 @@ from kkh.domain.aloha.pipeline import Pipeline
 from kkh.domain.aloha.scenarios import scenarios
 from kkh.engineering.omc import MatResult, OMCService
 from kkh.llm.ollama import Ollama
-from kkh.rag.retrieval import joint_facts
-from kkh.semantic.graphdb import GraphDB
 
 TASKS = [
     {"id": "generate-elbow-axis", "joint": "elbow", "field": "axis",
@@ -123,20 +121,16 @@ def run(model=None, repeats=1, seed=42, max_attempts=2) -> dict:
     frozen = ROOT / "generated/modelica/ALOHA2/Arms/AlohaVX300s.mo"
     report = {"run_id": run_id, "model": model, "seed": seed, "repeats": repeats, "max_attempts": max_attempts,
               "scope": "Constrained numeric parameter generation/repair in isolated copies of the full ALOHA2 assembly",
-              "protocol": f"Same URDF excerpt, tasks, seed, temperature=0, 8192 context, 500 output tokens, up to {max_attempts} attempts. C adds live ontology facts. Failed attempts receive independent validation diagnostics, never a hidden target answer. Numeric proposals are evaluated only in isolated full-model copies.",
+              "protocol": f"Same URDF excerpt, tasks, seed, temperature=0, 8192 context, 500 output tokens, up to {max_attempts} attempts. Failed attempts receive independent validation diagnostics, never a hidden target answer. Numeric proposals are evaluated only in isolated full-model copies.",
               "source_sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
               "frozen_model_sha256": hashlib.sha256(frozen.read_bytes()).hexdigest(),
               "started": dt.datetime.now(dt.timezone.utc).isoformat(), "trials": []}
-    from kkh.semantic.local import knowledge_store
-    client, db = Ollama(), knowledge_store()
-    report["ontology_backend"] = db.backend
-    report["protocol"] = report["protocol"].replace("live ontology", db.backend + " ontology")
+    client = Ollama()
     try:
         report["model_digest"] = next(m["digest"] for m in client.models() if m["name"] == model)
         for repeat in range(repeats):
             for task in TASKS:
-                # Interleave B/C in alternating order to reduce warm-up ordering effects.
-                for workflow in (["B", "C"] if repeat % 2 == 0 else ["C", "B"]):
+                for workflow in ["B"]:
                     trial = {"workflow": workflow, "task": task["id"], "repeat": repeat,
                              "seed": seed + repeat, "initial_fault": task["fault"], "parameter_correct": False,
                              "check_ok": False, "simulate_ok": False, "engineering_valid": False}
@@ -146,10 +140,6 @@ def run(model=None, repeats=1, seed=42, max_attempts=2) -> dict:
                     try:
                         excerpt = ET.tostring(tree.find(f"joint[@name='{task['joint']}']"), encoding="unicode")
                         context = {"task": task["instruction"], "source_urdf": excerpt}
-                        if workflow == "C":
-                            context["ontology_facts"] = joint_facts("follower_right", task["joint"], db)
-                            if not context["ontology_facts"]:
-                                raise RuntimeError("No ontology evidence")
                         schema = {"type": "object", "properties": {
                             task["field"]: {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3}
                             if task["field"] == "axis" else {"type": "number"}},
@@ -176,19 +166,17 @@ def run(model=None, repeats=1, seed=42, max_attempts=2) -> dict:
                     print(f"{workflow} {task['id']}: valid={trial['engineering_valid']} ({trial['wall_seconds']}s)", flush=True)
     finally:
         client.close()
-        db.close()
     report["summary"] = {w: {"trials": len(rows := [t for t in report["trials"] if t["workflow"] == w]),
                                     "parameter_correct": sum(t["parameter_correct"] for t in rows),
                                     "executable": sum(t["simulate_ok"] for t in rows),
                                     "engineering_valid": sum(t["engineering_valid"] for t in rows),
                                     "first_attempt_valid": sum(t.get("first_attempt_valid", False) for t in rows),
                                     "repair_iterations": sum(t.get("repair_iterations", 0) for t in rows),
-                                    "mean_wall_seconds": round(sum(t["wall_seconds"] for t in rows)/len(rows), 2)} for w in ["B", "C"]}
+                                    "mean_wall_seconds": round(sum(t["wall_seconds"] for t in rows)/len(rows), 2)} for w in ["B"]}
     report["success"] = all("response" in t and "error" not in t for t in report["trials"])
     report["finished"] = dt.datetime.now(dt.timezone.utc).isoformat()
-    b, c = report["summary"]["B"], report["summary"]["C"]
-    report["interpretation"] = (f"B validated {b['engineering_valid']}/{b['trials']} candidates; C validated {c['engineering_valid']}/{c['trials']}. "
-        + ("No ontology benefit was observed in this paired pilot. " if b['engineering_valid'] == c['engineering_valid'] else "A difference was observed in this small sample; it is not statistically established. ")
+    b = report["summary"]["B"]
+    report["interpretation"] = (f"B validated {b['engineering_valid']}/{b['trials']} candidates. "
         + "Compilation alone does not establish engineering correctness. These constrained tasks and local model do not establish whole-model synthesis or statistical generalization.")
     report["frozen_model_unchanged"] = hashlib.sha256(frozen.read_bytes()).hexdigest() == report["frozen_model_sha256"]
     (out / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")

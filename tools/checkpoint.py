@@ -6,11 +6,10 @@ Writes to E:/users/opt2.ai/NOVA/ai-kkh-preserved/<label>-<timestamp>/:
   untracked/                untracked, non-ignored files, if any
   user-data/studio.sqlite3  consistent copy via the SQLite backup API (chats, trajectories, model revisions)
   user-data/...             copilot audits, studio model working copies, validation and run reports (JSON only)
-  graphdb/kkh-aloha-engineering.nq   read-only N-Quads export of the project repository (all named graphs)
   manifest.json             SHA-256 of every file
 
 Excluded: .venv, node_modules, web/dist, build, third_party (re-fetchable, pinned), license files,
-simulation result binaries (*.mat), large benchmark candidate copies, the live GraphDB data directory.
+simulation result binaries (*.mat), large benchmark candidate copies, the live data directory.
 """
 from __future__ import annotations
 
@@ -73,26 +72,17 @@ def main(label: str = "checkpoint") -> Path:
     for f in (ROOT / "runs").rglob("*.json"):
         rel = f.relative_to(ROOT)
         if f.name in REPORT_NAMES and "ALOHA2" not in rel.parts and "omc" not in rel.parts \
-                and "graphdb-container" not in rel.parts:
+               :
             target = ud / rel
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(f, target)
-    try:
-        import httpx
-        r = httpx.get("http://localhost:7201/repositories/kkh-aloha-engineering/statements",
-                      params={"infer": "false"}, headers={"Accept": "application/n-quads"}, timeout=120)
-        r.raise_for_status()
-        (dest / "graphdb").mkdir()
-        (dest / "graphdb/kkh-aloha-engineering.nq").write_bytes(r.content)
-    except Exception as exc:  # GraphDB down: record it, do not fail the checkpoint
-        (dest / "graphdb-export-skipped.txt").write_text(repr(exc))
     files = {p.relative_to(dest).as_posix(): {"sha256": sha(p), "bytes": p.stat().st_size}
              for p in dest.rglob("*") if p.is_file()}
     manifest = {"created": dt.datetime.now(dt.timezone.utc).isoformat(), "source": str(ROOT),
                 "head": git("rev-parse", "HEAD", text=True).stdout.strip(),
                 "branch": git("rev-parse", "--abbrev-ref", "HEAD", text=True).stdout.strip(),
                 "uncommitted_patch": bool(diff), "untracked_files": len(untracked),
-                "excluded": "venv, node_modules, web/dist, build, third_party, licenses/keys, *.mat, benchmark model copies, live GraphDB data",
+                "excluded": "venv, node_modules, web/dist, build, third_party, licenses/keys, *.mat, benchmark model copies",
                 "files": files}
     (dest / "manifest.json").write_text(json.dumps(manifest, indent=1))
     git("bundle", "verify", str(dest / "repository.bundle"))

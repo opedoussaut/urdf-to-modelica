@@ -10,7 +10,6 @@ import "monaco-editor/editor/contrib/contextmenu/browser/contextmenu";
 import EditorWorker from "monaco-editor/editor/editor.worker?worker";
 import cytoscape from "cytoscape";
 import ModelicaDiagram from "./ModelicaDiagram";
-import SemanticTrace from "./SemanticTrace";
 import {
   ExternalLink,
   Save,
@@ -848,9 +847,6 @@ export default function ModelicaEditor({ context, setContext }: Props) {
                     {entity.robot === "aloha_vx300s" ? "Follower" : "Leader"} ·{" "}
                     {entity.joint} ({entity.type})
                   </strong>
-                  <small title={entity.iri}>
-                    Knowledge graph: {entity.iri.split("/aloha2/")[1]}
-                  </small>
                   <small>
                     URDF {entity.urdf.file} · {entity.urdf.parent} →{" "}
                     {entity.urdf.child}
@@ -952,7 +948,6 @@ export default function ModelicaEditor({ context, setContext }: Props) {
           )}
         </aside>
       </div>
-      <details className="wb-card wb-pad"><summary>Selected component · ontology evidence and parameter provenance</summary><SemanticTrace context={context}/></details>
       {changes && (
         <section className="wb-card wb-pad">
           <h2>Native editor changes · {changes.changes.length} files</h2>

@@ -76,42 +76,6 @@ def test_native_roundtrip_and_baseline_guard(tmp_path):
     assert manifest(baseline)==before
 
 
-def test_dual_context_isolation_and_durable_errors(tmp_path,monkeypatch):
-    from kkh.studio import copilot
-    import kkh.rag.retrieval as retrieval
-    import kkh.semantic.graphdb as graphdb
-    store=Store(tmp_path/'state.sqlite');chat=store.create('conversation','Dual',{})
-    calls=[]
-    class Local:
-        def __init__(self,**kw):pass
-        def chat(self,messages,**settings):
-            calls.append((messages,settings));return {'content':json.dumps({'answer':'Source-backed answer','source_paths':[],'assumptions':[],'proposed_change':''}),'metrics':{}}
-        def close(self):pass
-    class DB:
-        def __init__(self,**kw):pass
-        def close(self):pass
-    monkeypatch.setattr(copilot,'Ollama',Local);monkeypatch.setattr(graphdb,'GraphDB',DB)
-    retrieved=[]
-    def retrieve(question,db):retrieved.append(question);return [{'id':'E1','property':'axis','value':'0,1,0'}]
-    monkeypatch.setattr(retrieval,'retrieve',retrieve)
-    paired=copilot.pair(store,chat['id'],'Explain elbow','local-test',{'selected':'elbow'})
-    assert len(retrieved)==1 and len(calls)==2
-    plain,grounded=sorted(calls,key=lambda v:'ADDITIONAL ONTOLOGY EVIDENCE' in v[0][-1]['content'])
-    assert plain[0][0]==grounded[0][0] and plain[1]==grounded[1]
-    assert 'ADDITIONAL ONTOLOGY EVIDENCE' not in plain[0][-1]['content']
-    assert 'ADDITIONAL ONTOLOGY EVIDENCE' in grounded[0][-1]['content']
-    plain_message=next(m for m in paired['messages'] if m['data']['mode']=='without')
-    assert all('GraphDB' not in t['tool'] for t in plain_message['data']['trace'])
-    assert len(Store(store.path).list('message'))==3
-    def failure(*a,**kw):raise RuntimeError('GraphDB offline')
-    monkeypatch.setattr(retrieval,'retrieve',failure)
-    paired=copilot.pair(store,chat['id'],'Another elbow question','local-test',{})
-    assert {m['data']['mode']:m['data']['status'] for m in paired['messages']}=={'without':'complete','with':'error'}
-    paired=copilot.pair(store,chat['id'],'Keep this question despite invalid context','local-test',{'robot':'missing'})
-    assert all(m['data']['status']=='error' for m in paired['messages'])
-    assert any(m['data'].get('content')=='Keep this question despite invalid context' for m in Store(store.path).messages(chat['id']))
-
-
 def test_tracking_metrics_do_not_claim_delay_for_unexcited_axes():
     from kkh.studio.dynamics import measure
     t=np.linspace(0,2,101);q=np.tile(R.C.start_vector(),(101,1));q[:,0]=.1*np.sin(t)
@@ -271,12 +235,7 @@ def test_copilot_proposal_checks_reject_noop_bounds_and_class_names():
     assert out[0]["file"] == "Control/FollowerServoSettings.mo" and out[0]["bounds"] == [1.0, 500.0]
     assert "no change" in out[1]["check"] and "[1, 500]" in out[2]["check"] and "instance name" in out[3]["check"]
     assert out[4]["file"] == "Arms/AlohaVX300s.mo"
-    basis = out[4]["semantics"]["basis"]
-    if basis.startswith("knowledge graph"):          # ontology-grounded decision (GraphDB available)
-        assert "Verified fact from data/urdf/aloha_vx300s.urdf" in out[4]["check"]
-        assert out[0]["semantics"]["tunable"] is True and out[0]["semantics"]["evidence_status"] == "Assumed"
-    else:                                            # explicit, conservative fallback
-        assert "GraphDB unavailable" in out[4]["check"]
+    assert out[4]["basis"] == "file rule" and "outside the Control package" in out[4]["check"]
 
 
 def test_dynamic_follower_binds_servo_parameters_to_revision(tmp_path):

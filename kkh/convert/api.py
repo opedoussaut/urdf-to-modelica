@@ -243,7 +243,7 @@ def review_file(kind: str, run: str = "", mode: str = "", mutation: str = ""):
     except ValueError as exc:
         raise HTTPException(404, str(exc)) from exc
     return {"target": t, "label": ctx["label"], "text": model_text(files), "files": list(files),
-            "omc_messages": ctx["omc_messages"], "entities": entities(t), "graph": ctx["robot"] in ("aloha_vx300s", "aloha_wx250s")}
+            "omc_messages": ctx["omc_messages"], "entities": entities(t)}
 
 
 class ReviewRun(BaseModel):

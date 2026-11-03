@@ -4,7 +4,6 @@
 The field moves weekly, so every entry carries its date and link. Re-check before quoting a number.
 
 Why this file exists: HT GEN7 PhysAI Studio trains no policy. Its evidence is (1) the engineering model's verification
-and, next, validation against real ALOHA recordings, (2) the ontology rule-check experiment
 (`reports/DETECTION_RESULTS.md`), (3) the grounding research question. This file tracks what learned robot "brains"
 output and how they are measured, so the studio stays a useful **pre-deployment engineering check** for any of them
 rather than a competitor to them. The plain-language version lives in the studio: Physical AI Atlas, concepts

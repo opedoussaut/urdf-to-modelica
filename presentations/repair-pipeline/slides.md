@@ -414,12 +414,10 @@ kkh/convert    reused building blocks
 
 kkh/engineering  URDF parser + kinematics, OpenModelica service, result reader
 kkh/llm          Ollama client (local models only)
-kkh/semantic + kkh/rag   GraphDB knowledge graph, GraphRAG
 kkh/domain/aloha · kkh/studio
 ```
 
 Web front end: React + TypeScript + three.js. Back end: FastAPI. Engines: OpenModelica 1.27.1 + MSL 4.1.0, MuJoCo 3.16,
-Ollama, GraphDB.
 
 ---
 

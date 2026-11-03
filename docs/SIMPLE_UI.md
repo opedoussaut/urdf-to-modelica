@@ -7,7 +7,6 @@ remembered per browser (`localStorage kkh.ui`).
 | Page | What it does | Code |
 | --- | --- | --- |
 | **Convert & compare** | URDF → Modelica three ways, scored by the same seven real OpenModelica checks | `kkh/convert/`, `web/src/simple/Convert.tsx` |
-| **Review** | Review a generated (or seeded test) file: manually, AI-assisted, or AI + ontologies; each review scored against known defects | `kkh/convert/review.py`, `review_score.py`, `web/src/simple/Review.tsx` |
 | **Repair workflow** | URDF input → **URDF compliance** (Stage 0: ROS wiki specification, tree rule, physics; a file with errors is refused) → Convert (DLR, no AI) → OpenModelica check (ordered steps, diagnostics.json) → AI Repair Comparison (AI only vs AI + Modelica assets, frozen fault set v1) → Engineer review (keep/reject each edit, amend, re-check, OMEdit) → Approved model (justified approval, separate layout pass) → Simulation. Reads `runs/workflow/<run>/`; see docs/REPAIR_PIPELINE_PROPOSAL.md | `kkh/workflow/*`, `web/src/simple/Workflow.tsx` |
 | **Guide** | Documentation of the flow (5 steps: you do / what happens / you get / why), the design rationale, dated measured results, the revised workflow with build status, and a searchable glossary (48 terms). Engineering view adds code paths and sources. Deep link `?page=guide` | `web/src/simple/Guide.tsx`, `guideContent.ts` |
 | **Learn the ideas** | The Physical AI Atlas, incl. the concept "Three ways to build a model from a robot file" | `web/src/Atlas.tsx` |
@@ -20,7 +19,6 @@ Inputs (`kkh/convert/sources.py`): five pinned robots — the **SO-101 arm** (Th
 `g1_29dof_with_hand_rev_1_0.urdf`, BSD-3), **Berkeley Humanoid Lite** (CC-BY-SA-4.0), the ALOHA 2 **follower**
 (`aloha_vx300s`) and **leader** (`aloha_wx250s`) — or an uploaded `.urdf` (≤ 300 kB, parsed before acceptance, stored by
 hash in `runs/convert/uploads/`). The humanoids are pinned sparse checkouts (URDF + the meshes it references, listed in
-`config/public_sources.json` `sparse_files`). Only the ALOHA arms are in the knowledge graph so far.
 
 **3D view** (`kkh/convert/robot3d.py`, `web/src/simple/RobotView.tsx`): drawn from the same URDF that is converted —
 joint frames from URDF origins (rpy as Z·Y·X), motion about the URDF axis, mimic joints applied, the maker's STL meshes.
@@ -131,9 +129,7 @@ injected into the reference) are caught on exactly the injected link.
 **seeded test file** (`seeded`): the frozen follower class with exactly one known error from
 `kkh/benchmark/detection.MUTATIONS` (M0 control … H7, held-out ones marked).
 - **Manual**: a form (entity, category, note, confidence, optional correction); time measured.
-- **AI-assisted** / **AI + ontologies**: local model (any installed), same prompt, seed 42, 24 k context, structured
   output (`issues` with entity/category/evidence/confidence/correction, `claims` with numeric URDF facts). The
-  ontology mode adds GraphDB joint facts (`kkh/rag/retrieval.joint_facts`; pinned arms only).
 - Reviewers never see the ground truth: file (annotations removed) + cleaned URDF + OpenModelica's own messages.
 
 Ground truth: converted files → `runner.findings()` defects (entity + category); seeded → the mutation.
@@ -143,9 +139,6 @@ nothing new; conversion → full OpenModelica re-score; at most 3 per review), *
 **Brier score** of the confidence, time. "Compare the reviews" shows one column per review; exports via
 `/api/convert/scores`.
 
-First measurements (seeded M1, elbow axis sign): nemotron-3-nano:4b — AI and AI + ontologies both report nothing
-(recall 0; the ontology review states 20/20 correct facts but does not use them); qwen2.5-coder:7b — AI reports
-nothing, AI + ontologies reports 12 false alarms at full confidence (precision 0, Brier 1.0), none of its corrections
 applicable. A correct manual review of M3 scores recall 1, precision 1, correction 1/1.
 
 The earlier "edit and save versions" feature was removed at the user's request: the files are reviewed, not hand-fixed.

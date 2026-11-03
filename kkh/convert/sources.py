@@ -24,7 +24,7 @@ PINNED = {
                     "Note: the published file gives every joint lower = upper = 0, effort 0 and velocity 0 (exporter defaults), "
                     "and two thumb links an inertia rounded to zero; Stage 0 reports both"],
         "license": "Apache-2.0", "repo": "https://github.com/Westwood-Robotics/THEMIS-Simulation-Model",
-        "provenance": "THEMIS-Simulation-Model @ c955a30 (pinned, config/public_sources.json)", "graph": False},
+        "provenance": "THEMIS-Simulation-Model @ c955a30 (pinned, config/public_sources.json)"},
     "so101": {
         "path": "third_party/so_arm100/Simulation/SO101/so101_new_calib.urdf",
         "label": "SO-101 arm (LeRobot)", "short": "SO-101", "demo": True,
@@ -33,7 +33,7 @@ PINNED = {
                     "Hugging Face LeRobot documentation (SO-101 setup and calibration)",
                     "Note: the file gives every joint the same effort limit (10 N·m), a generic value rather than the servo rating"],
         "license": "Apache-2.0", "repo": "https://github.com/TheRobotStudio/SO-ARM100",
-        "provenance": "SO-ARM100 @ a758567 (pinned, config/public_sources.json)", "graph": False},
+        "provenance": "SO-ARM100 @ a758567 (pinned, config/public_sources.json)"},
     "unitree_g1": {
         "path": "third_party/unitree_ros/robots/g1_description/g1_29dof_with_hand_rev_1_0.urdf",
         "label": "Unitree G1 EDU with Dex3-1 hands", "short": "Unitree G1",
@@ -41,7 +41,7 @@ PINNED = {
         "sources": ["Unitree unitree_ros g1_description (official URDF g1_29dof_with_hand_rev_1_0)",
                     "Unitree G1 product page and developer documentation"],
         "license": "BSD-3-Clause", "repo": "https://github.com/unitreerobotics/unitree_ros",
-        "provenance": "unitree_ros @ 5994d4f (pinned, config/public_sources.json)", "graph": False},
+        "provenance": "unitree_ros @ 5994d4f (pinned, config/public_sources.json)"},
     "berkeley_humanoid_lite": {
         "path": "third_party/berkeley_humanoid_lite_assets/data/robots/berkeley_humanoid/berkeley_humanoid_lite/urdf/berkeley_humanoid_lite.urdf",
         "label": "Berkeley Humanoid Lite", "short": "Berkeley Humanoid Lite",
@@ -49,19 +49,19 @@ PINNED = {
         "sources": ["Berkeley Humanoid Lite assets (URDF exported from the project's CAD)",
                     "Project README joint table and motor configuration", "RSS 2025 paper (arXiv 2504.17249)"],
         "license": "CC-BY-SA-4.0", "repo": "https://github.com/HybridRobotics/Berkeley-Humanoid-Lite-Assets",
-        "provenance": "Berkeley-Humanoid-Lite-Assets @ fc90fed (pinned, config/public_sources.json)", "graph": False},
+        "provenance": "Berkeley-Humanoid-Lite-Assets @ fc90fed (pinned, config/public_sources.json)"},
     "aloha_vx300s": {"path": "data/urdf/aloha_vx300s.urdf", "label": "ALOHA 2 follower arm (ViperX 300 S)", "short": "ALOHA follower",
                      "what": "The arm that does the work in the ALOHA 2 bimanual workcell, with a two-finger gripper",
                      "sources": ["Interbotix ALOHA xacro (aloha_vx300s), expanded by tools/expand_xacro.py",
                                  "Trossen specification pages", "ALOHA 2 paper (arXiv 2405.02292)"],
                      "license": "BSD-3-Clause", "repo": "https://github.com/Interbotix/interbotix_ros_manipulators",
-                     "provenance": "Interbotix xacro, pinned commit, expanded by tools/expand_xacro.py", "graph": True},
+                     "provenance": "Interbotix xacro, pinned commit, expanded by tools/expand_xacro.py"},
     "aloha_wx250s": {"path": "data/urdf/aloha_wx250s.urdf", "label": "ALOHA 2 leader arm (WidowX 250 S)", "short": "ALOHA leader",
                      "what": "The arm a person moves by hand to teach ALOHA 2 (teleoperation)",
                      "sources": ["Interbotix ALOHA xacro (aloha_wx250s), expanded by tools/expand_xacro.py",
                                  "Trossen specification pages", "ALOHA 2 paper (arXiv 2405.02292)"],
                      "license": "BSD-3-Clause", "repo": "https://github.com/Interbotix/interbotix_ros_manipulators",
-                     "provenance": "Interbotix xacro, pinned commit, expanded by tools/expand_xacro.py", "graph": True},
+                     "provenance": "Interbotix xacro, pinned commit, expanded by tools/expand_xacro.py"},
 }
 
 
@@ -125,7 +125,7 @@ def store_upload(filename: str, data: bytes) -> dict:
     path = d / "robot.urdf"
     meta = {"id": "upload-" + digest[:16], "path": path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix(),
             "label": f"{info['robot']} (uploaded: {Path(filename).name})", "provenance": "uploaded by the user",
-            "kind": "upload", "graph": False, "sha256": digest, "structure": structure, **info}
+            "kind": "upload", "sha256": digest, "structure": structure, **info}
     (d / "meta.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
     return meta
 

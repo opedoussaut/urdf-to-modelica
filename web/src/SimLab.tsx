@@ -187,7 +187,6 @@ export default function SimLab({
           {params &&
             KEYS.map((k) => {
               const [lo, hi] = setup.bounds[k];
-              const sem = setup.semantics?.[k];
               return (
                 <div key={k} className={"lab-param" + (changed.includes(k) ? " changed" : "")}>
                   <div className="lab-param-row">
@@ -218,9 +217,6 @@ export default function SimLab({
                   </div>
                   <small>
                     baseline {setup.baseline[k]} · declared range [{lo}, {hi}] (ALOHA2.Control.ServoGains)
-                    {sem?.applicable !== undefined && (
-                      <> · knowledge graph: {sem.applicable ? "may be changed" : "blocked"} ({sem.evidence_status})</>
-                    )}
                   </small>
                 </div>
               );
@@ -424,9 +420,6 @@ export default function SimLab({
               <div className="lab-actions">
                 <button className="lab-ghost" onClick={() => setShowSource(!showSource)}>
                   <Code2 size={14} /> {showSource ? "Hide" : "Inspect"} Modelica
-                </button>
-                <button className="lab-ghost" onClick={() => open(7)}>
-                  <Network size={14} /> View semantic provenance
                 </button>
                 <button
                   className="lab-primary"

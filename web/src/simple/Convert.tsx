@@ -174,7 +174,7 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
                 {s.links} parts · {s.movable} moving joints · {s.mass_kg} kg
               </small>
               <small className="sx-tag">
-                {s.license} · {s.graph ? "knowledge graph available" : "not yet in the knowledge graph"}
+                {s.license}
               </small>
               {expert && <code>{s.sha256.slice(0, 16)}…</code>}
             </button>
@@ -201,7 +201,7 @@ export default function Convert({ openUnderstand, learn }: { openUnderstand: (t:
               <small>
                 {s.links} parts · {s.movable} moving joints · {s.mass_kg} kg
               </small>
-              <small className="sx-tag">Your upload · no knowledge graph</small>
+              <small className="sx-tag">Your upload</small>
               {expert && <code>{s.sha256.slice(0, 16)}…</code>}
             </button>
           ))}

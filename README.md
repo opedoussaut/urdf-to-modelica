@@ -48,7 +48,6 @@ scripts\start.ps1
 ```
 
 Then open http://127.0.0.1:8000. The start screen launches Stages 0–2 for a robot or an uploaded URDF; the repair,
-review and approval stages run from their own pages. GraphDB is optional for the pipeline (`-SkipGraphDB`).
 
 **Command line** (from bash, set `PYTHONPATH=.`):
 
@@ -62,7 +61,6 @@ python -m kkh.workflow.stage4_validate runs/workflow/<id>
 python -m kkh.workflow.campaign runs/workflow/<id> --model qwen3-coder:30b --cases natural,F04,F05
 ```
 
-**Tests:** `.venv\Scripts\python -m pytest -q tests/test_workflow_*.py` (markers: `omc`, `slow`, `graphdb`, `ollama`).
 
 ## Layout
 
@@ -79,6 +77,5 @@ presentations/     Slidev decks: repair-pipeline, themis-concept
 ## History
 
 This repository was split on 2026-11-02 from the `feat/urdf-repair-pipeline` branch of `ai-kkh-physicalai`, history
-included. It still contains the earlier HT GEN7 PhysAI Studio (ALOHA 2 evidence graph, GraphDB, copilot, benchmarks);
 see [docs/STUDIO_README.md](docs/STUDIO_README.md). Technical identifiers keep their historic names: the Python package
 `kkh`, `KKH_*` environment variables and the API paths.

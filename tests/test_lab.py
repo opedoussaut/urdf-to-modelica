@@ -1,4 +1,4 @@
-"""Demo lab features: 1D Modelica servo experiment, live URDF→Modelica pipeline, ontology reasoning, copilot default."""
+"""Demo lab features: 1D Modelica servo experiment, live URDF→Modelica pipeline, lab, copilot default."""
 import hashlib
 import math
 import time
@@ -102,29 +102,6 @@ def test_pipeline_rejects_sources_outside_the_allowlist():
     from kkh.studio import lab_api
     with pytest.raises(ValueError):
         lab_api.run_pipeline("../../etc/passwd")
-
-
-@pytest.mark.graphdb
-def test_reasoning_chain_and_rule_diagnostics_are_grounded():
-    from kkh.studio import reasoning
-    chain = reasoning.joint_reasoning("shoulder", "follower_right")
-    nodes = {n["id"]: n for n in chain["nodes"]}
-    assert len(chain["nodes"]) == 7
-    identity = {f["label"]: f for f in nodes["identity"]["facts"]}
-    assert identity["asserted type"]["value"] == "kkh:RevoluteJoint"
-    assert identity["cora:robotPart of"]["status"] == "inferred"   # via kkh:hasJoint ⊑ cora:robotPart
-    units = {f["label"]: f for f in nodes["units"]["facts"]}
-    assert "72 °" in units["upperLimit"]["value"]                 # degrees from the QUDT conversion multiplier
-    gates = nodes["constraints"]["facts"]
-    assert gates[0]["value"] == "may be changed" and gates[1]["value"] == "blocked"
-    unit = reasoning.rule_diagnostic("M3-unit-degrees")
-    assert unit["detected"] and unit["frozen_class_unchanged"] and unit["findings"][0]["category"] == "unit"
-    mimic = reasoning.rule_diagnostic("M6-mimic-sign")
-    assert mimic["detected"] and mimic["findings"][0]["rule"] == "mimic"
-    control = reasoning.rule_diagnostic("M0-control")
-    assert control["findings"] == []
-    with pytest.raises(ValueError):
-        reasoning.rule_diagnostic("M7-unsourced-mass")  # not offered in the demo list
 
 
 def test_copilot_default_is_configurable_and_missing_models_are_explicit(monkeypatch):

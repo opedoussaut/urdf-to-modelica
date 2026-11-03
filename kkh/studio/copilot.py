@@ -70,9 +70,7 @@ def check_parameter_changes(changes, sources):
             reason = f"{comp} ({type_name}) has no parameter '{key}' set in {file}"
         elif not numeric:
             reason = f"{comp}.{key} = {current} is not a numeric literal; edit it in source"
-        elif not (semantic := ontology_applicability(f"ALOHA2.{file[:-3].replace('/', '.')}.{comp}", key, file))["applicable"]:
-            # Ontology-grounded gate: what the parameter represents, its evidence status and tunability come from the
-            # knowledge graph (kkh:ModelicaParameterBinding), not from file names or LLM text.
+        elif not (semantic := applicability(f"ALOHA2.{file[:-3].replace('/', '.')}.{comp}", key, file))["applicable"]:
             reason = semantic["reason"]
         elif not number:
             reason = "proposed value is not a number"
@@ -85,30 +83,19 @@ def check_parameter_changes(changes, sources):
         sem = semantic
         out.append({**change, "file": file, "type": type_name, "current": current,
                     "bounds": list(bounds) if bounds else None, "structurally_valid": not reason,
-                    "semantics": {k: sem.get(k) for k in ("found", "iri", "tunable", "evidence_status", "owner", "owner_label",
-                                                          "source", "unit", "bounds", "basis")} if sem else None,
+                    "basis": sem.get("basis") if sem else None,
                     "check": reason or ("component instance and numeric parameter found in " + file
                                         + (f"; within declared bounds [{bounds[0]:g}, {bounds[1]:g}]" if bounds else "; no bounds declared")
                                         + (f"; {sem['reason']}" if sem else ""))})
     return out
 
 
-def ontology_applicability(modelica_path: str, parameter: str, file: str) -> dict:
-    """Knowledge-graph decision for a proposed change; conservative file rule only if GraphDB is unreachable."""
-    try:
-        from kkh.semantic.graphdb import GraphDB
-        from kkh.semantic.parameters import applicability
-        db = GraphDB(timeout=8)
-        try:
-            return {**applicability(db, modelica_path, parameter), "basis": "knowledge graph (GraphDB)"}
-        finally:
-            db.close()
-    except Exception as exc:  # GraphDB unavailable: never allow source facts through
-        ok = file.startswith("Control/")
-        return {"found": None, "applicable": ok, "basis": "fallback file rule (GraphDB unavailable)",
-                "reason": ("tunable design parameter (fallback rule, GraphDB unavailable)" if ok else
-                           f"cannot verify what {modelica_path}.{parameter} represents (GraphDB unavailable: "
-                           f"{str(exc)[:80]}); only Control-package parameters are allowed in fallback mode")}
+def applicability(modelica_path: str, parameter: str, file: str) -> dict:
+    """Conservative rule for a proposed change: only Control-package parameters are design choices."""
+    ok = file.startswith("Control/")
+    return {"applicable": ok, "basis": "file rule",
+            "reason": "tunable design parameter (Control package)" if ok else
+                      f"{modelica_path}.{parameter} is outside the Control package; only Control-package parameters may change"}
 
 
 ROBOT_WORDS = {"aloha_vx300s": ("follower", "viperx", "vx300s", "vx300"),
@@ -169,7 +156,7 @@ def conversion_context(context):
         trace.append({"tool": "read_source", "path": sources[-1]["path"], "sha256": hashlib.sha256(text.encode()).hexdigest(),
                       "truncated": len(excerpt) < len(text)})
     robot = report["source"].get("id") if report["source"].get("id") in C.ARM_CLASS else None
-    resolved = {**context, "robot": robot, "graph": bool(robot), "source_label": report["source"].get("label"),
+    resolved = {**context, "robot": robot, "source_label": report["source"].get("label"),
                 "conversion_mode": mode.get("label")}
     score = mode.get("score", {})
     # Measured facts about this file (real OpenModelica run vs URDF), stated plainly; identical for both answer sides.
@@ -248,7 +235,7 @@ def pair(store: Store, conversation, question, model, context):
     identity = uuid.uuid4().hex
     settings={"model":model,"seed":42,"temperature":0,"num_ctx":16384,"max_tokens":3000}  # identical for both sides
     user=store.create("message","user",{"conversation":conversation,"pair":identity,"role":"user","content":question,"context":context,"settings":settings})
-    records={mode:store.create("message",mode,{"conversation":conversation,"pair":identity,"role":"assistant","mode":mode,"status":"pending","content":"","context":context,"settings":settings}) for mode in ("without","with")}
+    records={mode:store.create("message",mode,{"conversation":conversation,"pair":identity,"role":"assistant","mode":mode,"status":"pending","content":"","context":context,"settings":settings}) for mode in ("without",)}
     try:
         focused, focus_note = resolve_focus(question, context)
         base, trace, resolved = base_context(focused,store)
@@ -261,28 +248,12 @@ def pair(store: Store, conversation, question, model, context):
     def run(mode):
         record=records[mode]; started=now(); begin=time.perf_counter(); tools=list(trace)
         try:
-            extra=""
-            if mode=="with":
-                if resolved.get("graph") is False:
-                    raise ValueError("No robot knowledge graph exists for this robot (uploaded URDF): the grounded answer is not available. Only the pinned ALOHA arms are in GraphDB.")
-                from kkh.semantic.graphdb import GraphDB
-                from kkh.rag.retrieval import retrieve
-                db=GraphDB(timeout=10)
-                try:
-                    hint=" leader" if resolved.get("robot")=="aloha_wx250s" else ""  # retrieval selects the arm from the text
-                    evidence=retrieve(question+" "+str(context.get("selected",""))+hint,db=db)
-                finally:
-                    db.close()
-                report=C.ROOT / "reports/ontology.json"
-                validation=json.loads(report.read_text(encoding="utf-8"))
-                extra="\nADDITIONAL ONTOLOGY EVIDENCE (GraphDB):\n"+json.dumps({"evidence":evidence[:12],"validation":{"shacl":validation.get("shacl"),"server_shacl":{"positive":validation.get("server_shacl",{}).get("positive",{}).get("conforms"),"negative_control":validation.get("server_shacl",{}).get("negative_control",{}).get("conforms")},"reasoning":validation.get("reasoning")}})
-                tools.append({"tool":"GraphDB semantic retrieval","endpoint":"http://127.0.0.1:7201","repository":"kkh-aloha-engineering","evidence":evidence,"shacl_source":"reports/ontology.json (last verified report)"})
             history=[]
             for item in previous[-6:]:
                 d=item["data"]
                 if d.get("role")=="user" or (d.get("mode")==mode and d.get("status")=="complete"):
                     history.append({"role":d["role"],"content":str(d["content"])[:1500]})
-            messages=[{"role":"system","content":SYSTEM},*history,{"role":"user","content":base+extra+"\nQUESTION:\n"+question+"\n/no_think"}]
+            messages=[{"role":"system","content":SYSTEM},*history,{"role":"user","content":base+"\nQUESTION:\n"+question+"\n/no_think"}]
             client=Ollama(timeout=300)
             try:
                 # Citations are constrained to the supplied source paths at decoding time (structured output enum);
@@ -309,5 +280,5 @@ def pair(store: Store, conversation, question, model, context):
             data={**record["data"],"status":"error","content":"","error":str(exc)}
         return store.update(record["id"],record["version"],{**data,"trace":tools,"started":started,"finished":now(),"seconds":time.perf_counter()-begin})
     with ThreadPoolExecutor(max_workers=2) as executor:
-        futures=[executor.submit(run,mode) for mode in ("without","with")]
+        futures=[executor.submit(run,mode) for mode in ("without",)]
         return {"pair":identity,"messages":[f.result() for f in futures],"settings":settings,"dispatch":"Concurrent requests to the same local Ollama server; server scheduling may serialize inference"}

@@ -1,14 +1,12 @@
-"""Controlled error-detection experiment: does ontology grounding detect engineering errors more reliably?
+"""Controlled error-detection experiment: which detector finds engineering errors reliably?
 
 Candidates: the frozen generated follower arm class (control) plus seeded single-error variants.
-Each candidate is checked by five detectors that all see the SAME engineering information
+Each candidate is checked by three detectors that all see the SAME engineering information
 (the aloha_vx300s URDF and the candidate Modelica class):
 
-  SIM    OpenModelica check + RightArmReach simulation + independent FK/limit/mimic validation (no ontology, no LLM)
-  DIFF   deterministic URDF <-> Modelica text comparison (modelica_inspect.completeness; no ontology, no LLM)
+  SIM    OpenModelica check + RightArmReach simulation + independent FK/limit/mimic validation (no LLM)
+  DIFF   deterministic URDF <-> Modelica text comparison (modelica_inspect.completeness; no LLM)
   B      local Ollama reading the raw URDF and the candidate Modelica class
-  C_LLM  the same Ollama model reading graph evidence (SPARQL over GraphDB) instead of the raw URDF
-  C_RULE candidate lifted to RDF in GraphDB + fixed SPARQL rules using ontology relations and QUDT units
 
 Scoring per candidate: detected (a finding on the mutated entity), classified (also the correct category),
 false positives (findings on any other entity; on the control every finding is false).
@@ -27,7 +25,6 @@ import uuid
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from kkh.domain.aloha import candidate as cand
 from kkh.domain.aloha.configuration import ROOT, URDF_DIR, arm_robot
 from kkh.engineering.modelica_inspect import completeness
 
@@ -263,29 +260,6 @@ def _modelica_excerpt(class_file: Path) -> str:
     return text.split("\n  annotation (\n")[0]
 
 
-def _graph_evidence(db) -> str:
-    """Engineering facts for the follower arm, retrieved from GraphDB by fixed SPARQL (no candidate data)."""
-    from kkh.rag.retrieval import JOINTS, joint_facts
-    facts = {}
-    for j in sorted(JOINTS):
-        rows = joint_facts("follower_right", j, db)
-        facts[j] = {r["property"]: r["value"] + (f" [{r['unit'].split('/')[-1]}]" if r.get("unit") else "") for r in rows}
-    q = cand.PREFIX + f"""SELECT ?label ?parent ?child ?ox ?oy ?oz ?type WHERE {{
-      GRAPH <{cand.DATA_GRAPH}> {{ <{cand.entity('follower_right')}> kkh:hasJoint ?j . ?j rdfs:label ?label ; a ?type ;
-      kkh:parentLink/rdfs:label ?parent ; kkh:childLink/rdfs:label ?child ; kkh:originXYZ [ kkh:x ?ox ; kkh:y ?oy ; kkh:z ?oz ] }} }}"""
-    for r in db.select(q, infer=False):
-        j = r["label"].split("/")[-1]
-        facts.setdefault(j, {}).update({"type": r["type"].split("#")[-1], "parent": r["parent"].split("/")[-1],
-                                       "child": r["child"].split("/")[-1],
-                                       "origin_xyz": f"{float(r['ox']):g},{float(r['oy']):g},{float(r['oz']):g} [M]"})
-    q = cand.PREFIX + f"""SELECT ?label ?m ?status WHERE {{ GRAPH <{cand.DATA_GRAPH}> {{
-      <{cand.entity('follower_right')}> kkh:hasLink ?l . ?l rdfs:label ?label ; kkh:inertialStatus ?status .
-      OPTIONAL {{ ?l kkh:mass/qudt:numericValue ?m }} }} }}"""
-    links = {r["label"].split("/")[-1]: {"mass_kg": r.get("m"), "inertial_status": r["status"]} for r in db.select(q, infer=False)}
-    return json.dumps({"joints": facts, "links": links,
-                       "source": "GraphDB repository kkh-aloha-engineering, graph " + cand.DATA_GRAPH}, separators=(",", ":"))
-
-
 def det_llm(client, model, seed, reference_name, reference, class_file) -> dict:
     messages = [{"role": "system", "content": SYSTEM},
                 {"role": "user", "content": f"{reference_name}:\n{reference}\n\nCandidate Modelica model:\n{_modelica_excerpt(class_file)}"}]
@@ -301,33 +275,25 @@ def run(model=None, seeds=(42, 43), with_sim=True, llm=True, only: list[str] | N
         resume: Path | None = None) -> dict:
     from kkh.llm.ollama import DEFAULT_MODEL, Ollama
     model = model or DEFAULT_MODEL  # recorded in the report; historical reports keep their own model ID
-    from kkh.semantic.graphdb import GraphDB
     previous = json.loads((resume / "report.json").read_text(encoding="utf-8")) if resume else None
     run_id = previous["run_id"] if previous else (
         dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6])
     out = ROOT / "runs/benchmark/detection" / run_id
     out.mkdir(parents=True, exist_ok=bool(previous))
     frozen_hash = hashlib.sha256((FROZEN / CLASS_REL).read_bytes()).hexdigest()
-    db = GraphDB()
     client = Ollama() if llm else None
     report = {"run_id": run_id, "model": model, "seeds": list(seeds), "frozen_class_sha256": frozen_hash,
               "started": dt.datetime.now(dt.timezone.utc).isoformat(), "categories": CATEGORIES,
               "protocol": ("Each candidate = frozen ALOHA2 package with one seeded error in Arms/AlohaVX300s.mo "
-                           "(isolated copy). B and C_LLM use the same model, seed, temperature 0, 16k context, 3000-token output budget, "
-                           "JSON schema and system prompt; B receives the URDF (visual/collision geometry removed), "
-                           "C_LLM receives GraphDB evidence retrieved by fixed SPARQL for the same arm. Both receive "
-                           "the identical candidate Modelica excerpt. C_RULE uses no LLM."),
+                           "(isolated copy). B receives the URDF (visual/collision geometry removed) and the candidate "
+                           "Modelica excerpt, with temperature 0, 16k context and a 3000-token output budget."),
               "candidates": []}
     try:
-        report["graphdb"] = db.version()
-        report["qudt_subset_triples"] = cand.publish_qudt_subset(db)
         if llm:
             report["model_digest"] = next(m["digest"] for m in client.models() if m["name"] == model)
         urdf_ref = _urdf_kinematic_excerpt()
-        graph_ref = _graph_evidence(db)
-        report["reference_sizes_chars"] = {"urdf": len(urdf_ref), "graph_evidence": len(graph_ref)}
+        report["reference_sizes_chars"] = {"urdf": len(urdf_ref)}
         (out / "reference_urdf.xml").write_text(urdf_ref, encoding="utf-8")
-        (out / "reference_graph.json").write_text(graph_ref, encoding="utf-8")
         if previous:
             if (previous["model"], previous["seeds"], previous["frozen_class_sha256"]) != (model, list(seeds), frozen_hash):
                 raise ValueError("Cannot resume: model, seeds or frozen model differ")
@@ -352,13 +318,6 @@ def run(model=None, seeds=(42, 43), with_sim=True, llm=True, only: list[str] | N
             t = time.perf_counter()
             findings = det_diff(f)
             rec["detectors"]["DIFF"] = {"findings": findings, "seconds": round(time.perf_counter() - t, 3), **score(mut, findings)}
-            # C_RULE
-            t = time.perf_counter()
-            cr = cand.check(db, f, f"{run_id}/{mut['id']}")
-            for x in cr["findings"]:
-                x.pop("c", None)
-            rec["detectors"]["C_RULE"] = {"findings": cr["findings"], "candidate_triples": cr["triples"],
-                                          "seconds": round(time.perf_counter() - t, 3), **score(mut, cr["findings"])}
             # SIM
             if with_sim:
                 t = time.perf_counter()
@@ -371,25 +330,23 @@ def run(model=None, seeds=(42, 43), with_sim=True, llm=True, only: list[str] | N
                                            "classified": None, "note": "flags the model; does not localise or classify"}
             # LLM detectors
             if llm:
-                for name, ref_name, ref in (("B", "Engineering reference (URDF)", urdf_ref),
-                                            ("C_LLM", "Engineering reference (knowledge-graph evidence, JSON)", graph_ref)):
-                    runs = []
-                    for seed in seeds:
-                        try:
-                            r = det_llm(client, model, seed, ref_name, ref, f)
-                            r.update(score(mut, r["findings"]), seed=seed)
-                        except Exception as e:
-                            r = {"seed": seed, "error": repr(e), "detected": False, "classified": False,
-                                 "accepted_category": False, "false_positives": 0}
-                        runs.append(r)
-                    rec["detectors"][name] = {"runs": runs}
+                name, ref_name, ref = "B", "Engineering reference (URDF)", urdf_ref
+                runs = []
+                for seed in seeds:
+                    try:
+                        r = det_llm(client, model, seed, ref_name, ref, f)
+                        r.update(score(mut, r["findings"]), seed=seed)
+                    except Exception as e:
+                        r = {"seed": seed, "error": repr(e), "detected": False, "classified": False,
+                             "accepted_category": False, "false_positives": 0}
+                    runs.append(r)
+                rec["detectors"][name] = {"runs": runs}
             report["candidates"].append(rec)
             (out / "report.json").write_text(json.dumps(report, indent=1), encoding="utf-8")
             print(mut["id"], {k: (v.get("detected"), v.get("false_positives")) if "runs" not in v else
                               [(r.get("detected"), r.get("false_positives")) for r in v["runs"]]
                               for k, v in rec["detectors"].items()}, flush=True)
     finally:
-        db.close()
         if client:
             client.close()
     report["summary"] = summarize(report)

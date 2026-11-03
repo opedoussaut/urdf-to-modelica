@@ -3,7 +3,7 @@
 Produces self-contained Modelica text that depends only on the Modelica Standard Library:
   * `component_library()`   reusable link/joint/trajectory classes (placed in <Pkg>.Components / .Blocks)
   * `robot_class()`         one model per URDF tree, one component instance per URDF link and joint
-  * `mapping`               URDF entity -> Modelica component path, consumed by the knowledge graph
+  * `mapping`               URDF entity -> Modelica component path
 
 Formulation: prescribed motion. Every independently driven joint is driven by a
 Rotational/Translational `Move` source fed with analytic q, qd, qdd, so no actuator dynamics and

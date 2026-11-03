@@ -4,13 +4,11 @@ Audit date: 16 October 2026. This guide covers the supplied master brief through
 
 ## Audit before implementation
 
-Inspected committed and uncommitted Python, React/TypeScript, Modelica, URDF/configuration, ontology, tests, startup scripts, and measured reports. Preserved 136 tracked/untracked source and artifact files, their hashes, the working-tree patch, and a Git bundle in `E:/users/opt2.ai/NOVA/ai-kkh-preserved/pre-master-brief-20261016-072121`. Earlier full-workspace and cold GraphDB backups remain intact. Ignored runtime assets and license files are retained in place.
 
 | Capability at audit | Classification | Evidence / gap |
 | --- | --- | --- |
 | Pinned geometry, URDF FK, limit/mimic handling | Implemented and verified | Existing engineering modules, real meshes, independent FK tests |
 | Prescribed-motion Modelica | Implemented and verified | Frozen source hashes, 9-second OMC reach, 7.29e-14 m FK error |
-| GraphDB 11.3.3, ingestion, inference, SHACL | Implemented and verified | `reports/ontology.json`, positive and negative validation controls |
 | Local Ollama and grounded read-only copilot | Implemented and verified | Existing client, citations, real API/browser calls; generated claims still need review |
 | Persistent conversation history | Missing | Only last answer in React state; audit JSON files exist and can be recovered |
 | Read-only robot viewer / recorded playback | Implemented and verified | Existing `Twin.tsx`; no mouse-driven joint or IK control |
@@ -31,7 +29,6 @@ scripts\start.ps1
 .venv\Scripts\python -m pytest -q --basetemp=runs/pytest-master-check
 ```
 
-The frozen verifier writes a unique run and does not regenerate baseline files. GraphDB is project-only on port 7201; do not modify containers on ports 7200 or 7300. Runtime AI is local Ollama only. License files must remain excluded from Git.
 
 ## Acceptance boundaries
 
@@ -42,9 +39,7 @@ Further implementation results and exact user testing instructions are appended 
 ## Takeover verification (16 October 2026) — how to test
 
 Start everything: `scripts\start.ps1` (add `-Restart` to force an API restart, `-NoBrowser` to stay in the shell).
-Expected: `[graphdb] running`, `[ollama] running`, `[status] GraphDB: ready | Ollama: 7 local models`.
 
-Automated: `.venv\Scripts\python -m pytest -q` → 52 passed (real OpenModelica, GraphDB, Ollama).
 
 Manual (http://127.0.0.1:8000):
 
@@ -79,7 +74,6 @@ Follow `DEMO_WALKTHROUGH.md` for the full scenario and expected observations. Qu
 Preserved the newer Claude commits and all existing uncommitted/untracked work before editing. Checkpoint:
 `E:/users/opt2.ai/NOVA/ai-kkh-preserved/codex-resume-verification-20261016-215127` (534 files, 59.9 MB, Git bundle,
 working-tree patch, untracked sources, consistent SQLite backup, model copies and project-repository RDF export).
-Ignored dependencies, simulation binaries and the live GraphDB volume remain in place; older full backups are intact.
 
 Verified the current code, not only the earlier milestone reports:
 
@@ -88,7 +82,6 @@ Verified the current code, not only the earlier milestone reports:
 * `npm --prefix web run build` → TypeScript and production build passed. Monaco's large lazy chunk remains a known
   first-load cost; it does not block the build.
 * All frozen `.mo` hashes still match `reports/engineering_baseline.json`; branch remains `feat/aloha-baseline`.
-  Project GraphDB **11.3.3** on 7201, installed local Ollama models and OpenModelica are healthy.
 * Restored **Drag leader end effector** alongside Move leader arm, Look around and the existing follower Cartesian
   controls. Click the mode, then drag the glowing teal marker in the camera plane. The existing leader IK applies
   bounded joint goals through the shared motion rate limiter. Unreachable targets keep the previous goal. Browser
@@ -111,6 +104,5 @@ Verified the current code, not only the earlier milestone reports:
   Screenshot: `docs/img/resume-motion-verification.png`. Final hashes, service status and native-validation evidence
   are recorded in `reports/resume_verification.json`.
 
-The guided cube-transfer implementation, semantic trace, revision-bound servo parameters, recorded simulations,
 reviewed AI-proposal workflow and all previous experiment/regression tools have been retained. See
 `DEMO_WALKTHROUGH.md` and `KNOWN_LIMITATIONS.md` for their measured results and engineering boundaries.

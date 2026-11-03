@@ -19,36 +19,26 @@ const FLOW = [
   },
   {
     n: 2,
-    icon: Network,
-    title: "Knowledge",
-    question: "What do we know, and how sure are we?",
-    does: "Store every robot fact in a knowledge graph with its unit and source.",
-    gets: "Each value labelled verified, derived or assumed; automatic error checks.",
-    open: 7,
-    action: "Engineering reasoning",
-  },
-  {
-    n: 3,
     icon: Workflow,
     title: "Model",
     question: "Can we compute with it?",
     does: "Convert the robot description into an executable Modelica physics model.",
     gets: "A model checked by OpenModelica, traceable element by element.",
-    open: 6,
+    open: 4,
     action: "Generate model",
   },
   {
-    n: 4,
+    n: 3,
     icon: Activity,
     title: "Simulate",
     question: "What happens if we change something?",
     does: "Tune a joint's servo settings and run a real simulation.",
     gets: "Measured tracking error, torque and settling - before vs after.",
-    open: 5,
+    open: 3,
     action: "Joint simulation",
   },
   {
-    n: 5,
+    n: 4,
     icon: Bot,
     title: "Decide",
     question: "Should we accept the change?",
@@ -61,7 +51,6 @@ const FLOW = [
 
 const GLOSSARY: [string, string][] = [
   ["URDF", "The robot's description file from the manufacturer: links, joints, limits, masses."],
-  ["Knowledge graph", "A database of engineering facts with their units and sources (GraphDB, using the CORA, QUDT and PROV-O standards)."],
   ["Modelica", "A language for physics models that can be simulated, not just animated."],
   ["OpenModelica", "The open-source tool that compiles and runs those models on this computer."],
   ["Revision", "A saved version of the model. Changes become new revisions; only validated ones can be accepted."],
@@ -88,7 +77,7 @@ export default function Home({ context, setContext, open }: { context: Context; 
           computer.
         </p>
         <div className="lab-actions">
-          <button className="lab-primary" onClick={() => open(4)}>
+          <button className="lab-primary" onClick={() => open(0)}>
             <PlayCircle size={16} /> Start the guided demo (5 min)
           </button>
           <button
@@ -102,7 +91,7 @@ export default function Home({ context, setContext, open }: { context: Context; 
             Explore the robot
           </button>
         </div>
-        <button className="home-atlas-link" onClick={() => open(9)}>
+        <button className="home-atlas-link" onClick={() => open(6)}>
           <BookOpen size={15} /> New to Physical AI? Browse the Atlas - the key ideas, explained in plain words
         </button>
         </div>
@@ -165,7 +154,7 @@ export default function Home({ context, setContext, open }: { context: Context; 
           <h2>Why this matters</h2>
           <p className="home-text">
             An animation shows a robot moving. An engineering model computes <b>why</b> it moves the way it does - torques, limits,
-            tracking errors - from traceable parameters. Combined with a knowledge graph, the studio knows which numbers are
+            tracking errors - from traceable parameters. The studio knows which numbers are
             manufacturer facts (never changed) and which are assumptions (safe to tune), and it catches modelling mistakes such as
             a limit written in degrees instead of radians.
           </p>
@@ -184,7 +173,6 @@ export default function Home({ context, setContext, open }: { context: Context; 
             <h2>What is real · what is not yet</h2>
             <ul className="home-list ok">
               <li>Robot data from the manufacturer's files, with checksums</li>
-              <li>Knowledge-graph reasoning and automatic rule checks</li>
               <li>Real OpenModelica simulations and comparisons</li>
               <li>Human approval for every model change</li>
             </ul>

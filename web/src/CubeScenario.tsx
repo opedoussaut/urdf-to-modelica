@@ -137,10 +137,10 @@ export const GUIDED_STEPS = [
   { id: "practice", title: "Practice", text: "Move leader arm is active: drag a highlighted teal link left/right, use the joint sliders, or the gripper buttons X/Y/Up/Down. Commands are rate-limited for smooth motion. Nothing is recorded yet." },
   { id: "record", title: "Record", text: "Press Start recording. Status, elapsed time and captured samples are shown below. Return to home first if you want a clean start." },
   { id: "perform", title: "Perform", text: "Bring the gripper to the cube with the Move-gripper buttons (X/Y, then Down), press Close, lift (Up), move over B and press Open. On the shared table the leader gripper carries the cube; in the legacy layout the follower does. Above A/B stay disabled until frame registration is verified. Follow the checklist." },
-  { id: "save", title: "Stop & save", text: "Stop recording, name the experiment and save it. The recording is stored with scenario, robot configuration, initial pose, gripper commands and model revision, and linked in the knowledge graph." },
+  { id: "save", title: "Stop & save", text: "Stop recording, name the experiment and save it." },
   { id: "replay", title: "Replay", text: "Replay animates the follower with the recorded joint angles (kinematic replay). The cube path comes from the backend evaluation of the saved recording." },
   { id: "simulate", title: "Simulate", text: "Run the OpenModelica follower model on this recording (Dynamic follower panel). This is a torque-driven simulation, not the replay and not a physical robot." },
-  { id: "diagnose", title: "Diagnose & improve", text: "Ask both copilots why the follower deviates, inspect the parameters in the knowledge graph and Modelica editor, create a proposal revision, validate, simulate and compare." },
+  { id: "diagnose", title: "Diagnose & improve", text: "Ask the copilot why the follower deviates, inspect the parameters and Modelica editor, create a proposal revision, validate, simulate and compare." },
 ];
 
 export function GuidedPanel({

@@ -23,30 +23,23 @@ import "./lab.css";
 const LeaderFollower = lazy(() => import("./LeaderFollower")),
   ModelicaEditor = lazy(() => import("./ModelicaEditor")),
   DualCopilot = lazy(() => import("./DualCopilot")),
-  Knowledge = lazy(() => import("./EngineeringKnowledge")),
-  Journey = lazy(() => import("./Journey")),
   SimLab = lazy(() => import("./SimLab")),
   ModelPipeline = lazy(() => import("./ModelPipeline")),
-  Reasoning = lazy(() => import("./Reasoning")),
   Home = lazy(() => import("./Home")),
   Atlas = lazy(() => import("./Atlas"));
-// Overview.tsx and ReasoningBenchmark.tsx are kept for internal use but are not part of the product navigation.
 // Indices are stable deep-link targets (open(i)); NAV_ORDER is the order shown in the rail.
 // [name, icon, short subtitle, purpose shown in the top bar]
 const tabs = [
   ["Robot & motion", Boxes, "Move, record, replay", "Move the leader arm, record a motion and replay it on the follower."],
   ["Model editor", Code2, "Edit, validate, accept", "Edit the Modelica model, check it with OpenModelica and accept new revisions."],
-  ["AI assistant", Bot, "Ask the local copilot", "Ask the local AI (Nemotron) to explain behaviour and draft changes - with and without the knowledge graph."],
-  ["Knowledge graph", Network, "Entities & provenance", "Browse the robot's facts in the knowledge graph and the trace of past engineering decisions."],
-  ["Guided demo", Compass, "Seven steps, start to finish", "A guided walk through the whole engineering flow on one joint."],
+  ["AI assistant", Bot, "Ask the local copilot", "Ask the local AI (Nemotron) to explain behaviour and draft changes."],
   ["Joint simulation", Activity, "Tune a servo, simulate", "Change a joint's servo settings and compare real OpenModelica simulations."],
   ["Generate model", Workflow, "URDF → Modelica, checked", "Convert the robot description into a Modelica model and verify it."],
-  ["Engineering reasoning", GitBranch, "Why a value is trusted", "See how each value is known (verified, derived, assumed) and catch modelling errors automatically."],
   ["Home", HomeIcon, "What this studio does", "Overview of the studio and its five-step engineering flow."],
-  ["Physical AI Atlas", BookOpen, "The ideas, explained", "A map of the concepts behind the studio: robots, physics models, knowledge graphs, learning and the sim-to-real gap."],
+  ["Physical AI Atlas", BookOpen, "The ideas, explained", "A map of the concepts behind the studio: robots, physics models, learning and the sim-to-real gap."],
 ] as const;
 // The Atlas is shown in the Overview view; in the Engineering view it is opt-in (a refresher), remembered per browser.
-const ATLAS = 9;
+const ATLAS = 6;
 const storedAtlas = () => {
   try {
     return localStorage.getItem("kkh.atlas") === "1";
@@ -56,40 +49,35 @@ const storedAtlas = () => {
 };
 // The rail follows the engineering flow; indices stay stable for deep links and open(i).
 const NAV_GROUPS: { label: string; items: number[] }[] = [
-  { label: "Start", items: [8, 9, 4] },
+  { label: "Start", items: [5, 6] },
   { label: "1 · Robot", items: [0] },
-  { label: "2 · Knowledge", items: [7, 3] },
-  { label: "3 · Model", items: [6, 1] },
-  { label: "4 · Simulate", items: [5] },
-  { label: "5 · Decide", items: [2] },
+  { label: "2 · Model", items: [4, 1] },
+  { label: "3 · Simulate", items: [3] },
+  { label: "4 · Decide", items: [2] },
 ];
 // The arm in the rail changes its look with the engineering step of the current page.
-const MODE: Record<number, ArmMode> = { 0: "robot", 1: "model", 2: "decide", 3: "knowledge", 4: "robot", 5: "simulate", 6: "model", 7: "knowledge", 8: "robot", 9: "robot" };
+const MODE: Record<number, ArmMode> = { 0: "robot", 1: "model", 2: "decide", 3: "simulate", 4: "model", 5: "robot", 6: "robot" };
 // One plain-language sentence per page, shown in the Overview view.
 const PLAIN: Record<number, string> = {
-  8: "This studio checks robot changes on a computer model first, so nothing is tried blindly on the real machine.",
-  4: "A short tour: we follow one part of the arm (the shoulder) from its specification to a tested, approved change.",
+  5: "This studio checks robot changes on a computer model first, so nothing is tried blindly on the real machine.",
   0: "Here you move the robot arm on screen, record a movement and play it back - like a flight recorder for the arm.",
-  7: "Every number about the arm comes from somewhere. This page shows where, how sure we are, and catches mistakes automatically.",
-  3: "A map of everything the studio knows about the robot: its parts, how they connect, and where each fact comes from.",
-  6: "The studio turns the robot's specification file into a physics model a computer can calculate with - and checks it.",
+  4: "The studio turns the robot's specification file into a physics model a computer can calculate with - and checks it.",
   1: "The physics model of the robot, as code. Changes are saved as versions and only approved after a successful check.",
-  5: "Try a new setting for one motor and see, in a real physics simulation, whether the arm follows its target better or worse.",
+  3: "Try a new setting for one motor and see, in a real physics simulation, whether the arm follows its target better or worse.",
   2: "Ask questions in plain language. A local AI explains; it can suggest changes, but a person always decides.",
-  9: "New to robots? Each page explains one idea in plain words and shows where to see it in the studio.",
+  6: "New to robots? Each page explains one idea in plain words and shows where to see it in the studio.",
 };
 const STEPS: { label: string; pages: number[]; hint: string }[] = [
-  { label: "Start", pages: [8, 9, 4], hint: "Home, Physical AI Atlas and guided demo" },
+  { label: "Start", pages: [5, 6], hint: "Home and Physical AI Atlas" },
   { label: "Robot", pages: [0], hint: "What is the machine? Move it, record a motion." },
-  { label: "Knowledge", pages: [7, 3], hint: "What do we know about it, and how sure are we?" },
-  { label: "Model", pages: [6, 1], hint: "Turn the robot into a physics model and check it." },
-  { label: "Simulate", pages: [5], hint: "Change a setting and simulate the effect." },
+  { label: "Model", pages: [4, 1], hint: "Turn the robot into a physics model and check it." },
+  { label: "Simulate", pages: [3], hint: "Change a setting and simulate the effect." },
   { label: "Decide", pages: [2], hint: "Ask the AI, review and approve changes." },
 ];
 const groupOf = (i: number) => NAV_GROUPS.find((g) => g.items.includes(i))?.label || "";
-// Deep links: ?ws=home|atlas|journey|reasoning|pipeline|lab|editor|robot|copilot|knowledge (plus workspace-specific parameters).
-const WS: Record<string, number> = { robot: 0, editor: 1, copilot: 2, knowledge: 3, journey: 4, lab: 5, pipeline: 6, reasoning: 7, home: 8, atlas: 9 };
-const initialWs = WS[new URLSearchParams(location.search).get("ws") || ""] ?? 8;
+// Deep links: ?ws=home|atlas|pipeline|lab|editor|robot|copilot (plus workspace-specific parameters).
+const WS: Record<string, number> = { robot: 0, editor: 1, copilot: 2, lab: 3, pipeline: 4, home: 5, atlas: 6 };
+const initialWs = WS[new URLSearchParams(location.search).get("ws") || ""] ?? 5;
 
 // A stale lazy bundle after a local rebuild must not unmount other workspaces
 // (which may contain an unsaved recording or source edit).
@@ -135,7 +123,7 @@ export default function App() {
       /* per-viewer convenience only */
     }
     if (on) choose(ATLAS);
-    else if (active === ATLAS) choose(8);
+    else if (active === ATLAS) choose(5);
   };
   useEffect(() => {
     let disposed = false;
@@ -251,7 +239,7 @@ export default function App() {
         <div className="wb-sidebar-bottom">
           <ShieldCheck size={18} />
           <p>
-            Local by design<small>Ollama · OpenModelica · GraphDB</small>
+            Local by design<small>Ollama · OpenModelica</small>
           </p>
         </div>
         <button
@@ -337,15 +325,9 @@ export default function App() {
                 ) : i === 2 ? (
                   <DualCopilot context={context} />
                 ) : i === 3 ? (
-                  <Knowledge context={context} setContext={setContext} />
-                ) : i === 4 ? (
-                  <Journey context={context} setContext={setContext} open={choose} />
-                ) : i === 5 ? (
                   <SimLab context={context} setContext={setContext} open={choose} />
-                ) : i === 6 ? (
+                ) : i === 4 ? (
                   <ModelPipeline context={context} setContext={setContext} open={choose} />
-                ) : i === 7 ? (
-                  <Reasoning context={context} setContext={setContext} open={choose} />
                 ) : i === ATLAS ? (
                   <Atlas open={choose} />
                 ) : (

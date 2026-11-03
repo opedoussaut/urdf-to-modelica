@@ -86,20 +86,6 @@ def _revision_servo(model: str | None, revision: str | None, joint: str) -> tupl
     return {k: float(values[k]) for k in S1.TUNABLE}, f"revision {rid[:8]} ({status}) · Control/FollowerServoSettings.mo", rid
 
 
-def _semantics(joint: str) -> dict:
-    """Knowledge-graph semantics of each tunable servo parameter (best effort: GraphDB may be offline)."""
-    try:
-        from kkh.semantic.graphdb import GraphDB
-        from kkh.semantic.parameters import applicability
-        db = GraphDB(timeout=6)
-        try:
-            return {k: applicability(db, f"ALOHA2.Control.FollowerServoSettings.{joint}", k) for k in S1.TUNABLE}
-        finally:
-            db.close()
-    except Exception as exc:
-        return {"_error": f"GraphDB unavailable: {str(exc)[:160]}"}
-
-
 @router.get("/lab/servo1d/setup")
 def servo_setup(joint: str = "shoulder", model: str | None = None, revision: str | None = None):
     plant = guard(lambda: S1.derive_plant(joint))
@@ -108,7 +94,7 @@ def servo_setup(joint: str = "shoulder", model: str | None = None, revision: str
     trajectories = [{"id": t["id"], "name": t["name"], "duration_s": t["data"]["time"][-1],
                      "space": t["data"].get("reference_space", "leader_joints")} for t in store.list("trajectory", limit=50)]
     return {"joint": joint, "joints": S1.SERVO_JOINTS, "plant": plant, "baseline": baseline, "baseline_label": label,
-            "revision": rid, "bounds": S1.SERVO_BOUNDS, "units": S1.UNITS, "semantics": _semantics(joint),
+            "revision": rid, "bounds": S1.SERVO_BOUNDS, "units": S1.UNITS, 
             "model_preview": S1.modelica_source(plant, baseline, cmd), "trajectories": trajectories}
 
 
@@ -127,7 +113,6 @@ def servo_run(body: ServoRun):
     def run():
         result = S1.run_experiment(body.joint, baseline, candidate, spec, baseline_label=label, revision=rid)
         result["model"] = body.model
-        result["governance"] = {k: v for k, v in _semantics(body.joint).items() if not k.startswith("_")} if candidate else {}
         name = f"1D {body.joint} · {result['input']['label']}" + (" · baseline vs candidate" if candidate else "")
         return store.create("servo1d", name, result, result["id"])
     return job("1D servo experiment (OpenModelica)", run)
@@ -160,12 +145,12 @@ def servo_propose(identity: str, body: ServoProposal):
     cand, base = data["runs"].get("candidate"), data["runs"]["baseline"]
     if not cand or not cand.get("ok"):
         raise HTTPException(422, "Only a successfully simulated candidate can be proposed")
-    from .copilot import ontology_applicability
+    from .copilot import applicability
     changes = []
     for key in S1.TUNABLE:
         if abs(cand["params"][key] - base["params"][key]) <= 1e-12:
             continue
-        gate = ontology_applicability(f"ALOHA2.Control.FollowerServoSettings.{data['joint']}", key, "Control/FollowerServoSettings.mo")
+        gate = applicability(f"ALOHA2.Control.FollowerServoSettings.{data['joint']}", key, "Control/FollowerServoSettings.mo")
         if not gate["applicable"]:
             raise HTTPException(422, f"{key}: {gate['reason']}")
         changes.append({"file": "Control/FollowerServoSettings.mo", "component": data["joint"], "parameter": key,
@@ -417,38 +402,6 @@ def pipeline_import(identity: str, body: PipelineImport):
                                        reason=f"Imported URDF→Modelica candidate {identity[:8]} (generated from pinned URDF)"))
 
 
-# ================================================================================================ Ontology reasoning
-@router.get("/lab/reasoning/joint")
-def reasoning_joint(joint: str = "shoulder", robot: str = "aloha_vx300s"):
-    from . import reasoning
-    from .robotics import JOINTS
-    if joint not in JOINTS:
-        raise HTTPException(422, "Unknown joint")
-    arm = "leader" if robot == "aloha_wx250s" else "follower_right"
-    return guard(lambda: reasoning.joint_reasoning(joint, arm, store))
-
-
-@router.get("/lab/ontology/cases")
-def ontology_cases():
-    from kkh.benchmark.detection import MUTATIONS
-    from .reasoning import DIAGNOSTIC_CASES
-    by_id = {m["id"]: m for m in MUTATIONS}
-    return [{"id": c, "description": by_id[c]["description"], "category": by_id[c].get("category"),
-             "held_out": bool(by_id[c].get("held_out"))} for c in DIAGNOSTIC_CASES]
-
-
-class Diagnostic(BaseModel):
-    case: str = "M3-unit-degrees"
-
-
-@router.post("/lab/ontology/diagnostic")
-def ontology_diagnostic(body: Diagnostic):
-    from . import reasoning
-    if body.case not in reasoning.DIAGNOSTIC_CASES:
-        raise HTTPException(422, "Unknown diagnostic case")
-    return guard(lambda: reasoning.rule_diagnostic(body.case))
-
-
 # ================================================================================================ Readiness
 @router.get("/lab/readiness")
 def readiness():
@@ -457,19 +410,6 @@ def readiness():
     from kkh.engineering.omc import DEFAULT_OMHOME
     from kkh.llm.ollama import DEFAULT_MODEL, Ollama
     items = []
-    try:
-        from kkh.semantic.graphdb import GraphDB
-        db = GraphDB(timeout=4)
-        try:
-            graphs = {r["g"]: int(r["n"]) for r in db.select("SELECT ?g (COUNT(*) AS ?n) WHERE { GRAPH ?g { ?s ?p ?o } } GROUP BY ?g", infer=False)}
-            items.append({"id": "graphdb", "label": "GraphDB knowledge graph", "ok": bool(graphs), "detail":
-                          f"{db.repo} · {sum(graphs.values())} triples in {len(graphs)} named graphs", "graphs": graphs,
-                          "disables": "ontology reasoning, rule diagnostics, applicability gates, trace"})
-        finally:
-            db.close()
-    except Exception as exc:
-        items.append({"id": "graphdb", "label": "GraphDB knowledge graph", "ok": False, "detail": str(exc)[:160],
-                      "disables": "ontology reasoning, rule diagnostics, applicability gates, trace"})
     omc = Path(DEFAULT_OMHOME) / "bin" / "omc.exe"
     last = store.list("servo1d", limit=1)
     items.append({"id": "openmodelica", "label": "OpenModelica", "ok": omc.exists(), "detail": str(omc) + (

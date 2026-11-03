@@ -1,6 +1,5 @@
 # Step 4 — Coordinate registration audit (diagnostic, not calibration)
 
-This step detects the currently inconsistent task coordinate conventions. It makes **no changes** to the frozen Modelica models, robot scene, IK API, or GraphDB.
 
 The current renderer applies `FOLLOWER_OFFSET = +0.45 m` and `LEADER_OFFSET = -0.50 m` only for presentation. The cube's initial follower-local position `[0.30, 0.12, 0.02] m` therefore displays at world X `0.75 m`; the same visible point is at leader-display-local X `1.25 m`. This is likely unreachable, and cannot be fixed by swapping IK endpoints alone.
 

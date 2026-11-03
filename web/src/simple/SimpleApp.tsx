@@ -14,7 +14,7 @@ const Convert = lazy(() => import("./Convert")),
 
 type Page = "convert" | "repair" | "review" | "guide" | "learn";
 // Full-studio page index (App tabs) → deep-link key, for the Atlas "See it in the studio" buttons.
-const STUDIO_WS = ["robot", "editor", "copilot", "knowledge", "journey", "lab", "pipeline", "reasoning", "home", "atlas"];
+const STUDIO_WS = ["robot", "editor", "copilot", "lab", "pipeline", "home", "atlas"];
 export type Target = { kind?: "conversion" | "seeded"; run?: string; mode?: string; mutation?: string };
 
 /** Switch to the full studio (all pages) and remember the choice for this browser. */
@@ -107,7 +107,7 @@ export default function SimpleApp() {
                 <RotateCcw size={14} /> Reset
               </button>
             )}
-            <button className="sx-full" onClick={() => openFullStudio()} title="Open the complete studio with all pages (robot, knowledge graph, simulation…)">
+            <button className="sx-full" onClick={() => openFullStudio()} title="Open the complete studio with all pages (robot, editor, simulation)">
               <LayoutGrid size={14} /> Full studio
             </button>
           </div>
@@ -122,7 +122,7 @@ export default function SimpleApp() {
           </Suspense>
         </main>
         {resetOpen && <ResetDialog close={() => setResetOpen(false)} />}
-        <footer className="sx-foot">Local by design · Ollama · OpenModelica · GraphDB · every score comes from a real OpenModelica run</footer>
+        <footer className="sx-foot">Local by design · Ollama · OpenModelica · every score comes from a real OpenModelica run</footer>
       </div>
     </AudienceContext.Provider>
   );

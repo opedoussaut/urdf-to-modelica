@@ -16,7 +16,6 @@ def test_browser_evidence_flow():
     geometry = client.get("/api/geometry").json()
     assert geometry
     assert client.get(geometry[0]["mesh"]).status_code == 200
-    assert client.get("/api/graph").json()["nodes"]
 
 
 def test_api_rejects_cross_origin_jobs_and_unknown_models():

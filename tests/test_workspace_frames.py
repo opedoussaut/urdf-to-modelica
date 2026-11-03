@@ -169,9 +169,7 @@ def test_api_serves_layouts_with_closed_gates_and_validates_manipulator(tmp_path
     from fastapi.testclient import TestClient
     from kkh.api.main import app
     import kkh.studio.api as api
-    import kkh.semantic.trace as trace
     from kkh.studio.storage import Store
-    monkeypatch.setattr(trace, "_write", lambda g: {"graphdb": "captured"})  # no GraphDB writes from tests
     monkeypatch.setattr(api, "store", Store(tmp_path / "api.sqlite"))
     client = TestClient(app)
     data = client.get("/api/workbench/workspace/layouts").json()

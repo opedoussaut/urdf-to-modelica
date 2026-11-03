@@ -24,10 +24,8 @@ changed. Branch `feat/urdf-repair-pipeline` (worktree `.claude/worktrees/urdf-re
 |---|---|---|---|
 | **1 Convert** | `kkh/convert/urdfmodelica.py`: pinned DLR URDFModelica `92541b6`, isolated copy of the library, documented pre-processing T1–T3 (name characters, textures), relative root. `kkh/benchmark/workflow_a.py`: older ALOHA bimanual variant. `kkh/engineering/modelica_gen.py`: our own deterministic generator (ALOHA2 package). | Good | No conversion **manifest** (URDF/mesh hashes, CLI args, Python/OM versions); converter log cut to 3 000 characters; no structured **source→target mapping**; no inertial/joint/frame table; no list of **unsupported URDF elements** (transmission, gazebo, mimic, collision, safety_controller, …). |
 | **2 Check** | `kkh/engineering/omc.py`: load/check/simulate, regex message parser (file/line/col) and 9 classes. `kkh/convert/score.py`: 8 measured checks (produced, loads, checks, simulates, coverage, kinematics vs URDF FK, axes/masses/CoM/inertia, dynamics torque). | Good core | Order and taxonomy differ from the mission; equation balance is not its own step; no **unit** check (`checkModel` unit warnings); no **graphics check** (Placement / connect `Line` coverage); no single **machine-readable diagnostic record** (id, stage, category, severity, location, evidence). |
-| **3 AI repair** | `kkh/convert/llm.py`: modes 1/2 **write the model from scratch** from the URDF, then up to 2 repairs fed by OpenModelica diagnostics. Same seed/temperature/budget for both modes, loop guard, every attempt kept. `kkh/convert/library_index.py`: BM25 over 4 MSL sub-packages. `kkh/rag/repair.py`: generic bounded loop (1–3 attempts). `kkh/benchmark/harness.py`: B/C parameter-repair ablation with GraphDB facts. | Partly reusable | **The AI is the generator today**, which the mission reverses. No repair-only mode that starts from the converter output. The retrieval index has **no per-asset provenance/version/licence**, covers only 4 sub-packages, and does not log which retrieved items were cited in a correction. |
 | **Fault injection** | `kkh/benchmark/detection.py` + `kkh/domain/aloha/candidate.py`: MUTATIONS + HELD_OUT on our own generator's follower class, rules frozen at `53405d7`. `runs/convert/seeded`: seeded defects for review scoring. | Pattern reusable | No fault set for the **DLR-converted** package; it must be written and frozen before any repair is measured. |
 | **4 Validate** | `score.py` is already independent of the producer; `modelica_inspect.py` parses components/parameters/connections. | Good | No **integrity guard** comparing original vs candidate: deleted components, changed masses/inertias/limits/frames, suppressed checks (removed `assert`, `Evaluate`, commented equations), diagram-only edits. No resolved/remaining/new-error bookkeeping. |
-| **5 Review** | `kkh/studio/models.py`: immutable revisions, forks, source diff, OMEdit round trip, `accept` only from a *validated* revision; Model editor UI (`ModelicaEditor.tsx`, synced 3D arm). `Review.tsx`: manual / AI / AI+ontology reviews. | Good | Repair candidates are not imported as revisions; no 3-way view (original / AI only / AI + assets); no **per-change** accept/reject; repair evidence (retrieved assets, diagnostics fixed) not shown. Revision storage is wired to the ALOHA2 baseline path. |
 | **6 Approved + simulate** | `models.accept`, RightArmReach / LeaderArmCheck experiments, 1D lab, OMEdit open, export with meshes (`kkh/convert/export.py`). | Good | No explicit "approved model" promotion record linking URDF → conversion → diagnostics → candidate → approval. |
 | **Graphics** | **Corrected after measurement (Stage 2, OpenModelica annotation API):** the DLR output for the ALOHA follower *does* carry most connection lines, but **18 of the robot model's 49 connections have no `Line`**. All 234 drawn components have a `Placement`. (The audit's first count of "0 Line" came from a single-line text match that missed multi-line annotations.) Our generator: 51 `connect`, no routes (the kinematic schematic in the studio is a workaround). | Gap | No deterministic layout pass. |
 | **UX** | Simple UI: Convert & compare → Review. Full studio (`?ui=studio`): Robot → Knowledge → Model → Simulate → Decide. | | Needs the 7-stage sequence. |
@@ -123,7 +121,6 @@ Every run lives in `runs/workflow/<run-id>/` with `stage1/`, `stage2/`, `ai_only
   project's own answer), `third_party/ref` (Houssem's model, never an input).
 - **Optional, needs approval:** OpenModelica user's guide (licence check), Modelica Language Specification
   (download, CC BY-SA).
-- **Retrieval:** BM25, as today, deterministic, no embedding model and no download. GraphDB is not required for this
   experiment.
 
 ### Fault injection: `stage3_faults.py`
@@ -176,7 +173,6 @@ Every run lives in `runs/workflow/<run-id>/` with `stage1/`, `stage2/`, `ai_only
 ### Stage 6: approve and simulate
 - `stage6_promote` writes `approval.json`:
   - URDF hash → manifest → diagnostics → the candidate's edits → validation → approver;
-  - optionally a PROV-O trace in GraphDB (existing `kkh/semantic/trace.py`), repository `kkh-aloha-engineering` only.
 - Simulations: the existing excitation and 2 s run from the studio, OMEdit open, export with meshes. For ALOHA 2,
   RightArmReach and LeaderArmCheck stay as they are.
 

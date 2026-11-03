@@ -270,7 +270,7 @@ export default function ModelPipeline({
                   {m.mimic_equations.length > 0 && (
                     <p className="lab-footnote">
                       Mimic equations in the generated class: <code>{m.mimic_equations.join("  ")}</code> - the URDF multiplier −1 is
-                      preserved (sign errors here are caught by the ontology mimic rule; see Engineering Reasoning).
+                      preserved (sign errors here change the motion).
                     </p>
                   )}
                 </div>

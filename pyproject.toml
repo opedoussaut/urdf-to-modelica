@@ -1,12 +1,12 @@
 [project]
 name = "kkh-aloha-studio"
 version = "0.1.0"
-description = "HT GEN7 PhysAI Studio - Engineering-Grounded Physical AI: public robot specifications -> executable Modelica virtual twin (local AI, GraphDB, OpenModelica)"
+description = "HT GEN7 PhysAI Studio - Engineering-Grounded Physical AI: public robot specifications -> executable Modelica virtual twin (local AI, OpenModelica)"
 requires-python = ">=3.11"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
 markers = ["omc: requires a local OpenModelica installation", "slow: takes more than ~10 s",
-           "graphdb: requires local GraphDB", "ollama: requires local Ollama"]
+           "ollama: requires local Ollama"]
 filterwarnings = ["ignore::DeprecationWarning"]

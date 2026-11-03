@@ -1,4 +1,4 @@
-"""Scoring a review against known defects. Same metrics for manual, AI and AI + ontologies reviews.
+"""Scoring a review against known defects. Same metrics for manual and AI reviews.
 
 Ground truth (never shown to the reviewer):
   conversion file → the scorer's measured defects (kkh.convert.runner.findings, entity + category)

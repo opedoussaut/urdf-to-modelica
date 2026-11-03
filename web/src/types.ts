@@ -60,15 +60,6 @@ export interface Studio {
     discrepancies: Record<string, unknown>[];
   };
   baseline: Run;
-  ontology: {
-    backend?: string;
-    asserted_triples: number;
-    closure_triples?: number;
-    shacl: { conforms: boolean };
-    reasoning: Record<string, { explicit: boolean; inferred: boolean }>;
-    graphdb_verified?: boolean;
-    graphdb_blocker?: string;
-  };
   benchmark: Benchmark | null;
   reference_benchmark?: {
     equations: number;
@@ -80,7 +71,6 @@ export interface Studio {
 }
 export interface Benchmark {
   model: string;
-  ontology_backend: string;
   max_attempts?: number;
   repeats?: number;
   scope: string;
@@ -99,7 +89,6 @@ export interface Benchmark {
   >;
 }
 export interface Health {
-  graphdb: { ok: boolean; note?: string; error?: string };
   ollama: { ok: boolean; models?: string[] };
   openmodelica: { installed: boolean };
 }

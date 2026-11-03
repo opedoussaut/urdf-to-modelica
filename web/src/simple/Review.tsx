@@ -5,7 +5,7 @@ import { message, waitJob, type Doc } from "../studio";
 import { convert, keyLabel, orderKeys, type LocalModel, type RunSummary } from "./api";
 import type { Target } from "./SimpleApp";
 
-type ReviewMode = "manual" | "ai" | "ai_ontology";
+type ReviewMode = "manual" | "ai";
 type Issue = { entity: string; category: string; evidence: string; confidence: number; correction: { component: string; parameter: string; value: number[] } };
 type ReviewScore = {
   defects: number;
@@ -30,7 +30,6 @@ type FileView = { label: string; text: string; omc_messages: string; entities: s
 const MODE_INFO: Record<ReviewMode, { label: string; plain: string; Icon: typeof Bot }> = {
   manual: { label: "Manual review", plain: "You read the file and list the problems you find. The timer measures your effort.", Icon: User },
   ai: { label: "AI-assisted review", plain: "A local AI reads the file and the robot file and lists problems with proposed corrections.", Icon: Bot },
-  ai_ontology: { label: "AI + ontologies review", plain: "The same AI, also given the robot's facts from the knowledge graph (ontologies, units, sources).", Icon: Network },
 };
 const CATEGORY_LABEL: Record<string, string> = {
   axis: "wrong joint axis",
@@ -132,11 +131,11 @@ export default function Review({ target, setTarget, toConvert, learn }: { target
   return (
     <div className="lab sx-page">
       <div className="lab-plain">
-        <b>IN PLAIN WORDS</b> A generated model can hide mistakes. Here a person, an AI, or an AI given the robot's knowledge graph reviews a file and proposes
+        <b>IN PLAIN WORDS</b> A generated model can hide mistakes. Here a person or an AI reviews a file and proposes
         corrections. Each review is then scored against the problems we know are there, so you can see which way of reviewing works best.
       </div>
       <span className="lab-eyebrow">REVIEW</span>
-      <h1>Review a model: by hand, with AI, or with AI + ontologies</h1>
+      <h1>Review a model: by hand or with AI</h1>
 
       <section className="sx-step">
         <h2>
@@ -240,13 +239,13 @@ export default function Review({ target, setTarget, toConvert, learn }: { target
           <div className="sx-modes">
             {(Object.keys(MODE_INFO) as ReviewMode[]).map((m) => {
               const { label, plain, Icon } = MODE_INFO[m];
-              const off = m === "ai_ontology" && !file.graph;
+              const off = false;
               return (
                 <label key={m} className={"sx-mode" + (mode === m ? " on" : "") + (off ? " off" : "")}>
                   <input type="radio" name="review-mode" checked={mode === m} disabled={busy || off} onChange={() => setMode(m)} />
                   <Icon size={22} />
                   <b>{label}</b>
-                  <p>{off ? "Not available: this robot is not in the knowledge graph (uploaded URDF)." : plain}</p>
+                  <p>{plain}</p>
                 </label>
               );
             })}

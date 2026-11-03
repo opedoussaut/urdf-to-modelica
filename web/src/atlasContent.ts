@@ -1,6 +1,6 @@
 /**
  * Physical AI Atlas - plain-language concepts behind the studio, organised as a map (regions → concepts).
- * Facts about the studio itself are taken from its own sources (URDF, kkh/studio/servo1d.py, ontology/, configuration);
+ * Facts about the studio itself are taken from its own sources (URDF, kkh/studio/servo1d.py, configuration);
  * nothing here reports a result that the studio has not produced.
  *
  * Definitions: each one names its source. `quote: true` means the wording is the source's own (short definitional
@@ -27,8 +27,6 @@ export type Visual =
   | "scoring"
   | "provenance"
   | "prov-o"
-  | "ontology"
-  | "semantic-stack"
   | "leader-follower"
   | "lfd-pipeline"
   | "chunking"
@@ -104,7 +102,7 @@ The difference that matters: in the physical world, mistakes have mass. A wrong 
 
 This studio works on the robot used by much of today's research on learned manipulation, **ALOHA 2** (two small arms you can teach by demonstration). Its idea: before trusting any change on the real robot, test it on an **engineering model** whose every number has a known source.`,
     visuals: ["sense-act", "ai-kinds"],
-    studio: [{ page: 4, label: "Guided demo", what: "the whole flow on one joint, from specification to approved change" }],
+    studio: [],
     related: ["anatomy", "twin", "sim2real"],
   },
   {
@@ -129,7 +127,7 @@ Each joint adds one way of moving, a **degree of freedom**. The ALOHA follower a
 All of this is written down by the manufacturer in a **URDF** file: every link's mass and shape, every joint's axis and limits. URDF can only describe tree-shaped chains of rigid links - which is exactly what this arm is. The studio reads that file as its single source for the robot's geometry.`,
     visuals: ["arm-explore", "chain"],
     studio: [{ page: 0, label: "Robot & motion", what: "move each joint of the leader arm and watch the follower" }],
-    related: ["kinematics", "ontology"],
+    related: ["kinematics"],
   },
   {
     id: "kinematics",
@@ -175,7 +173,7 @@ Robot joints use **servo control**: a target angle comes in, a sensor measures t
 
 Tuning these settings is a classic engineering trade-off, and a good place to start understanding why a physics model is useful: you can try ten settings in simulation in the time it takes to test one on hardware.`,
     visuals: ["servo-loop", "gains", "effort"],
-    studio: [{ page: 5, label: "Joint simulation", what: "change kp/kd for one joint and compare tracking error, torque and settling" }],
+    studio: [{ page: 3, label: "Joint simulation", what: "change kp/kd for one joint and compare tracking error, torque and settling" }],
     related: ["modelica-1d", "twin", "sim2real"],
   },
   {
@@ -205,7 +203,7 @@ A **physics model** contains the equations of motion: masses, inertias, joint ax
 A **digital twin** goes one step further: the model stays connected to one real machine, and the two are kept in step with data. By the definitions above, what the studio has today is a **digital model** - its parameters come from documentation, and data from the real robot does not yet flow into it automatically. It is built automatically from the URDF and keeps a trace of where every parameter came from. Becoming a twin is the road described in *sim-to-real*.`,
     visuals: ["twin", "twin-levels"],
     studio: [
-      { page: 6, label: "Generate model", what: "URDF → Modelica model, checked by OpenModelica" },
+      { page: 4, label: "Generate model", what: "URDF → Modelica model, checked by OpenModelica" },
       { page: 1, label: "Model editor", what: "the model as code, with versions and approvals" },
     ],
     related: ["modelica-1d", "sim2real", "provenance"],
@@ -239,10 +237,10 @@ Two tools run Modelica: **OpenModelica**, open-source, used by this studio on yo
 In the studio, the whole arm is a Modelica **multibody** model (3D mechanics as a system model), and *Joint simulation* is a pure **1D** model of one joint: inertia, damping, gravity and friction torque, and the servo.`,
     visuals: ["modelica-1d", "acausal", "tools"],
     studio: [
-      { page: 5, label: "Joint simulation", what: "a 1D servo model of one joint, simulated by OpenModelica" },
+      { page: 3, label: "Joint simulation", what: "a 1D servo model of one joint, simulated by OpenModelica" },
       { page: 1, label: "Model editor", what: "the generated Modelica package and its kinematic schematic" },
     ],
-    related: ["control", "twin", "ontology"],
+    related: ["control", "twin"],
   },
   {
     id: "three-ways",
@@ -279,7 +277,7 @@ All three are judged by the **same seven checks**, run by OpenModelica: is there
 
 What to expect: rule-based converters are reliable within their rules but can miss details (here, URDFModelica does not enforce the gripper's mirrored fingers). Small local AIs often write code that only looks like Modelica. Grounding the AI in real library definitions is meant to close that gap - the comparison measures whether it does.`,
     visuals: ["three-ways"],
-    studio: [{ page: 6, label: "Generate model", what: "the studio's own deterministic converter, checked by OpenModelica" }],
+    studio: [{ page: 4, label: "Generate model", what: "the studio's own deterministic converter, checked by OpenModelica" }],
     related: ["modelica-1d", "trust", "benchmarks"],
   },
   {
@@ -321,7 +319,7 @@ What to expect: rule-based converters are reliable within their rules but can mi
 4. **Parameters** - joint axes, masses, centres of mass and inertias, compared in each part's own frame.
 5. **Dynamics** - for the same motion, the torque each joint needs in the model is compared with an independent physics engine (**MuJoCo**) reading the robot file: **inverse dynamics**. Friction and damping are left out on both sides so only the physics of masses and geometry is compared.
 
-**Scoring a review (Review).** A person, an AI, or an AI given the knowledge graph reviews a file and lists problems with proposed corrections. We already know the problems: either the ones the checks above measured, or one error we planted on purpose in a test file. So we can count:
+**Scoring a review (Review).** A person or an AI reviews a file and lists problems with proposed corrections. We already know the problems: either the ones the checks above measured, or one error we planted on purpose in a test file. So we can count:
 
 - **Recall** - how many of the known problems were found; **precision** - how many reported problems are real (false alarms cost engineering time).
 - **Corrections that work** - each proposed fix is applied to a copy and checked again: does the problem disappear without breaking something else?
@@ -330,7 +328,7 @@ What to expect: rule-based converters are reliable within their rules but can mi
 
 No single number: a reviewer can find everything but drown it in false alarms, or be cautious and miss half. The page shows each measure side by side.`,
     visuals: ["scoring"],
-    studio: [{ page: 6, label: "Generate model", what: "the studio's own conversion and its checks" }],
+    studio: [{ page: 4, label: "Generate model", what: "the studio's own conversion and its checks" }],
     related: ["three-ways", "trust", "benchmarks"],
   },
   {
@@ -362,51 +360,8 @@ No single number: a reviewer can find everything but drown it in false alarms, o
 
 This record of origin is **provenance**, and the studio stores it with the W3C standard vocabulary for it (PROV-O). It protects you from the most common modelling failure: an assumption that silently becomes a "fact" three files later. It also makes reviews faster - a reviewer looks at the assumptions, not at everything.`,
     visuals: ["provenance", "prov-o"],
-    studio: [{ page: 7, label: "Engineering reasoning", what: "one joint traced from source file to decision, every fact labelled" }],
-    related: ["ontology", "sim2real", "trust"],
-  },
-  {
-    id: "ontology",
-    region: "knowledge",
-    title: "Ontologies and knowledge graphs - and why we use them",
-    gist: "A shared vocabulary with rules, so robot facts from different files mean the same thing to people, tools and AI.",
-    definitions: [
-      {
-        term: "Ontology",
-        text: "a formal, explicit specification of a shared conceptualization",
-        quote: true,
-        source: "Studer, Benjamins & Fensel, Data & Knowledge Engineering 25, 1998 (building on Gruber, 1993)",
-        url: "https://doi.org/10.1016/S0169-023X(97)00056-6",
-      },
-      {
-        term: "Knowledge graph",
-        text: "A graph of data intended to accumulate and convey knowledge of the real world, whose nodes represent entities of interest and whose edges represent relations between them.",
-        source: "Hogan et al., Knowledge Graphs, ACM Computing Surveys 54(4), 2021",
-        url: "https://doi.org/10.1145/3447772",
-      },
-      { term: "RDF triple", text: "The unit of a knowledge graph: subject - predicate - object, for example elbow - has upper limit - 1.6 rad.", source: "W3C RDF 1.1 Concepts and Abstract Syntax", url: "https://www.w3.org/TR/rdf11-concepts/" },
-      { term: "SHACL", text: "a language for validating RDF graphs against a set of conditions", quote: true, source: "W3C SHACL Recommendation, 2017", url: "https://www.w3.org/TR/shacl/" },
-      {
-        term: "CORA",
-        text: "The Core Ontology for Robotics and Automation: general robotics concepts, their definitions, attributes, constraints and relations, as a base for specialised ontologies.",
-        source: "IEEE 1872-2015, Standard Ontologies for Robotics and Automation",
-        url: "https://standards.ieee.org/standard/1872-2015.html",
-      },
-    ],
-    body: `The same elbow appears in the URDF, in the Modelica model, in a datasheet, in a test report. Each uses its own names and units. An **ontology** is an agreed vocabulary with rules - *a joint connects two links; a joint limit is an angle; an angle has a unit* - written so that a computer can check it.
-
-A **knowledge graph** stores the facts using that vocabulary, as a network of small sentences (triples): *elbow* -is a→ *revolute joint*; *elbow* -has upper limit→ *1.6 rad*; that value -comes from→ *the URDF file at this commit*. The studio uses public standards rather than inventing its own words: **CORA** (IEEE 1872) for robotics, **QUDT** for quantities and units, **PROV-O** (W3C) for provenance, and **SHACL** rules to check the data. The graph lives in **GraphDB** on this computer and is queried with **SPARQL**.
-
-**Why we propose it:**
-1. **One meaning across tools** - the URDF, the Modelica model and the documentation are linked element by element.
-2. **Mistakes caught by rules** - a limit in the wrong unit, a missing mass, a parameter outside its declared bounds are flagged automatically.
-3. **Grounded AI** - the assistant answers from retrieved facts with sources, not from memory. Whether this measurably improves AI-assisted modelling is the research question the studio is built to test.`,
-    visuals: ["ontology", "semantic-stack"],
-    studio: [
-      { page: 3, label: "Knowledge graph", what: "browse the robot's entities and their sources" },
-      { page: 7, label: "Engineering reasoning", what: "the rules that check each value" },
-    ],
-    related: ["provenance", "trust", "modelica-1d"],
+    studio: [],
+    related: ["sim2real", "trust"],
   },
   {
     id: "demonstrations",
@@ -472,14 +427,14 @@ What the studio does today: you record leader motions, replay them on the follow
     body: `Large language models are fluent - and that is the danger: a confident answer about a joint limit may be invented. In engineering, the cost of a plausible wrong number is high.
 
 Three habits make AI useful here:
-- **Grounding** - before answering, the assistant retrieves the relevant facts (from the knowledge graph and source files) and must cite them. When the retrieval walks a knowledge graph, this is often called **GraphRAG**. You can compare an answer *with* and *without* this evidence side by side.
+- **Grounding** - before answering, the assistant retrieves the relevant facts (from the source files) and must cite them.
 - **Bounded tools** - the AI can read and propose, never change the model by itself. Proposed parameter changes are checked against declared bounds and limited to tunable settings, not manufacturer facts.
 - **Human approval** - a proposal becomes a new model version only after a passing OpenModelica check and a person accepting it.
 
 The model runs **locally** (NVIDIA Nemotron through Ollama): no robot data leaves the computer.`,
     visuals: ["grounding", "rag"],
-    studio: [{ page: 2, label: "AI assistant", what: "the same question answered with and without the knowledge graph" }],
-    related: ["ontology", "provenance"],
+    studio: [{ page: 2, label: "AI assistant", what: "a question answered from the engineering sources" }],
+    related: ["provenance"],
   },
   {
     id: "foundation-models",
@@ -528,7 +483,7 @@ What we know and what is only claimed is tracked, with dates and links, in docs/
     visuals: ["fm-outputs"],
     studio: [
       { page: 0, label: "Robot & motion", what: "move the gripper and watch inverse kinematics pick joint angles within the limits" },
-      { page: 5, label: "Joint simulation", what: "see whether a joint motion stays within the motor's torque" },
+      { page: 3, label: "Joint simulation", what: "see whether a joint motion stays within the motor's torque" },
     ],
     related: ["demonstrations", "kinematics", "benchmarks"],
   },
@@ -577,15 +532,12 @@ The best-known ones for arms like ALOHA:
 **What a benchmark does not tell you:** whether the robot's own description is right (a joint limit in the wrong unit, a missing mass), whether a motion stays within the motors' torque, or where each number came from. A policy can score well and still be driven by a wrong robot model.
 
 **Why the studio is not on these leaderboards:** it trains no policy, so there is nothing of its own to score. Its evidence is of a different kind:
-1. **Twin validation** - compare what the engineering model predicts with what the real ALOHA arm did, on public recordings, keeping some recordings aside until the model is frozen. This is being set up; no validated result is claimed yet.
-2. **Rule-check detection** - errors are planted on purpose in a copy of the model (a flipped axis, a limit in degrees); the experiment counts which checker finds them. The ontology rules found 12 of 16, all correctly typed, with no false alarms (results of 16 October 2026).
-3. **The grounding question** - does giving the AI assistant facts from the knowledge graph make its modelling help measurably better? In that experiment, the small local model was not improved by the graph evidence; the question stays open.`,
+1. **Twin validation** - compare what the engineering model predicts with what the real ALOHA arm did, on public recordings, keeping some recordings aside until the model is frozen. This is being set up; no validated result is claimed yet.`,
     visuals: ["bench-vs-studio"],
     studio: [
-      { page: 7, label: "Engineering reasoning", what: "the rules that catch planted errors, joint by joint" },
       { page: 0, label: "Robot & motion", what: "record and replay motions on the follower model" },
     ],
-    related: ["foundation-models", "sim2real", "ontology"],
+    related: ["foundation-models", "sim2real"],
   },
   {
     id: "sim2real",
@@ -631,8 +583,7 @@ Ways to close it: **system identification** (measure the real joint's response a
 **This is our challenge:** turn the engineering model from a well-sourced estimate into a validated twin of the real ALOHA, one measured parameter at a time.`,
     visuals: ["sim2real", "close-gap", "vv"],
     studio: [
-      { page: 5, label: "Joint simulation", what: "see which parameters are derived and which are assumed" },
-      { page: 7, label: "Engineering reasoning", what: "assumptions listed explicitly, per joint" },
+      { page: 3, label: "Joint simulation", what: "see which parameters are derived and which are assumed" },
     ],
     related: ["provenance", "twin", "control", "demonstrations"],
   },

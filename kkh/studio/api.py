@@ -78,9 +78,6 @@ def create(kind:str,body:Document):
         if data["scenario"].get("version")!=sc["version"]:raise HTTPException(422,"Scenario version mismatch")
         data["scenario"]={"id":sc["id"],"version":sc["version"],"sha256":sc["sha256"],"file":sc["file"]}
     record=store.create(kind,body.name,data)
-    if kind=="trajectory":
-        from kkh.semantic.trace import record_observation
-        record_observation(record)  # GraphDB engineering trace; best effort, never blocks saving
     return record
 
 
@@ -182,10 +179,7 @@ def dynamics(identity:str,body:Control,axes:int=6):
         record=store.create("simulation",old["name"]+f" · {body.focus} · {labels}",
                             {**result,"trajectory":identity,"model":body.model,
                              "model_revision":runs[-1]["revision"],"reference_revision":runs[0]["revision"]})
-        from kkh.semantic.trace import record_simulation
-        revs={r["revision"]:store.get(r["revision"],"revision") for r in runs if r.get("revision")}
-        trace=record_simulation(record,revs,old["data"])
-        return store.update(record["id"],record["version"],{**record["data"],"trace":trace})
+        return record
     return job("Follower revision comparison",run)
 
 
@@ -273,20 +267,10 @@ def action(identity:str,body:Action):
     if body.action=="engineering_variant":return guard(lambda:models.engineering_variant(identity))
     if body.action in {"import","reject"}:return guard(lambda:models.roundtrip(identity,body.action,body.hashes))
     if body.action=="accept":
-        accepted=guard(lambda:models.accept(identity,body.revision))
-        from kkh.semantic.trace import record_acceptance
-        record_acceptance(identity,store.get(body.revision,"revision"))
-        return accepted
+        return guard(lambda:models.accept(identity,body.revision))
     if body.action=="restore":return guard(lambda:models.restore(identity,body.revision,body.hashes))
     if body.action in {"check","simulate"}:
-        def validate():
-            head=store.get(identity,"model")["data"]["head"]
-            result=models.validate(identity,body.class_name,body.action=="simulate",body.stop_time)
-            from kkh.semantic.trace import record_validation
-            revision=store.get(head,"revision")
-            record_validation(revision,revision["data"].get("status")=="validated",body.class_name)
-            return result
-        return job("OpenModelica "+body.action,validate)
+        return job("OpenModelica "+body.action,lambda:models.validate(identity,body.class_name,body.action=="simulate",body.stop_time))
     raise HTTPException(422,"Unknown action")
 
 
@@ -303,13 +287,13 @@ def propose(identity:str,body:Proposal):
     the revision must be reviewed, validated by OpenModelica and explicitly accepted in the Modelica editor."""
     msg=guard(lambda:store.get(body.message,"message"))
     changes=[c for i,c in enumerate(msg["data"].get("parameter_changes") or []) if not body.indices or i in body.indices]
-    # Re-decide applicability now from the knowledge graph (stored answers are never trusted for this decision).
-    from .copilot import ontology_applicability
+    # Re-decide applicability now (stored answers are never trusted for this decision).
+    from .copilot import applicability
     valid,rejected,decisions=[],[],{}
     for c in changes:
         if not c.get("structurally_valid") or not c.get("file"):continue
         path_=f"ALOHA2.{c['file'][:-3].replace('/','.')}.{c['component']}"
-        d=ontology_applicability(path_,c["parameter"],c["file"])
+        d=applicability(path_,c["parameter"],c["file"])
         if d["applicable"]:
             valid.append({k:c.get(k) for k in ("component","parameter","value","file")})
             decisions[(c["component"],c["parameter"])]={**d,"justification":c.get("justification")}
@@ -317,15 +301,12 @@ def propose(identity:str,body:Proposal):
             rejected.append(f"{c['component']}.{c['parameter']}: {d['reason']}")
     if not valid:raise HTTPException(422,"No applicable parameter change selected"+("; rejected: "+"; ".join(rejected) if rejected else ""))
     path=(msg["data"].get("context") or {}).get("file","Arms/AlohaVX300s.mo")
-    reason=(f"AI proposal from copilot ({msg['data'].get('mode')} ontology, {msg['data'].get('settings',{}).get('model')}, "
+    reason=(f"AI proposal from copilot ({msg['data'].get('settings',{}).get('model')}, "
             f"message {msg['id'][:8]}): "+", ".join(f"{c['component']}.{c['parameter']}={c['value']}" for c in valid))
     result=guard(lambda:models.propose_parameters(identity,path,valid,reason))
     for a in result["applied"]:
         d=decisions.get((a["component"],a["parameter"]),{})
-        a.update({"parameter_iri":d.get("iri"),"justification":d.get("justification"),"semantic_basis":d.get("basis"),
-                  "evidence_status":d.get("evidence_status")})
-    from kkh.semantic.trace import record_proposal
-    result["trace"]=record_proposal(msg,result["applied"],store.get(result["revision"],"revision"),identity)
+        a.update({"justification":d.get("justification"),"basis":d.get("basis")})
     result["rejected"]=rejected
     store.update(msg["id"],msg["version"],{**msg["data"],"proposal_revision":result["revision"],"proposal_model":identity})
     return result
@@ -334,10 +315,9 @@ def propose(identity:str,body:Proposal):
 @router.get("/entity")
 def entity(robot:str="aloha_vx300s",joint:str|None=None,file:str|None=None,component:str|None=None):
     """Resolve one engineering entity across representations using the generator's URDF<->Modelica mapping
-    (generated/modelica/aloha2_mapping.json) and the evidence-graph IRIs. Either (robot, joint) or (file, component)."""
+    (generated/modelica/aloha2_mapping.json). Either (robot, joint) or (file, component)."""
     from kkh.domain.aloha import configuration as C
     from kkh.domain.aloha.build import SERVO_JOINTS
-    from kkh.domain.aloha.knowledge import entity as iri
     mapping=json.loads((C.ROOT/"generated/modelica/aloha2_mapping.json").read_text(encoding="utf-8"))["classes"]
     if file and component:
         if file.startswith("Control/") and component in SERVO_JOINTS:
@@ -355,9 +335,7 @@ def entity(robot:str="aloha_vx300s",joint:str|None=None,file:str|None=None,compo
     urdf=C.arm_robot(robot)
     if joint not in urdf.joints:raise HTTPException(404,"Unknown joint for this robot")
     j=urdf.joints[joint]; cls=mapping[robot]
-    arm="leader" if robot=="aloha_wx250s" else "follower_right"
-    record={"robot":robot,"joint":joint,"type":j.type,"iri":str(iri(f"{arm}/joint/{joint}")),
-            "graph_arm":arm,
+    record={"robot":robot,"joint":joint,"type":j.type,
             "urdf":{"file":f"data/urdf/{robot}.urdf","joint":joint,"parent":j.parent,"child":j.child,
                     "axis":j.axis.tolist() if j.movable else None},
             "modelica":{"file":f"Arms/{C.ARM_CLASS[robot]}.mo","class":cls["class"],"component":cls["joints"][joint],
@@ -427,8 +405,6 @@ def retarget_attempt(identity:str):
                                  "evidence":{"observed":"none (computed)","assumed":"experimental display layout; Level-1 visual rule",
                                              "simulated":"none until an OpenModelica run"}}
         record=store.create("trajectory",source["name"][:80]+" · follower attempt (retargeted)",robotics.trajectory(attempt))
-        from kkh.semantic.trace import record_derivation
-        record_derivation(record,identity)  # best effort; never blocks
         return {"record":record,"report":out["report"],"task":S.evaluate_recording(record["data"])}
     return job("Retarget follower attempt",run)
 
@@ -462,31 +438,6 @@ def workspace_layouts():
     data=W.load_layouts()
     return {**data,"gates":W.gates(False)|{"display_layout_applied":True},
             "statement":"Experimental layout - position IK only; orientation/collision/physical contact unverified."}
-
-
-# ---------------------------------------------------------------------------------------------- semantic engineering
-@router.get("/semantic/joint")
-def semantic_joint(robot:str="aloha_vx300s",joint:str="shoulder"):
-    """Ontology chain (actuators, servo controller, parameters, Modelica bindings, evidence) and engineering trace."""
-    from kkh.semantic.graphdb import GraphDB
-    from kkh.semantic.trace import joint_chain, joint_trace
-    from kkh.studio.robotics import JOINTS
-    if joint not in JOINTS:raise HTTPException(422,"Unknown joint")
-    arm="leader" if robot=="aloha_wx250s" else "follower_right"
-    db=GraphDB(timeout=10)
-    try:
-        return {"chain":guard(lambda:joint_chain(db,arm,joint)),
-                "trace":guard(lambda:joint_trace(db,joint)) if arm!="leader" else None,
-                "graphs":{"evidence":"https://w3id.org/kkh/graphs/aloha2","trace":"https://w3id.org/kkh/graphs/aloha2/trace"}}
-    finally:
-        db.close()
-
-
-@router.post("/semantic/backfill")
-def semantic_backfill():
-    """Record existing recordings, simulations, proposals and acceptances in the GraphDB engineering trace (idempotent)."""
-    from kkh.semantic.trace import backfill
-    return guard(lambda:backfill(store))
 
 
 # 1D Simulation Lab and Robot Model Pipeline (registered on this router)

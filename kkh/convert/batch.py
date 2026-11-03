@@ -4,7 +4,7 @@
         --models nemotron-3-nano:4b,qwen2.5-coder:7b,qwen3-coder:30b [--run <existing run id>] [--skip-convert]
 
 1. Conversion: all three methods, each AI method once per model (one new run, unless --run reuses one).
-2. Reviews (AI and AI + ontologies, every model) of: every file that run produced, and every seeded test file
+2. AI reviews (every model) of: every file that run produced, and every seeded test file
    (kkh/benchmark/detection.MUTATIONS). A review that already exists for the same target, mode and model is skipped,
    so the command can be stopped and started again.
 Progress goes to runs/convert/batch_<run>.log; every result is stored where the studio pages read it.
@@ -57,7 +57,7 @@ def main():
     targets += [{"kind": "seeded", "mutation": s["id"]} for s in review.seeded_list()]
     # small models first: early results arrive quickly; the 30B model runs last
     order = sorted(models, key=lambda m: ("30b" in m, m))
-    jobs = [(t, mode, m) for m in order for t in targets for mode in ("ai", "ai_ontology")]
+    jobs = [(t, mode, m) for m in order for t in targets for mode in ("ai",)]
     _log(log, f"reviews (protocol {a.protocol}): {len(targets)} files x 2 modes x {len(order)} models = {len(jobs)} (existing ones skipped)")
     for n, (t, mode, m) in enumerate(jobs, 1):
         if (mode, m, a.protocol) in done_reviews(t):

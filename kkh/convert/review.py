@@ -1,7 +1,7 @@
-"""Reviews of a generated Modelica file: manual, AI-assisted, AI + ontologies-assisted. Same structured report for all.
+"""Reviews of a generated Modelica file: manual or AI-assisted. Same structured report for all.
 
 A review never sees the ground truth (the scorer's findings or the seeded mutation): only the Modelica file, the
-cleaned URDF and OpenModelica's own messages for that file. The ontology mode additionally receives GraphDB joint
+cleaned URDF and OpenModelica's own messages for that file.
 facts (kkh.rag.retrieval.joint_facts) for the pinned ALOHA arms. Corrections are proposals: they are applied only to
 isolated copies when the review is scored (kkh.convert.review_score), never to the file itself.
 
@@ -30,7 +30,6 @@ from .library_index import _strip
 REVIEW_MODES = {
     "manual": "Manual review (a person)",
     "ai": "AI-assisted review",
-    "ai_ontology": "AI + ontologies-assisted review",
 }
 PROPERTIES = ["axis", "origin_xyz", "origin_rpy", "lower_limit", "upper_limit", "effort_limit", "velocity_limit",
               "mass", "com_xyz", "mimic_multiplier"]
@@ -143,23 +142,6 @@ def model_text(files: dict[str, str]) -> str:
 
 
 # ------------------------------------------------------------------------------------------- AI reviews
-ARM = {"aloha_vx300s": "follower_right", "aloha_wx250s": "leader"}
-
-
-def graph_evidence(robot_id: str | None) -> tuple[str, list]:
-    if robot_id not in ARM:
-        raise ValueError("No robot knowledge graph for this robot (uploaded URDF): the ontology-assisted review is not available")
-    from kkh.rag.retrieval import JOINTS, joint_facts
-    from kkh.semantic.graphdb import GraphDB
-    db = GraphDB(timeout=15)
-    try:
-        facts = {j: joint_facts(ARM[robot_id], j, db) for j in sorted(JOINTS)}
-    finally:
-        db.close()
-    rows = [{"joint": j, **{k: r[k] for k in ("property", "value", "unit", "source") if k in r}} for j, fs in facts.items() for r in fs]
-    return json.dumps(rows, separators=(",", ":")), rows
-
-
 def ai_review(target: dict, mode: str, model: str | None = None, protocol: str = "v1") -> dict:
     from kkh.llm.ollama import DEFAULT_MODEL, Ollama
     model = model or DEFAULT_MODEL
@@ -167,10 +149,6 @@ def ai_review(target: dict, mode: str, model: str | None = None, protocol: str =
     user = (f"URDF (visual/collision geometry removed):\n{sources.prompt_text(urdf)}\n\n"
             f"Modelica model to review:\n{model_text(files)}\n\n"
             f"OpenModelica messages for this file (real output; empty = it loaded):\n{ctx['omc_messages'] or '(none)'}")
-    evidence = []
-    if mode == "ai_ontology":
-        text, evidence = graph_evidence(ctx["robot"])
-        user += ("\n\nRobot knowledge graph facts (GraphDB, ontologies CORA/QUDT/PROV-O; units are QUDT units):\n" + text)
     system = SYSTEM + (PROTOCOL_V2 if protocol == "v2" else "")
     messages = [{"role": "system", "content": system}, {"role": "user", "content": user + "\n/no_think"}]
     client = Ollama(timeout=900)

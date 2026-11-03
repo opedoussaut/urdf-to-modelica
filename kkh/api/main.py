@@ -14,11 +14,9 @@ from pydantic import BaseModel, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from kkh.domain.aloha import configuration as C
-from kkh.domain.aloha.knowledge import build_graph, K
 from kkh.domain.aloha.scenarios import scenarios
 from kkh.engineering.urdf_model import rpy_to_matrix
 from kkh.llm.ollama import DEFAULT_MODEL, Ollama
-from kkh.semantic.graphdb import GraphDB
 
 ROOT = C.ROOT
 app = FastAPI(title="HT GEN7 PhysAI Studio", version="0.2.0")
@@ -26,7 +24,6 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1
 pool = ThreadPoolExecutor(max_workers=1)
 jobs: dict[str, dict] = {}
 jobs_lock = threading.Lock()
-copilot_lock = threading.Lock()
 
 
 @app.middleware("http")
@@ -52,16 +49,6 @@ def read_json(path: Path, default=None):
 @app.get("/api/health")
 def health():
     status = {}
-    db = GraphDB(timeout=3)
-    try:
-        present = db.exists()
-        ready = present and db.ask("ASK { <https://w3id.org/kkh/aloha2/robot> a <https://w3id.org/kkh/eng#Robot> }")
-        status["graphdb"] = {"ok": ready, "repository_exists": present, "url": db.url, "repository": db.repo,
-                              "version": db.version(), "note": "No project data; license/ingestion pending" if not ready else "ready"}
-    except Exception as exc:
-        status["graphdb"] = {"ok": False, "error": str(exc)}
-    finally:
-        db.close()
     client = Ollama(timeout=3)
     try:
         installed = [m["name"] for m in client.models()]
@@ -80,8 +67,6 @@ def health():
 @app.get("/api/studio")
 def studio():
     return {"manifest": C.build_manifest(), "baseline": read_json(ROOT / "reports/engineering_baseline.json"),
-            "ontology": read_json(ROOT / "reports/ontology.json"),
-            "benchmark": read_json(ROOT / "reports/benchmark.json"),
             "reference_benchmark": read_json(ROOT / "reports/benchmark_A.json"), "scenarios": scenarios()}
 
 
@@ -151,70 +136,11 @@ def job(job_id: str):
         return dict(jobs[job_id])
 
 
-class Question(BaseModel):
-    question: str = Field(min_length=3, max_length=1500)
-    model: str = Field(default_factory=lambda: DEFAULT_MODEL, max_length=80)
-
-
-@app.post("/api/copilot")
-def copilot(body: Question):
-    if not copilot_lock.acquire(blocking=False):
-        raise HTTPException(409, "The local copilot is busy")
-    try:
-        from kkh.rag.copilot import ask
-        return ask(body.question, body.model)
-    except Exception as exc:
-        raise HTTPException(503, str(exc)) from exc
-    finally:
-        copilot_lock.release()
-
-
-@app.get("/api/graph")
-def graph():
-    from rdflib import RDF, RDFS
-    from rdflib import Graph
-    from kkh.semantic.local import knowledge_store
-    from kkh.domain.aloha.knowledge import DATA_GRAPH
-    db = knowledge_store()
-    try:
-        g = (Graph().parse(data=db.construct(f"CONSTRUCT {{?s ?p ?o}} WHERE {{GRAPH <{DATA_GRAPH}> {{?s ?p ?o}}}}"), format="nt")
-             if db.backend == "graphdb" else build_graph())
-        backend = db.backend
-    finally:
-        db.close()
-    nodes, edges = [], []
-    allowed = {K.Robot, K.Arm, K.Link, K.Actuator, K.RevoluteJoint, K.PrismaticJoint, K.FixedJoint, K.ContinuousJoint}
-    ids = {s for s, _, typ in g.triples((None, RDF.type, None)) if typ in allowed}
-    for node in sorted(ids, key=str):
-        typ = next(str(t).split("#")[-1] for t in g.objects(node, RDF.type) if t in allowed)
-        name = str(g.value(node, RDFS.label) or str(node).split('/')[-1])
-        nodes.append({"data": {"id": str(node), "label": name.split('/')[-1], "name": name, "kind": typ}})
-    for s, p, o in g:
-        if s in ids and o in ids:
-            edges.append({"data": {"id": str(s) + str(p) + str(o), "source": str(s), "target": str(o), "label": str(p).split('#')[-1]}})
-    return {"nodes": nodes, "edges": edges, "backend": backend, "mode": "asserted domain graph; reasoning witnesses in ontology report"}
-
-
 @app.get("/api/sources/{model}/urdf")
 def source_urdf(model: str):
     if model not in C.ARM_CLASS:
         raise HTTPException(404, "Unknown source model")
     return FileResponse(C.URDF_DIR / f"{model}.urdf", media_type="application/xml")
-
-
-@app.get("/api/evidence")
-def evidence(arm: str = "follower_right", joint: str = "elbow"):
-    from kkh.rag.retrieval import joint_facts
-    from kkh.semantic.local import knowledge_store
-    db = knowledge_store()
-    try:
-        return {"backend": db.backend, "facts": joint_facts(arm, joint, db)}
-    except ValueError as exc:
-        raise HTTPException(422, str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(503, str(exc)) from exc
-    finally:
-        db.close()
 
 
 @app.get("/api/geometry")
@@ -235,8 +161,6 @@ def geometry():
 
 from kkh.studio.api import router as workbench_router
 app.include_router(workbench_router)
-from kkh.api.benchmark import router as benchmark_router  # noqa: E402
-app.include_router(benchmark_router)
 from kkh.convert.api import router as convert_router  # noqa: E402
 app.include_router(convert_router)
 from kkh.workflow.api import router as workflow_router  # noqa: E402
